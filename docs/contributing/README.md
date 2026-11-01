@@ -53,3 +53,4 @@
 - [查找待解决的问题](issues.md) (如何查阅 issues)
     - [Issue 属性列表](issue-labels.md)
 - [PR 审核](code-style.md#pr-review-惯例)
+- [Commit 信息规范](commit-messages.md)
