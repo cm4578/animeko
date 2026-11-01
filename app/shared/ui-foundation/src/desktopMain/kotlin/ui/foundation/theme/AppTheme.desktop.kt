@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024-2025 OpenAni and contributors.
+ * Copyright (C) 2024-2026 OpenAni and contributors.
  *
  * 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证.
  * Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
@@ -21,6 +21,7 @@ import com.materialkolor.dynamicColorScheme
 import me.him188.ani.app.ui.foundation.LocalPlatform
 import me.him188.ani.app.ui.foundation.layout.LocalPlatformWindow
 import me.him188.ani.utils.platform.isLinux
+import me.him188.ani.utils.platform.isMacOS
 import me.him188.ani.utils.platform.isWindows
 
 @Composable
@@ -30,6 +31,12 @@ actual fun appColorScheme(
     useBlackBackground: Boolean,
     isDark: Boolean,
 ): ColorScheme {
+    if (LocalPlatform.current.isMacOS()) {
+        // macOS 使用 Ani 配色; 不跟随系统强调色 (见 isPlatformSupportDynamicTheme).
+        return remember(seedColor, isDark, useBlackBackground) {
+            modifyColorSchemeForBlackBackground(aniColorScheme(seedColor, isDark), isDark, useBlackBackground)
+        }
+    }
     val actualSeedColor = if (useDynamicTheme && isPlatformSupportDynamicTheme()) {
         val currentWindowColor by LocalPlatformWindow.current.accentColor.collectAsState(Color.Unspecified)
         //fallback to default color, if platform can't get the accent color
