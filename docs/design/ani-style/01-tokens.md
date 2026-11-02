@@ -115,7 +115,10 @@
 | onSecondary | `#FFFFFF` | `#0D141B` | |
 | secondaryContainer * | `#E6EEF4` | `#293A49` | tint(导航指示器、选中 FilterChip) |
 | onSecondaryContainer * | `#1B4A6E` | `#C1DDF5` | onTint |
-| tertiary 系列 | 不覆写 | 不覆写 | 沿用 materialkolor 以 accent 生成的值 |
+| tertiary | `#131D26` | `#E6EAEF` | label,见 §4.3 |
+| onTertiary | `#FFFFFF` | `#0D141B` | |
+| tertiaryContainer * | `#E6EEF4` | `#293A49` | tint |
+| onTertiaryContainer * | `#1B4A6E` | `#C1DDF5` | onTint |
 | background | `#F1F4F9` | `#0D141B` | bg |
 | onBackground | `#131D26` | `#E6EAEF` | label |
 | surface | `#F1F4F9` | `#0D141B` | bg |
@@ -145,6 +148,7 @@
 ### 4.3 刻意的取舍
 
 - **浅色模式 surfaceContainer 系列不单调递增**:Lowest 为雾蓝灰,Low/High/Container 为白,Highest 又是灰。这对应「灰底白卡」的层次。深色模式仍单调递增。
+- **tertiary 系列不是第三种强调色**:设计稿的评分、排名等数字用 label,选中态用 tint。读 tertiary 的现有组件(评分数字与星星、弹幕源 FilterChip、选择资料来源摘要等)因此显示为中性文字与 tint 淡底,不出现 materialkolor 由 accent 推出的其他色相。
 - **`surfaceTint` 与 `surface` 同值**:关闭 M3 色调高度,带 `tonalElevation` 的 `Surface` 不会泛出强调色。不要设为 `Color.Transparent`(`surfaceColorAtElevation` 合成时会把表面压暗)。
 - **M3 组件默认值受到的影响**(预期内,组件按 02 改样式时处理):
   - 未传颜色的 `Card` 默认 `surfaceContainerHighest`,为灰卡。要白卡用 `AniThemeDefaults.primaryCardColors()`。
@@ -325,7 +329,7 @@ fun aniColorScheme(seedColor: Color, isDark: Boolean): ColorScheme {
         style = PaletteStyle.TonalSpot,
     )
     return base.copy(
-        // §4.2 每个非 * 角色取 n, * 角色取 a; tertiary 系列不覆写
+        // §4.2 每个非 * 角色取 n, * 角色取 a; `*Fixed` 系列不覆写
     )
 }
 
@@ -387,11 +391,12 @@ inline fun Platform.isApple(): Boolean = isIos() || isMacOS()
 
 新增 `app/shared/ui-foundation/src/commonTest/kotlin/ui/foundation/theme/AniColorSchemeTest.kt`:
 
-1. `default seed uses brand colors in light scheme`、`default seed uses brand colors in dark scheme`:§4.2 每个非 tertiary 角色与期望值相等。
+1. `default seed uses brand colors in light scheme`、`default seed uses brand colors in dark scheme`:§4.2 每个角色(`*Fixed` 系列除外)与期望值相等。
 2. `derived schemes meet contrast requirements`:对 `AniThemeDefaults.themeColorOptions` 全部种子色,加 `#808080`、`#FFFF00`、`#0000FF`、`#FF0000`,浅色深色各验证:
    - `primary` vs `surfaceContainerLowest` ≥ 4.5,`primary` vs `surfaceContainerLow` ≥ 4.5
    - `onPrimary` vs `primary` ≥ 4.5
    - `onSecondaryContainer` vs `secondaryContainer` ≥ 4.5
+   - `tertiary` vs `surfaceContainerLowest` ≥ 4.5,`onTertiary` vs `tertiary` ≥ 4.5,`onTertiaryContainer` vs `tertiaryContainer` ≥ 4.5
    - `onSurfaceVariant` vs `surfaceContainerHighest` ≥ 4.5
    - `inversePrimary` vs `inverseSurface` ≥ 4.5
    - `outline` vs `surfaceContainerLowest` ≥ 3.0
