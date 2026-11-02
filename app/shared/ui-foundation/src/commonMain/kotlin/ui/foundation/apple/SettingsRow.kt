@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import me.him188.ani.app.ui.foundation.theme.AniTextStyles
@@ -39,8 +40,8 @@ import me.him188.ani.app.ui.foundation.theme.AniTextStyles
 /**
  * C6 设定行.
  *
- * 手机高 48, 带说明时至少 60; 内距 0 12 0 16. 标题 `body` label, 说明 `caption` label2.
- * macOS 高 48, 带说明时至少 60; 内距 0 16. 标题 `macBody` label, 说明 `macCaption` label2.
+ * 手机高 52 (带图标 48), 带说明时上下内距 12、至少 60; 内距 0 12 0 16. 标题 `body` label, 说明 `footnote` label2.
+ * macOS 高 48, 带说明时上下内距 10、至少 60; 内距 0 16. 标题 `macBody` label, 说明 `macCaption` label2.
  * 行尾用下列其中一种, 不要混用: [SettingsRowNavigation] (`›` 或 `↗`)、[AniSwitch] (见 [SettingsSwitchRow])、
  * [SettingsRowPopupValue]; 就地执行的动作用 [SettingsActionRow].
  *
@@ -111,7 +112,7 @@ fun SettingsSwitchRow(
 }
 
 /**
- * C6 就地执行的动作行 (复制、导入、登出、检查更新): 整行文字为 accent, 手机 `callout`, macOS `macBody`.
+ * C6 就地执行的动作行 (复制、导入、登出、检查更新): 标题为 accent, 手机 `body`, macOS `macBody`.
  *
  * 危险动作也用此样式, **不用红色**, 由确认对话框防误触.
  */
@@ -120,21 +121,23 @@ fun SettingsActionRow(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    description: String? = null,
     showDivider: Boolean = false,
     enabled: Boolean = true,
 ) {
     SettingsRowLayout(
         modifier = modifier.clickable(enabled = enabled, role = Role.Button, onClick = onClick),
-        description = null,
+        description = description,
         icon = null,
         showDivider = showDivider,
         enabled = enabled,
         title = {
             Text(
                 text,
-                style = if (isMacStyle) AniTextStyles.macBody else AniTextStyles.callout,
+                style = if (isMacStyle) AniTextStyles.macBody else AniTextStyles.body,
                 color = MaterialTheme.colorScheme.primary,
-                maxLines = 1,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
         },
         trailing = {},
@@ -142,9 +145,12 @@ fun SettingsActionRow(
 }
 
 /**
- * C6 行尾 `›` (进入下一页) 或 `↗` (打开外部链接、系统设置).
+ * C6 行尾 `›` (进入下一页) 或 `↗` (打开外部链接、系统设置), 箭头为 label2.
  *
- * @param value 当前值, label2; 手机 `subhead`, macOS `macCallout`.
+ * - `›`: 提示点、值、箭头间距 12. 手机箭头 16 号、线宽 2; macOS 14 号、线宽 2.2.
+ * - `↗`: 值与箭头间距手机 6、macOS 4. 手机箭头 15 号、线宽 2.2; macOS 14 号、线宽 2.2.
+ *
+ * @param value 当前值, label2. `›` 在手机用 `subhead`, `↗` 在手机用 `callout`; macOS 都用 `macCallout`.
  * @param alert 在值前显示 C12 提示点 (有新版本等).
  * @param external `true` 时显示 `↗`.
  */
@@ -154,17 +160,40 @@ fun SettingsRowNavigation(
     alert: Boolean = false,
     external: Boolean = false,
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+    val mac = isMacStyle
+    val spacing = when {
+        !external -> 12.dp
+        mac -> 4.dp
+        else -> 6.dp
+    }
+    Row(horizontalArrangement = Arrangement.spacedBy(spacing), verticalAlignment = Alignment.CenterVertically) {
         if (alert) {
             AlertDot()
         }
         if (value != null) {
-            SettingsRowValueText(value)
+            SettingsRowValueText(
+                value,
+                style = when {
+                    mac -> AniTextStyles.macCallout
+                    external -> AniTextStyles.callout
+                    else -> AniTextStyles.subhead
+                },
+            )
         }
         Icon(
-            if (external) AppleIcons.externalLink() else AppleIcons.chevronRight(),
+            when {
+                !external -> AppleIcons.chevronRight(if (mac) 2.2f else 2f)
+                mac -> AppleIcons.macExternalLink()
+                else -> AppleIcons.externalLink(2.2f)
+            },
             contentDescription = null,
-            Modifier.size(SettingsRowDefaults.TrailingIconSize),
+            Modifier.size(
+                when {
+                    mac -> 14.dp
+                    external -> 15.dp
+                    else -> 16.dp
+                },
+            ),
             tint = MaterialTheme.colorScheme.secondary,
         )
     }
@@ -173,7 +202,8 @@ fun SettingsRowNavigation(
 /**
  * C6 行尾弹出值: 当前值 + 上下双箭头. 点击后显示的选单由调用处提供.
  *
- * 手机为 label2 文字 + 16 号箭头. macOS 为弹出按钮: fill 底、高 24、圆角 6, `macCallout` label 文字 + 12 号 label2 箭头.
+ * 手机为 `callout` label2 文字 + 14 号箭头 (线宽 2.4), 间距 4.
+ * macOS 为弹出按钮: fill 底、高 24、圆角 6, `macCallout` label 文字 + 12 号 label2 箭头.
  */
 @Composable
 fun SettingsRowPopupValue(
@@ -206,21 +236,21 @@ fun SettingsRowPopupValue(
         return
     }
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-        SettingsRowValueText(value)
+        SettingsRowValueText(value, style = AniTextStyles.callout)
         Icon(
             AppleIcons.upDown(),
             contentDescription = null,
-            Modifier.size(SettingsRowDefaults.TrailingIconSize),
+            Modifier.size(14.dp),
             tint = MaterialTheme.colorScheme.secondary,
         )
     }
 }
 
 @Composable
-private fun SettingsRowValueText(value: String) {
+private fun SettingsRowValueText(value: String, style: TextStyle) {
     Text(
         value,
-        style = if (isMacStyle) AniTextStyles.macCallout else AniTextStyles.subhead,
+        style = style,
         color = MaterialTheme.colorScheme.secondary,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
@@ -243,18 +273,18 @@ private fun SettingsRowLayout(
         mac -> 10.dp
         else -> 12.dp
     }
+    val minHeight = when {
+        description != null -> SettingsRowDefaults.HeightWithDescription
+        mac -> SettingsRowDefaults.MacHeight
+        icon != null -> SettingsRowDefaults.HeightWithIcon
+        else -> SettingsRowDefaults.Height
+    }
     Box(modifier.fillMaxWidth()) {
         Row(
             Modifier
                 .fillMaxWidth()
                 .alpha(if (enabled) 1f else AppleComponentDefaults.DisabledAlpha)
-                .heightIn(
-                    min = if (description != null) {
-                        SettingsRowDefaults.HeightWithDescription
-                    } else {
-                        SettingsRowDefaults.Height
-                    },
-                )
+                .heightIn(min = minHeight)
                 .padding(
                     start = 16.dp,
                     end = if (mac) 16.dp else 12.dp,
@@ -284,7 +314,7 @@ private fun SettingsRowLayout(
                 if (description != null) {
                     Text(
                         description,
-                        style = if (mac) AniTextStyles.macCaption else AniTextStyles.caption,
+                        style = if (mac) AniTextStyles.macCaption else AniTextStyles.footnote,
                         color = MaterialTheme.colorScheme.secondary,
                     )
                 }
@@ -305,8 +335,14 @@ private fun SettingsRowLayout(
 }
 
 object SettingsRowDefaults {
-    /** 行高, 手机与 macOS 相同. */
-    val Height = 48.dp
+    /** 手机无图标的行高 (设定子页). */
+    val Height = 52.dp
+
+    /** 手机带图标的行高 (「我的」页). */
+    val HeightWithIcon = 48.dp
+
+    /** macOS 行高. */
+    val MacHeight = 48.dp
 
     /** 带说明时的最小行高, 手机与 macOS 相同. */
     val HeightWithDescription = 60.dp
@@ -315,7 +351,6 @@ object SettingsRowDefaults {
     val MacPopupButtonHeight = 24.dp
 
     val IconTileSize = 30.dp
-    val TrailingIconSize = 16.dp
 
     /** 无图标时分隔线的起点. */
     val DividerStart = 16.dp

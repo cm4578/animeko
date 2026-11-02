@@ -90,6 +90,12 @@ object AppleIcons {
         stroke("M9.5 8H16v6.5")
     }
 
+    /** macOS 设定行的 `↗`, 箭身比 [externalLink] 长. */
+    fun macExternalLink(strokeWidth: Float = 2.2f): ImageVector = cached("macExternalLink", strokeWidth) {
+        stroke("M7 17L17 7")
+        stroke("M9 7h8v8")
+    }
+
     /** 弹出值的上下双箭头. */
     fun upDown(strokeWidth: Float = 2.4f): ImageVector = cached("upDown", strokeWidth) {
         stroke("M8 9.5l4-4 4 4")

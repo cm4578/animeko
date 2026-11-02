@@ -18,6 +18,7 @@ import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpRect
 import me.him188.ani.app.ui.foundation.LocalPlatform
@@ -54,6 +55,9 @@ internal fun ComposeUiTest.setAniStyleContent(
 }
 
 internal fun ComposeUiTest.boundsOf(tag: String): DpRect = onNodeWithTag(tag, useUnmergedTree = true).getBoundsInRoot()
+
+internal fun ComposeUiTest.textBoundsOf(text: String): DpRect =
+    onNodeWithText(text, useUnmergedTree = true).getBoundsInRoot()
 
 internal fun ComposeUiTest.heightOf(tag: String): Dp = boundsOf(tag).let { it.bottom - it.top }
 

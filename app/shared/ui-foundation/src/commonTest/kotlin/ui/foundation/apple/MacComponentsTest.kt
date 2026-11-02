@@ -113,6 +113,22 @@ class MacComponentsTest {
     }
 
     @Test
+    fun `settings navigation and group text use mac spacing`() = runAniComposeUiTest {
+        setAniStyleContent(MacOSPlatform) {
+            GroupedListSection(Modifier.testTag("section"), title = "Group", footer = "Footer") {
+                SettingsRow("Backup", onClick = {}) {
+                    SettingsRowNavigation(value = "Value")
+                }
+            }
+        }
+        val section = boundsOf("section")
+        // 行尾内距 16 + 14 号 `›` + 值与箭头间距 12.
+        assertEquals(42f, (section.right - textBoundsOf("Value").right).value, SIZE_TOLERANCE)
+        assertEquals(12f, (textBoundsOf("Group").left - section.left).value, SIZE_TOLERANCE)
+        assertEquals(12f, (textBoundsOf("Footer").left - section.left).value, SIZE_TOLERANCE)
+    }
+
+    @Test
     fun `buttons are 28 high on macOS`() = runAniComposeUiTest {
         var clicks = 0
         setAniStyleContent(MacOSPlatform) {

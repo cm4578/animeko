@@ -104,8 +104,30 @@ class AppleComponentsTest {
         waitForIdle()
         assertTrue(checked)
         onNodeWithTag("row").assertIsOn()
-        assertEquals(48f, heightOf("row").value, SIZE_TOLERANCE)
-        assertTrue(heightOf("rowWithDescription") >= 60.dp)
+        assertEquals(52f, heightOf("row").value, SIZE_TOLERANCE)
+        // 上下内距 12 + body 22 + 间距 2 + footnote 18.
+        assertEquals(66f, heightOf("rowWithDescription").value, SIZE_TOLERANCE)
+    }
+
+    @Test
+    fun `settings rows and group text follow the phone design`() = runAniComposeUiTest {
+        setAniStyleContent {
+            GroupedListSection(Modifier.testTag("section"), title = "Group", footer = "Footer") {
+                SettingsRow("Plain", Modifier.testTag("plain"), onClick = {}) {
+                    SettingsRowNavigation(value = "Value")
+                }
+                SettingsRow("With icon", Modifier.testTag("icon"), icon = AppleIcons.settings(), showDivider = true)
+                SettingsActionRow("Copy", onClick = {}, Modifier.testTag("action"), description = "Description")
+            }
+        }
+        assertEquals(52f, heightOf("plain").value, SIZE_TOLERANCE)
+        assertEquals(48f, heightOf("icon").value, SIZE_TOLERANCE)
+        assertEquals(66f, heightOf("action").value, SIZE_TOLERANCE)
+        val section = boundsOf("section")
+        // 行尾内距 12 + 16 号 `›` + 值与箭头间距 12.
+        assertEquals(40f, (section.right - textBoundsOf("Value").right).value, SIZE_TOLERANCE)
+        assertEquals(16f, (textBoundsOf("Group").left - section.left).value, SIZE_TOLERANCE)
+        assertEquals(16f, (textBoundsOf("Footer").left - section.left).value, SIZE_TOLERANCE)
     }
 
     @Test
