@@ -22,7 +22,7 @@ import me.him188.ani.app.ui.theme.DefaultSeedColor
 /**
  * Ani 配色: 背景、卡片、导航为中性石板色, 强调色由主题色推导.
  *
- * 在 materialkolor 以强调色生成的配色上覆写角色; tertiary 与 `*Fixed` 系列沿用生成结果.
+ * 在 materialkolor 以强调色生成的配色上覆写角色; `*Fixed` 系列沿用生成结果.
  * 角色映射与色值见 docs/design/ani-style/01-tokens.md §4.
  *
  * 高对比度深色主题由调用方在结果上套用 [modifyColorSchemeForBlackBackground].
@@ -46,6 +46,11 @@ fun aniColorScheme(seedColor: Color, isDark: Boolean): ColorScheme {
         onSecondary = n.onSecondary,
         secondaryContainer = a.tint,
         onSecondaryContainer = a.onTint,
+        // 没有第三种强调色: 评分等文字与图标用 label, 选中态等容器用 tint.
+        tertiary = n.label,
+        onTertiary = n.onSecondary,
+        tertiaryContainer = a.tint,
+        onTertiaryContainer = a.onTint,
         background = n.bg,
         onBackground = n.label,
         surface = n.bg,
