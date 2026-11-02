@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -30,16 +31,19 @@ import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -61,9 +65,10 @@ enum class AppleButtonStyle {
 }
 
 /**
- * C8 全圆角按钮.
+ * C8 按钮. 手机为全圆角、`callout`; macOS 为圆角 6 (高 36 起圆角 8)、`macCallout`.
  *
- * @param height 一般 44–48; 登录流程的满版按钮用 [AppleButtonDefaults.LoginHeight].
+ * @param height 手机一般 44–48, 登录流程的满版按钮用 [AppleButtonDefaults.LoginHeight];
+ * macOS 一般 28, 小窗口的满版按钮用 [AppleButtonDefaults.MacLargeHeight].
  */
 @Composable
 fun AppleButton(
@@ -71,10 +76,11 @@ fun AppleButton(
     modifier: Modifier = Modifier,
     style: AppleButtonStyle = AppleButtonStyle.Primary,
     enabled: Boolean = true,
-    height: Dp = AppleButtonDefaults.Height,
-    contentPadding: PaddingValues = AppleButtonDefaults.ContentPadding,
+    height: Dp = AppleButtonDefaults.height,
+    contentPadding: PaddingValues = AppleButtonDefaults.contentPadding,
     content: @Composable RowScope.() -> Unit,
 ) {
+    val mac = isMacStyle
     val containerColor: Color
     val contentColor: Color
     val fontWeight: FontWeight
@@ -97,11 +103,16 @@ fun AppleButton(
             fontWeight = FontWeight.SemiBold
         }
     }
+    val shape = when {
+        !mac -> CircleShape
+        height >= AppleButtonDefaults.MacLargeHeight -> RoundedCornerShape(8.dp)
+        else -> RoundedCornerShape(6.dp)
+    }
     Row(
         modifier
             .alpha(if (enabled) 1f else AppleComponentDefaults.DisabledAlpha)
             .heightIn(min = height)
-            .clip(CircleShape)
+            .clip(shape)
             .background(containerColor)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(contentPadding),
@@ -109,7 +120,7 @@ fun AppleButton(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         CompositionLocalProvider(LocalContentColor provides contentColor) {
-            ProvideTextStyle(AniTextStyles.callout.copy(fontWeight = fontWeight)) {
+            ProvideTextStyle(buttonTextStyle.copy(fontWeight = fontWeight)) {
                 content()
             }
         }
@@ -129,14 +140,14 @@ fun AppleTextButton(
     Row(
         modifier
             .alpha(if (enabled) 1f else AppleComponentDefaults.DisabledAlpha)
-            .heightIn(min = AppleComponentDefaults.MinTouchSize)
+            .heightIn(min = AppleComponentDefaults.minTouchSize)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.primary) {
-            ProvideTextStyle(AniTextStyles.callout) {
+            ProvideTextStyle(buttonTextStyle) {
                 content()
             }
         }
@@ -147,7 +158,7 @@ fun AppleTextButton(
  * C8 圆形图标按钮的底色.
  */
 enum class AppleCircleButtonStyle {
-    /** 工具按钮: fill 底 + label 图标. */
+    /** 工具按钮: 手机为 fill 底 + label 图标; macOS 为无底 + label2 图标. */
     Fill,
 
     /** 叠在图片或视频上: [AppleComponentDefaults.MediaScrim] 底 + 白色图标. */
@@ -155,9 +166,11 @@ enum class AppleCircleButtonStyle {
 }
 
 /**
- * C8 圆形图标按钮. 视觉尺寸为 [size], 外围补到 44 的透明点击区.
+ * C8 图标按钮. 视觉尺寸为 [size], 外围补到 [AppleComponentDefaults.minTouchSize] 的透明点击区.
  *
- * @param size 36 或 40.
+ * 手机为圆形. macOS 的 [AppleCircleButtonStyle.Fill] 为 28、圆角 6、无底、label2 图标.
+ *
+ * @param size 手机 36 或 40; macOS 28.
  */
 @Composable
 fun AppleCircleButton(
@@ -166,13 +179,18 @@ fun AppleCircleButton(
     contentDescription: String?,
     modifier: Modifier = Modifier,
     style: AppleCircleButtonStyle = AppleCircleButtonStyle.Fill,
-    size: Dp = AppleButtonDefaults.CircleSize,
+    size: Dp = AppleButtonDefaults.circleSize,
     enabled: Boolean = true,
 ) {
     val containerColor: Color
     val iconColor: Color
+    var shape: Shape = CircleShape
     when (style) {
-        AppleCircleButtonStyle.Fill -> {
+        AppleCircleButtonStyle.Fill -> if (isMacStyle) {
+            containerColor = Color.Transparent
+            iconColor = MaterialTheme.colorScheme.secondary
+            shape = RoundedCornerShape(6.dp)
+        } else {
             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
             iconColor = MaterialTheme.colorScheme.onSurface
         }
@@ -189,13 +207,14 @@ fun AppleCircleButton(
         containerColor = containerColor,
         iconColor = iconColor,
         size = size,
+        shape = shape,
         enabled = enabled,
         modifier = modifier,
     )
 }
 
 /**
- * C8「追番」切换按钮: 未追番为 fill 底 + label2 加号; 已追番为 tint 底 + accent 勾.
+ * C8「追番」切换按钮 (手机): 未追番为 fill 底 + label2 加号; 已追番为 tint 底 + accent 勾.
  */
 @Composable
 fun AppleFollowButton(
@@ -216,6 +235,7 @@ fun AppleFollowButton(
         },
         iconColor = if (followed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
         size = AppleButtonDefaults.CircleSize,
+        shape = CircleShape,
         enabled = enabled,
         modifier = modifier,
     )
@@ -229,14 +249,16 @@ private fun CircleButtonLayout(
     containerColor: Color,
     iconColor: Color,
     size: Dp,
+    shape: Shape,
     enabled: Boolean,
     modifier: Modifier,
 ) {
-    // 点击区是外围补足 44 的方框, 按压效果只画在圆内.
+    // 点击区是外围补足最小点击尺寸的方框, 按压效果只画在按钮内.
     val interactionSource = remember { MutableInteractionSource() }
+    val minTouchSize = AppleComponentDefaults.minTouchSize
     Box(
         modifier
-            .sizeIn(minWidth = AppleComponentDefaults.MinTouchSize, minHeight = AppleComponentDefaults.MinTouchSize)
+            .sizeIn(minWidth = minTouchSize, minHeight = minTouchSize)
             .alpha(if (enabled) 1f else AppleComponentDefaults.DisabledAlpha)
             .clickable(
                 interactionSource = interactionSource,
@@ -257,27 +279,58 @@ private fun CircleButtonLayout(
         Box(
             Modifier
                 .size(size)
-                .clip(CircleShape)
+                .clip(shape)
                 .background(containerColor)
                 .indication(interactionSource, ripple()),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, Modifier.size(AppleButtonDefaults.CircleIconSize), tint = iconColor)
+            Icon(
+                icon,
+                contentDescription = null,
+                Modifier.size(if (isMacStyle) AppleButtonDefaults.MacIconSize else AppleButtonDefaults.CircleIconSize),
+                tint = iconColor,
+            )
         }
     }
 }
 
+private val buttonTextStyle: TextStyle
+    @Composable @ReadOnlyComposable get() = if (isMacStyle) AniTextStyles.macCallout else AniTextStyles.callout
+
 object AppleButtonDefaults {
-    /** 一般按钮高度. */
+    /** 手机一般按钮高度. */
     val Height = 44.dp
 
-    /** 登录流程的满版按钮高度. */
+    /** 手机登录流程的满版按钮高度. */
     val LoginHeight = 50.dp
 
-    val ContentPadding = PaddingValues(horizontal = 20.dp)
+    /** macOS 按钮高度. */
+    val MacHeight = 28.dp
 
-    /** 圆形图标按钮的视觉尺寸; 另有 40. */
+    /** macOS 小窗口 (登录、授权) 的满版按钮高度, 圆角 8. */
+    val MacLargeHeight = 36.dp
+
+    /** 当前平台的一般按钮高度. */
+    val height: Dp
+        @Composable @ReadOnlyComposable get() = if (isMacStyle) MacHeight else Height
+
+    val ContentPadding = PaddingValues(horizontal = 20.dp)
+    val MacContentPadding = PaddingValues(horizontal = 12.dp)
+
+    val contentPadding: PaddingValues
+        @Composable @ReadOnlyComposable get() = if (isMacStyle) MacContentPadding else ContentPadding
+
+    /** 手机圆形图标按钮的视觉尺寸; 另有 40. */
     val CircleSize = 36.dp
 
+    /** macOS 图标按钮的尺寸. */
+    val MacIconButtonSize = 28.dp
+
+    val circleSize: Dp
+        @Composable @ReadOnlyComposable get() = if (isMacStyle) MacIconButtonSize else CircleSize
+
     val CircleIconSize = 18.dp
+
+    /** macOS 图标按钮的图标尺寸. */
+    val MacIconSize = 16.dp
 }

@@ -64,17 +64,18 @@ fun GroupedListSection(
 }
 
 /**
- * C5 列表卡: card 底, 圆角 16, 裁切内容. 行间分隔线用 [AppleDivider], 从文字起点开始.
+ * C5 列表卡: card 底, 圆角 16 (macOS 14), 裁切内容. 行间分隔线用 [AppleDivider], 从文字起点开始.
  */
 @Composable
 fun GroupedListCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val cornerRadius = if (isMacStyle) GroupedListDefaults.MacCornerRadius else GroupedListDefaults.CornerRadius
     Column(
         modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(GroupedListDefaults.CornerRadius))
+            .clip(RoundedCornerShape(cornerRadius))
             .background(MaterialTheme.colorScheme.surfaceContainerLow),
         content = content,
     )
@@ -82,6 +83,7 @@ fun GroupedListCard(
 
 object GroupedListDefaults {
     val CornerRadius = 16.dp
+    val MacCornerRadius = 14.dp
 
     /** 分组之间的间距. */
     val SectionSpacing = 24.dp

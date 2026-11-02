@@ -30,6 +30,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,7 +38,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import me.him188.ani.app.ui.foundation.theme.AniColors
 import me.him188.ani.app.ui.foundation.theme.AniTextStyles
@@ -46,7 +49,7 @@ import me.him188.ani.app.ui.foundation.theme.AniTextStyles
  * C4 分页胶囊 (详情/评论、互动/通知、在看/想看/看过).
  *
  * 选中为 tint 底 + onTint W600; 未选中透明 + label2 W500. [count] 跟在文字后, W500.
- * 视觉高 32, 上下补到 44 的点击区.
+ * 手机高 32、左右 14、`subhead`, 上下补到 44 的点击区; macOS 高 28、左右 12、`macCallout`.
  */
 @Composable
 fun PillTab(
@@ -73,18 +76,18 @@ fun PillTab(
             )
         },
         containerColor = if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
-        contentPadding = PaddingValues(horizontal = 14.dp),
+        contentPadding = PaddingValues(horizontal = if (isMacStyle) 12.dp else 14.dp),
         spacing = 5,
     ) {
         Text(
             text,
-            style = AniTextStyles.subhead,
+            style = pillTextStyle,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
             color = contentColor,
             maxLines = 1,
         )
         if (count != null) {
-            Text(count, style = AniTextStyles.subhead, fontWeight = FontWeight.Medium, color = contentColor, maxLines = 1)
+            Text(count, style = pillTextStyle, fontWeight = FontWeight.Medium, color = contentColor, maxLines = 1)
         }
     }
 }
@@ -93,6 +96,7 @@ fun PillTab(
  * C4 筛选胶囊 (带下拉箭头).
  *
  * 未套用为 card 底 + labelSoft W500; 已套用 ([applied]) 为 tint 底 + onTint W600.
+ * 手机内距 0 10 0 14、13 号箭头; macOS 内距 0 10 0 12、12 号箭头.
  * 多个筛选胶囊放进 [FilterPillFlowRow] 换行排列, 不横向滚动.
  */
 @Composable
@@ -118,25 +122,30 @@ fun FilterPill(
         } else {
             MaterialTheme.colorScheme.surfaceContainerLow
         },
-        contentPadding = PaddingValues(start = 14.dp, end = 10.dp),
+        contentPadding = PaddingValues(start = if (isMacStyle) 12.dp else 14.dp, end = 10.dp),
         spacing = 4,
     ) {
         Text(
             text,
-            style = AniTextStyles.subhead,
+            style = pillTextStyle,
             fontWeight = if (applied) FontWeight.SemiBold else FontWeight.Medium,
             color = contentColor,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-        Icon(AppleIcons.chevronDown(), contentDescription = null, Modifier.size(13.dp), tint = contentColor)
+        Icon(
+            AppleIcons.chevronDown(),
+            contentDescription = null,
+            Modifier.size(if (isMacStyle) 12.dp else 13.dp),
+            tint = contentColor,
+        )
     }
 }
 
 /**
  * 胶囊的换行排列: 左右与上下的视觉间距都是 8.
  *
- * 胶囊上下各有 6 的透明点击区, 所以行距取 -4, 让相邻两行胶囊的可见间距为 8.
+ * 手机的胶囊上下各有 6 的透明点击区, 所以行距取 -4, 让相邻两行胶囊的可见间距为 8.
  */
 @Composable
 fun FilterPillFlowRow(
@@ -146,7 +155,7 @@ fun FilterPillFlowRow(
     FlowRow(
         modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(-(PillDefaults.TouchHeight - PillDefaults.Height) + 8.dp),
+        verticalArrangement = Arrangement.spacedBy(-(PillDefaults.touchHeight - PillDefaults.height) + 8.dp),
         content = content,
     )
 }
@@ -165,13 +174,14 @@ private fun PillLayout(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     Box(
-        modifier.interaction(interactionSource).heightIn(min = PillDefaults.TouchHeight),
+        modifier.interaction(interactionSource).heightIn(min = PillDefaults.touchHeight),
         contentAlignment = Alignment.Center,
     ) {
+        val height = PillDefaults.height
         Row(
             Modifier
-                .height(PillDefaults.Height)
-                .clip(RoundedCornerShape(PillDefaults.Height / 2))
+                .height(height)
+                .clip(RoundedCornerShape(height / 2))
                 .background(containerColor)
                 .indication(interactionSource, ripple())
                 .padding(contentPadding),
@@ -183,10 +193,21 @@ private fun PillLayout(
     }
 }
 
+private val pillTextStyle: TextStyle
+    @Composable @ReadOnlyComposable get() = if (isMacStyle) AniTextStyles.macCallout else AniTextStyles.subhead
+
 object PillDefaults {
-    /** 胶囊的视觉高度. */
+    /** 手机胶囊的视觉高度. */
     val Height = 32.dp
 
-    /** 含透明点击区的高度. */
-    val TouchHeight = 44.dp
+    /** macOS 胶囊的高度. */
+    val MacHeight = 28.dp
+
+    /** 当前平台胶囊的视觉高度. */
+    val height: Dp
+        @Composable @ReadOnlyComposable get() = if (isMacStyle) MacHeight else Height
+
+    /** 含透明点击区的高度: 手机 44; macOS 与视觉高度相同. */
+    val touchHeight: Dp
+        @Composable @ReadOnlyComposable get() = if (isMacStyle) MacHeight else AppleComponentDefaults.MinTouchSize
 }

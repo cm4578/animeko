@@ -13,20 +13,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -34,26 +29,19 @@ import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
-import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import me.him188.ani.app.ui.foundation.LocalPlatformFontFamily
-import me.him188.ani.app.ui.foundation.PlatformFontFamily
-import me.him188.ani.app.ui.foundation.theme.aniColorScheme
 import me.him188.ani.app.ui.framework.runAniComposeUiTest
-import me.him188.ani.app.ui.theme.DefaultSeedColor
-import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * docs/design/ani-style/02-components.md 手机组件 C4–C15 的尺寸、语义与配色.
+ * docs/design/ani-style/02-components.md 手机组件 C4–C15 的尺寸、语义与配色. 内容以 iOS 平台显示.
  */
 class AppleComponentsTest {
     @Test
@@ -116,7 +104,7 @@ class AppleComponentsTest {
         waitForIdle()
         assertTrue(checked)
         onNodeWithTag("row").assertIsOn()
-        assertEquals(48f, heightOf("row").value, TOLERANCE)
+        assertEquals(48f, heightOf("row").value, SIZE_TOLERANCE)
         assertTrue(heightOf("rowWithDescription") >= 60.dp)
     }
 
@@ -152,7 +140,7 @@ class AppleComponentsTest {
         }
         onNodeWithTag("a").assertIsSelected()
         onNodeWithTag("b").assertIsNotSelected()
-        assertEquals(44f, heightOf("a").value, TOLERANCE)
+        assertEquals(44f, heightOf("a").value, SIZE_TOLERANCE)
 
         onNodeWithTag("b").performClick()
         waitForIdle()
@@ -172,7 +160,7 @@ class AppleComponentsTest {
         assertTrue(second.top > first.top, "second pill should wrap to the next line")
         // 点击区高 44, 胶囊高 32: 下一行胶囊的上缘比上一行胶囊的下缘低 8.
         val visualGap = (second.top + 6.dp) - (first.bottom - 6.dp)
-        assertEquals(8f, visualGap.value, TOLERANCE)
+        assertEquals(8f, visualGap.value, SIZE_TOLERANCE)
     }
 
     @Test
@@ -259,7 +247,7 @@ class AppleComponentsTest {
         onNodeWithTag("progress").assert(
             SemanticsMatcher.expectValue(SemanticsProperties.ProgressBarRangeInfo, ProgressBarRangeInfo(0.3f, 0f..1f)),
         )
-        assertEquals(4f, heightOf("progress").value, TOLERANCE)
+        assertEquals(4f, heightOf("progress").value, SIZE_TOLERANCE)
     }
 
     @Test
@@ -282,38 +270,5 @@ class AppleComponentsTest {
         expanded = false
         waitForIdle()
         onNodeWithText("Share").assertDoesNotExist()
-    }
-
-    private fun ComposeUiTest.setAniStyleContent(content: @Composable () -> Unit) {
-        setContent {
-            CompositionLocalProvider(LocalPlatformFontFamily provides PlatformFontFamily(null)) {
-                MaterialTheme(colorScheme = aniColorScheme(DefaultSeedColor, isDark = false), content = content)
-            }
-        }
-    }
-
-    private fun ComposeUiTest.heightOf(tag: String): Dp {
-        val bounds = onNodeWithTag(tag).getBoundsInRoot()
-        return bounds.bottom - bounds.top
-    }
-
-    private fun ComposeUiTest.assertSize(tag: String, width: Dp, height: Dp) {
-        val bounds = onNodeWithTag(tag).getBoundsInRoot()
-        assertEquals(width.value, (bounds.right - bounds.left).value, TOLERANCE, "width of $tag")
-        assertEquals(height.value, (bounds.bottom - bounds.top).value, TOLERANCE, "height of $tag")
-    }
-
-    private fun ComposeUiTest.assertPixel(tag: String, x: Dp, y: Dp, expected: Color) {
-        val pixels = onNodeWithTag(tag).captureToImage().toPixelMap()
-        val actual = with(density) { pixels[x.roundToPx(), y.roundToPx()] }
-        val matches = abs(actual.red - expected.red) < COLOR_TOLERANCE &&
-                abs(actual.green - expected.green) < COLOR_TOLERANCE &&
-                abs(actual.blue - expected.blue) < COLOR_TOLERANCE
-        assertTrue(matches, "pixel ($x, $y) of $tag: expected $expected, actual $actual")
-    }
-
-    private companion object {
-        const val TOLERANCE = 0.5f
-        const val COLOR_TOLERANCE = 2f / 255f
     }
 }

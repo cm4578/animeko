@@ -77,6 +77,41 @@ fun LargeTitleHeader(
 }
 
 /**
+ * C2 macOS 页面大标题: `macLargeTitle`; 可在同一基线后接 `macCallout` label2 的副标题, 间距 12.
+ *
+ * 放在内容区顶部. 内容区的内距 (上 4、左右 32) 见 [MacWindowDefaults.ContentPadding].
+ */
+@Composable
+fun MacLargeTitleHeader(
+    title: String,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+) {
+    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            title,
+            Modifier
+                .alignByBaseline()
+                .semantics { heading() },
+            style = AniTextStyles.macLargeTitle,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        if (subtitle != null) {
+            Text(
+                subtitle,
+                Modifier.alignByBaseline(),
+                style = AniTextStyles.macCallout,
+                color = MaterialTheme.colorScheme.secondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+/**
  * C3 一般推入页 (设定子页、通知、排行等) 的顶部: 左上返回圆钮 36 (fill 底), 下方 28/34 W800 大标题.
  *
  * 页面滚动后改用 [CollapsedTopBar].

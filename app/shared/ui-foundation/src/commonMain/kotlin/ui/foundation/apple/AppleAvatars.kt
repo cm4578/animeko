@@ -49,6 +49,15 @@ enum class AvatarRingSize(val size: Dp, val gap: Dp, val ring: Dp) {
 
     /** macOS 侧边栏帐号行. */
     MacSidebar(28.dp, 2.dp, 1.5.dp),
+
+    /** macOS 设定窗口分类栏帐号行. */
+    MacSettingsCategory(32.dp, 2.dp, 1.5.dp),
+
+    /** macOS 设定窗口帐号窗格. */
+    MacSettingsAccount(64.dp, 2.5.dp, 2.5.dp),
+
+    /** macOS 编辑个人资料. */
+    MacEditProfile(64.dp, 2.5.dp, 2.5.dp),
 }
 
 /**
