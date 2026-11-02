@@ -257,6 +257,8 @@ private fun style(size: Int, lineHeight: Int, weight: FontWeight, letterSpacing:
         fontFamily = LocalPlatformFontFamily.current.defaultFontFamily, // 为 null 时不指定,沿用默认字体
         fontSize = size.sp, lineHeight = lineHeight.sp, fontWeight = weight,
         letterSpacing = letterSpacing.sp,
+        // 首行上方与末行下方保留行距, 单行文字高度等于行高, 与设计稿的 CSS 行高一致
+        lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None),
     )
 ```
 
