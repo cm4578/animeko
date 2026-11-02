@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.sp
 import me.him188.ani.app.ui.foundation.LocalPlatformFontFamily
 
@@ -21,6 +22,7 @@ import me.him188.ani.app.ui.foundation.LocalPlatformFontFamily
  *
  * 与 `MaterialTheme.typography` 相互独立. 字体族取 [LocalPlatformFontFamily],
  * 为 `null` 时沿用系统默认字体. 数字列另加 `fontFeatureSettings = "tnum"`.
+ * 单行文字的高度等于行高 (首行上方与末行下方保留行距), 与设计稿的 CSS 行高一致.
  */
 object AniTextStyles {
     // 手机
@@ -105,4 +107,5 @@ private fun style(
     lineHeight = lineHeight.sp,
     fontWeight = weight,
     letterSpacing = letterSpacing.sp,
+    lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None),
 )
