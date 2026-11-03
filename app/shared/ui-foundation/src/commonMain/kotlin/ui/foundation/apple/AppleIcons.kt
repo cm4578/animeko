@@ -162,6 +162,29 @@ object AppleIcons {
         )
     }
 
+    /** 实心播放三角, 用于「继续观看」的播放钮. */
+    fun playFilled(): ImageVector = cached("playFilled", 0f) {
+        fill("M8 5v14l11-7z")
+    }
+
+    /** 追番「列表排版」. */
+    fun listLayout(strokeWidth: Float = 2f): ImageVector = cached("listLayout", strokeWidth) {
+        stroke("M9 6h11")
+        stroke("M9 12h11")
+        stroke("M9 18h11")
+        stroke("M4.5 6h0.01")
+        stroke("M4.5 12h0.01")
+        stroke("M4.5 18h0.01")
+    }
+
+    /** 追番「网格排版」. */
+    fun gridLayout(strokeWidth: Float = 2f): ImageVector = cached("gridLayout", strokeWidth) {
+        stroke(rect(4f, 4f, 6.5f, 6.5f, 1.5f))
+        stroke(rect(13.5f, 4f, 6.5f, 6.5f, 1.5f))
+        stroke(rect(4f, 13.5f, 6.5f, 6.5f, 1.5f))
+        stroke(rect(13.5f, 13.5f, 6.5f, 6.5f, 1.5f))
+    }
+
     /** 「我的」页「Bangumi 同步」. */
     fun sync(strokeWidth: Float = 2f): ImageVector = cached("sync", strokeWidth) {
         stroke("M20 12a8 8 0 0 1-14.3 4.9")
