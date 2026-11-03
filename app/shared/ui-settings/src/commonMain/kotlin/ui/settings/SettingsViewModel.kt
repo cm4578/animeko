@@ -64,6 +64,7 @@ import me.him188.ani.app.domain.settings.ProxyTester
 import me.him188.ani.app.domain.settings.ServiceConnectionTester
 import me.him188.ani.app.domain.settings.ServiceConnectionTesters
 import me.him188.ani.app.domain.torrent.engines.PikPakEngine
+import me.him188.ani.app.navigation.coerceVisible
 import me.him188.ani.app.platform.PermissionManager
 import me.him188.ani.app.platform.currentAniBuildConfig
 import me.him188.ani.app.ui.foundation.launchInBackground
@@ -387,7 +388,10 @@ open class SettingsViewModel : AbstractSettingsViewModel(), KoinComponent {
         backup.proxySettings?.let { settingsRepository.proxySettings.set(it) }
         backup.mediaCacheSettings?.let { settingsRepository.mediaCacheSettings.set(it) }
         backup.danmakuSettings?.let { settingsRepository.danmakuSettings.set(it) }
-        backup.uiSettings?.let { settingsRepository.uiSettings.set(it) }
+        backup.uiSettings?.let {
+            // 备份可能来自另一个平台, 其初始分页在本平台不一定显示
+            settingsRepository.uiSettings.set(it.copy(mainSceneInitialPage = it.mainSceneInitialPage.coerceVisible()))
+        }
         backup.themeSettings?.let { settingsRepository.themeSettings.set(it) }
         backup.updateSettings?.let { settingsRepository.updateSettings.set(it) }
         backup.videoScaffoldConfig?.let { settingsRepository.videoScaffoldConfig.set(it) }

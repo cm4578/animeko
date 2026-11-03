@@ -1174,7 +1174,7 @@ private fun getIcon(tab: SettingsTab): ImageVector {
 
 @Stable
 @Composable
-private fun getName(tab: SettingsTab): String {
+internal fun getName(tab: SettingsTab): String {
     return when (tab) {
         SettingsTab.PROFILE -> stringResource(Lang.settings_tab_account)
         SettingsTab.APPEARANCE -> stringResource(Lang.settings_tab_appearance)

@@ -42,6 +42,7 @@ import me.him188.ani.app.domain.session.SessionStateProvider
 import me.him188.ani.app.domain.torrent.engines.PikPakEngine
 import me.him188.ani.app.navigation.BrowserNavigator
 import me.him188.ani.app.navigation.MainScreenPage
+import me.him188.ani.app.navigation.coerceVisible
 import me.him188.ani.app.navigation.NavRoutes
 import me.him188.ani.app.tools.LocalTimeFormatter
 import me.him188.ani.app.tools.TimeFormatter
@@ -113,13 +114,13 @@ class AniAppViewModel : AbstractViewModel(), KoinComponent {
 
     val appState: Flow<AniAppState?> = combine(
         settings.themeSettings.flow,
-        settings.uiSettings.flow.take(1).map { it.mainSceneInitialPage }, // 只需要读取一次
+        settings.uiSettings.flow.take(1).map { it.mainSceneInitialPage.coerceVisible() }, // 只需要读取一次
         settings.uiSettings.flow,
         mediaCacheComposablesFlow,
     ) { themeSettings, mainSceneInitialPage, uiSettings, mediaCacheComposables ->
         AniAppState(
             NavRoutes.Main(mainSceneInitialPage),
-            uiSettings.mainSceneInitialPage,
+            uiSettings.mainSceneInitialPage.coerceVisible(),
             themeSettings,
             imageLoaderClient,
             mediaCacheComposables + listOf(@Composable { WebCaptchaDialogHost(webSessionManager) }),

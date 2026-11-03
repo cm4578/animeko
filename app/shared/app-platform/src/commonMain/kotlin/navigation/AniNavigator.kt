@@ -169,6 +169,10 @@ interface AniNavigator {
         navigate(NavRoutes.PlaybackHistorySyncStatus)
     }
 
+    fun navigateBangumiSync() {
+        navigate(NavRoutes.BangumiSync)
+    }
+
     fun navigateSettings(tab: SettingsTab? = null) {
         navigate(NavRoutes.Settings(tab))
     }

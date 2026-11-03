@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
@@ -71,6 +72,7 @@ import me.him188.ani.app.ui.exploration.schedule.ScheduleScreen
 import me.him188.ani.app.ui.exploration.schedule.ScheduleViewModel
 import me.him188.ani.app.ui.exploration.trends.TrendingRankingScreen
 import me.him188.ani.app.ui.exploration.trends.TrendingRankingViewModel
+import me.him188.ani.app.ui.foundation.LocalPlatform
 import me.him188.ani.app.ui.foundation.animation.NavigationMotionScheme
 import me.him188.ani.app.ui.foundation.animation.ProvideAniMotionCompositionLocals
 import me.him188.ani.app.ui.foundation.layout.currentWindowAdaptiveInfo1
@@ -106,6 +108,7 @@ import me.him188.ani.app.ui.qrlogin.isQrCodeScannerSupported
 import me.him188.ani.app.ui.search.SearchScreen
 import me.him188.ani.app.ui.settings.SettingsScreen
 import me.him188.ani.app.ui.settings.SettingsViewModel
+import me.him188.ani.app.ui.settings.account.AppleBangumiSyncScreen
 import me.him188.ani.app.ui.settings.mediasource.rss.EditRssMediaSourceScreen
 import me.him188.ani.app.ui.settings.mediasource.rss.EditRssMediaSourceViewModel
 import me.him188.ani.app.ui.settings.mediasource.jsonapi.EditJsonApiMediaSourceScreen
@@ -136,6 +139,7 @@ import me.him188.ani.datasources.api.source.FactoryId
 import me.him188.ani.utils.analytics.Analytics
 import me.him188.ani.utils.analytics.AnalyticsEvent.Companion.SubjectEnter
 import me.him188.ani.utils.analytics.recordEvent
+import me.him188.ani.utils.platform.isIos
 import org.jetbrains.compose.resources.stringResource
 import org.koin.mp.KoinPlatform
 
@@ -208,15 +212,77 @@ private fun AniAppContentImpl(
     val navMotionScheme by rememberUpdatedState(NavigationMotionScheme.current)
     val emailLoginViewModel = viewModel<EmailLoginViewModel> { EmailLoginViewModel() }
 
+    // iOS 的导航栏画在 NavDisplay 外层, 推入页也显示 (05 G10); 其他平台的导航栏在 MainScreen 内.
+    val isIos = LocalPlatform.current.isIos()
+    val navigationLayoutType = AniNavigationSuiteDefaults.calculateLayoutType(currentWindowAdaptiveInfo1())
+    val appleMainPages = if (isIos) rememberAppleMainPages(backStack) else null
+    val appleTabBarInsetDecorator = rememberAppleTabBarInsetDecorator(backStack, navigationLayoutType)
+
+    if (appleMainPages != null) {
+        AppleNavigationShell(
+            backStack,
+            aniNavigator,
+            appleMainPages,
+            navigationLayoutType,
+            modifier,
+        ) {
+            AniNavDisplay(
+                aniNavigator,
+                backStack,
+                mainSceneInitialPage,
+                Modifier.fillMaxSize(),
+                windowInsets,
+                windowInsetsWithoutTitleBar,
+                navMotionScheme,
+                emailLoginViewModel,
+                appleMainPages,
+                extraEntryDecorators = listOf(appleTabBarInsetDecorator),
+                onOpenPlayFlowDebugWindow,
+            )
+        }
+    } else {
+        AniNavDisplay(
+            aniNavigator,
+            backStack,
+            mainSceneInitialPage,
+            modifier,
+            windowInsets,
+            windowInsetsWithoutTitleBar,
+            navMotionScheme,
+            emailLoginViewModel,
+            appleMainPages = null,
+            extraEntryDecorators = emptyList(),
+            onOpenPlayFlowDebugWindow,
+        )
+    }
+}
+
+/**
+ * @param appleMainPages iOS 主分页的选中状态, 其他平台为 `null`.
+ */
+@Composable
+private fun AniNavDisplay(
+    aniNavigator: AniNavigator,
+    backStack: List<NavRoutes>,
+    mainSceneInitialPage: MainScreenPage,
+    modifier: Modifier,
+    windowInsets: WindowInsets,
+    windowInsetsWithoutTitleBar: WindowInsets,
+    navMotionScheme: NavigationMotionScheme,
+    emailLoginViewModel: EmailLoginViewModel,
+    appleMainPages: AppleMainPages?,
+    extraEntryDecorators: List<NavEntryDecorator<NavRoutes>>,
+    onOpenPlayFlowDebugWindow: () -> Unit,
+) {
     NavDisplay(
         backStack = backStack,
         modifier = modifier,
         onBack = { aniNavigator.popBackStack() },
-        entryDecorators = listOf(
+        entryDecorators = listOf<NavEntryDecorator<NavRoutes>>(
             // 让每个页面各自持有 rememberSaveable 状态和 ViewModel, 出栈时一并销毁
             rememberSaveableStateHolderNavEntryDecorator(),
             rememberViewModelStoreNavEntryDecorator(),
-        ),
+        ) + extraEntryDecorators,
         transitionSpec = {
             navMotionScheme.enterTransition togetherWith navMotionScheme.exitTransition
         },
@@ -323,26 +389,42 @@ private fun AniAppContentImpl(
                     }
                 }
 
+                // iOS 的选中分页放在 NavDisplay 外层, 推入页上的导航栏也要读写它
+                fun setPage(page: MainScreenPage) {
+                    if (appleMainPages != null) appleMainPages.setPage(route, page) else currentPage = page
+                }
+
                 OverrideNavigation(
                     {
                         object : AniNavigator by it {
                             override fun navigateMain(page: MainScreenPage, popUpTargetInclusive: NavRoutes?) {
-                                currentPage = page
+                                setPage(page)
                             }
                         }
                     },
                 ) {
                     val selfInfo by vm.selfInfo.collectAsState() // not -WithLifecycle
                     val showNotificationDot by vm.showNotificationDot.collectAsStateWithLifecycle()
-                    MainScreen(
-                        page = currentPage,
-                        selfInfo = selfInfo,
-                        onNavigateToPage = { currentPage = it },
-                        onNavigateToSettings = { aniNavigator.navigateSettings(it) },
-                        onNavigateToSearch = { aniNavigator.navigateSubjectSearch() },
-                        showNotificationDot = showNotificationDot,
-                        navigationLayoutType = navigationLayoutType,
-                    )
+                    if (appleMainPages != null) {
+                        AppleMainScreen(
+                            page = appleMainPages.pageOf(route),
+                            selfInfo = selfInfo,
+                            sharedViewModel = vm,
+                            showNotificationDot = showNotificationDot,
+                            onNavigateToPage = ::setPage,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    } else {
+                        MainScreen(
+                            page = currentPage,
+                            selfInfo = selfInfo,
+                            onNavigateToPage = { currentPage = it },
+                            onNavigateToSettings = { aniNavigator.navigateSettings(it) },
+                            onNavigateToSearch = { aniNavigator.navigateSubjectSearch() },
+                            showNotificationDot = showNotificationDot,
+                            navigationLayoutType = navigationLayoutType,
+                        )
+                    }
                 }
             }
             entry<NavRoutes.SubjectSearch> { route ->
@@ -473,6 +555,12 @@ private fun AniAppContentImpl(
                         )
                     },
                     windowInsets = windowInsetsWithoutTitleBar,
+                )
+            }
+            entry<NavRoutes.BangumiSync> { route ->
+                AppleBangumiSyncScreen(
+                    onNavigateBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                    modifier = Modifier.fillMaxSize(),
                 )
             }
             entry<NavRoutes.BangumiMerge> { route ->

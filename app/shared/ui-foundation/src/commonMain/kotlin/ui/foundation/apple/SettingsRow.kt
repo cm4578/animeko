@@ -34,7 +34,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
 import me.him188.ani.app.ui.foundation.theme.AniTextStyles
 
 /**
@@ -47,6 +49,7 @@ import me.him188.ani.app.ui.foundation.theme.AniTextStyles
  *
  * @param icon 30×30 的图标小方块. **只用于手机「我的」页**, 设定子页与 macOS 设定窗口的行不放图标.
  * @param showDivider 在行顶画分隔线, 用于卡片内第二行起. 有图标时从 58 开始, 无图标时从 16 开始.
+ * @param minHeight 覆盖默认的最小行高, 例如「我的」页通知列高 52 ([SettingsRowDefaults.Height]).
  */
 @Composable
 fun SettingsRow(
@@ -56,6 +59,7 @@ fun SettingsRow(
     icon: ImageVector? = null,
     showDivider: Boolean = false,
     enabled: Boolean = true,
+    minHeight: Dp = Dp.Unspecified,
     onClick: (() -> Unit)? = null,
     trailing: @Composable RowScope.() -> Unit = {},
 ) {
@@ -69,6 +73,7 @@ fun SettingsRow(
         icon = icon,
         showDivider = showDivider,
         enabled = enabled,
+        minHeight = minHeight,
         title = {
             Text(
                 title,
@@ -266,6 +271,7 @@ private fun SettingsRowLayout(
     enabled: Boolean,
     title: @Composable () -> Unit,
     trailing: @Composable RowScope.() -> Unit,
+    minHeight: Dp = Dp.Unspecified,
 ) {
     val mac = isMacStyle
     val verticalPadding = when {
@@ -273,7 +279,8 @@ private fun SettingsRowLayout(
         mac -> 10.dp
         else -> 12.dp
     }
-    val minHeight = when {
+    val rowMinHeight = when {
+        minHeight.isSpecified -> minHeight
         description != null -> SettingsRowDefaults.HeightWithDescription
         mac -> SettingsRowDefaults.MacHeight
         icon != null -> SettingsRowDefaults.HeightWithIcon
@@ -284,7 +291,7 @@ private fun SettingsRowLayout(
             Modifier
                 .fillMaxWidth()
                 .alpha(if (enabled) 1f else AppleComponentDefaults.DisabledAlpha)
-                .heightIn(min = minHeight)
+                .heightIn(min = rowMinHeight)
                 .padding(
                     start = 16.dp,
                     end = if (mac) 16.dp else 12.dp,

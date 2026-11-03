@@ -10,6 +10,7 @@
 package me.him188.ani.app.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.rounded.DownloadDone
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.TravelExplore
@@ -22,6 +23,9 @@ import me.him188.ani.app.ui.lang.Lang
 import me.him188.ani.app.ui.lang.main_screen_page_cache_management
 import me.him188.ani.app.ui.lang.main_screen_page_collection
 import me.him188.ani.app.ui.lang.main_screen_page_exploration
+import me.him188.ani.app.ui.lang.main_screen_page_profile
+import me.him188.ani.utils.platform.currentPlatform
+import me.him188.ani.utils.platform.isIos
 import org.jetbrains.compose.resources.stringResource
 
 @Serializable
@@ -142,6 +146,12 @@ sealed class NavRoutes : NavKey {
     data object PlaybackHistorySyncStatus : NavRoutes()
 
     /**
+     * Bangumi 同步: 待同步的收藏操作与全量同步. iOS 从「我的」分页进入.
+     */
+    @Serializable
+    data object BangumiSync : NavRoutes()
+
+    /**
      * 合并收藏: 处理 Animeko 与 Bangumi 两侧的收藏冲突.
      */
     @Serializable
@@ -199,13 +209,28 @@ enum class MainScreenPage {
     Exploration,
     Collection,
     CacheManagement,
+
+    /**
+     * 「我的」: 个人资料、通知、设置入口. 只在 iOS 显示, 见 [visibleEntries].
+     */
+    Profile,
     ;
 
     companion object {
+        /**
+         * 当前平台导航栏上显示的分页. iOS 有 [Profile]; 其他平台的个人入口在顶栏头像或侧边栏.
+         */
         @Stable
-        val visibleEntries get() = entries
+        val visibleEntries: List<MainScreenPage>
+            get() = if (currentPlatform().isIos()) entries else entries - Profile
     }
 }
+
+/**
+ * 当前平台不显示的分页 (例如从 iOS 的设置备份读到 [MainScreenPage.Profile]) 按 [MainScreenPage.Exploration] 处理.
+ */
+fun MainScreenPage.coerceVisible(): MainScreenPage =
+    if (this in MainScreenPage.visibleEntries) this else MainScreenPage.Exploration
 
 @Immutable
 @Serializable
@@ -247,6 +272,7 @@ fun MainScreenPage.getIcon() = when (this) {
     MainScreenPage.Exploration -> Icons.Rounded.TravelExplore
     MainScreenPage.Collection -> Icons.Rounded.Star
     MainScreenPage.CacheManagement -> Icons.Rounded.DownloadDone
+    MainScreenPage.Profile -> Icons.Outlined.Person
 }
 
 @Stable
@@ -255,4 +281,5 @@ fun MainScreenPage.getText(): String = when (this) {
     MainScreenPage.Exploration -> stringResource(Lang.main_screen_page_exploration)
     MainScreenPage.Collection -> stringResource(Lang.main_screen_page_collection)
     MainScreenPage.CacheManagement -> stringResource(Lang.main_screen_page_cache_management)
+    MainScreenPage.Profile -> stringResource(Lang.main_screen_page_profile)
 }

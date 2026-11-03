@@ -122,7 +122,7 @@ private fun ColorSchemePreviewItem(
 }
 
 @Composable
-private fun renderThemeModeText(mode: DarkMode): String {
+internal fun renderThemeModeText(mode: DarkMode): String {
     return when (mode) {
         DarkMode.LIGHT -> stringResource(Lang.settings_theme_mode_light)
         DarkMode.DARK -> stringResource(Lang.settings_theme_mode_dark)

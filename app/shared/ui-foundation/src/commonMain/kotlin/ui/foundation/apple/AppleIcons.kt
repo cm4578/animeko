@@ -162,6 +162,119 @@ object AppleIcons {
         )
     }
 
+    /** 「我的」页「Bangumi 同步」. */
+    fun sync(strokeWidth: Float = 2f): ImageVector = cached("sync", strokeWidth) {
+        stroke("M20 12a8 8 0 0 1-14.3 4.9")
+        stroke("M4 12a8 8 0 0 1 14.3-4.9")
+        stroke("M18.5 3.5v4h-4")
+        stroke("M5.5 20.5v-4h4")
+    }
+
+    // 以下为设定分类图标: 手机「我的」页的设定列与 macOS 设定窗口的分类栏共用.
+
+    /** 设定「介面」. */
+    fun settingsAppearance(strokeWidth: Float = 2f): ImageVector = cached("settingsAppearance", strokeWidth) {
+        stroke(rect(4f, 4f, 16f, 16f, 3f))
+        stroke("M4 10h16")
+        stroke("M10 10v10")
+    }
+
+    /** 设定「主题与色彩」. */
+    fun settingsTheme(strokeWidth: Float = 2f): ImageVector = cached("settingsTheme", strokeWidth) {
+        stroke(circle(12f, 12f, 8f))
+        fill("M12 4a8 8 0 0 1 0 16z")
+    }
+
+    /** 设定「播放器和弹幕过滤」. */
+    fun settingsPlayer(strokeWidth: Float = 2f): ImageVector = cached("settingsPlayer", strokeWidth) {
+        stroke(rect(3.5f, 5f, 17f, 14f, 3f))
+        fill("M10.5 9.5v5l4-2.5z")
+    }
+
+    /** 设定「资料源管理」. */
+    fun settingsMediaSource(strokeWidth: Float = 2f): ImageVector = cached("settingsMediaSource", strokeWidth) {
+        stroke(ellipse(12f, 6f, 7f, 2.5f))
+        stroke("M5 6v6c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6")
+        stroke("M5 12v6c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-6")
+    }
+
+    /** 设定「观看偏好」. */
+    fun settingsMediaSelector(strokeWidth: Float = 2f): ImageVector = cached("settingsMediaSelector", strokeWidth) {
+        stroke("M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z")
+        stroke(circle(12f, 12f, 2.8f))
+    }
+
+    /** 设定「服务器区域」. */
+    fun settingsServer(strokeWidth: Float = 2f): ImageVector = cached("settingsServer", strokeWidth) {
+        stroke(circle(12f, 12f, 8.5f))
+        stroke("M3.5 12h17")
+        stroke("M12 3.5c2.5 2.6 3.6 5.4 3.6 8.5s-1.1 5.9-3.6 8.5c-2.5-2.6-3.6-5.4-3.6-8.5s1.1-5.9 3.6-8.5z")
+    }
+
+    /** 设定「代理」. */
+    fun settingsProxy(strokeWidth: Float = 2f): ImageVector = cached("settingsProxy", strokeWidth) {
+        stroke("M4 8h13")
+        stroke("M14 4.5L17.5 8 14 11.5")
+        stroke("M20 16H7")
+        stroke("M10 12.5L6.5 16l3.5 3.5")
+    }
+
+    /** 设定「BitTorrent」. */
+    fun settingsBitTorrent(strokeWidth: Float = 2f): ImageVector = cached("settingsBitTorrent", strokeWidth) {
+        stroke(circle(6f, 12f, 2.5f))
+        stroke(circle(18f, 6f, 2.5f))
+        stroke(circle(18f, 18f, 2.5f))
+        stroke("M8.2 10.9l7.6-3.8")
+        stroke("M8.2 13.1l7.6 3.8")
+    }
+
+    /** 设定「储存」. */
+    fun settingsStorage(strokeWidth: Float = 2f): ImageVector = cached("settingsStorage", strokeWidth) {
+        stroke(rect(3.5f, 13f, 17f, 6.5f, 2f))
+        stroke("M5 13l2.5-7.5h9L19 13")
+        stroke("M16.5 16.3h.01")
+    }
+
+    /** 设定「软件更新」. */
+    fun settingsUpdate(strokeWidth: Float = 2f): ImageVector = cached("settingsUpdate", strokeWidth) {
+        stroke(circle(12f, 12f, 8f))
+        stroke("M12 8v7")
+        stroke("M9 12.5l3 3 3-3")
+    }
+
+    /** 设定「日志」. */
+    fun settingsLog(strokeWidth: Float = 2f): ImageVector = cached("settingsLog", strokeWidth) {
+        stroke("M7 3.5h7.5l4 4V20a.5.5 0 0 1-.5.5H7a1.5 1.5 0 0 1-1.5-1.5V5A1.5 1.5 0 0 1 7 3.5z")
+        stroke("M9 11.5h6")
+        stroke("M9 15h6")
+    }
+
+    /** 设定「关于」. */
+    fun settingsAbout(strokeWidth: Float = 2f): ImageVector = cached("settingsAbout", strokeWidth) {
+        stroke(circle(12f, 12f, 8.5f))
+        stroke("M12 11v5")
+        stroke("M12 8h.01")
+    }
+
+    /** 设定「除错」. */
+    fun settingsDebug(strokeWidth: Float = 2f): ImageVector = cached("settingsDebug", strokeWidth) {
+        stroke(rect(8f, 7f, 8f, 12f, 4f))
+        stroke("M10 7.5V6a2 2 0 0 1 4 0v1.5")
+        stroke("M4 13h4")
+        stroke("M16 13h4")
+        stroke("M5 8.5l3 2")
+        stroke("M19 8.5l-3 2")
+        stroke("M5 18l3-1.5")
+        stroke("M19 18l-3-1.5")
+    }
+
+    /** 设定「设置备份」. */
+    fun settingsBackup(strokeWidth: Float = 2f): ImageVector = cached("settingsBackup", strokeWidth) {
+        stroke(rect(3.5f, 4.5f, 17f, 5f, 1.5f))
+        stroke("M5 9.5v8.5a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5V9.5")
+        stroke("M10 13.5h4")
+    }
+
     private val cache = mutableMapOf<Pair<String, Float>, ImageVector>()
 
     private fun cached(name: String, strokeWidth: Float, paths: LineIconBuilder.() -> Unit): ImageVector =
@@ -190,10 +303,27 @@ object AppleIcons {
                 strokeLineJoin = StrokeJoin.Round,
             )
         }
+
+        /**
+         * 填充, 与设计稿 SVG 中 `fill="currentColor"` 的路径相同. 线宽不为 0 时同时描边.
+         */
+        fun fill(pathData: String) {
+            builder.addPath(
+                pathData = addPathNodes(pathData),
+                fill = SolidColor(Color.Black),
+                stroke = if (strokeWidth > 0f) SolidColor(Color.Black) else null,
+                strokeLineWidth = strokeWidth,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+        }
     }
 
     private fun circle(cx: Float, cy: Float, r: Float): String =
         "M${cx - r} ${cy}a$r $r 0 1 0 ${2 * r} 0a$r $r 0 1 0 ${-2 * r} 0z"
+
+    private fun ellipse(cx: Float, cy: Float, rx: Float, ry: Float): String =
+        "M${cx - rx} ${cy}a$rx $ry 0 1 0 ${2 * rx} 0a$rx $ry 0 1 0 ${-2 * rx} 0z"
 
     /** 圆角矩形, 与 SVG 的 `<rect x y width height rx>` 相同. */
     private fun rect(x: Float, y: Float, width: Float, height: Float, r: Float): String =
