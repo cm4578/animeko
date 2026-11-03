@@ -460,7 +460,7 @@ private fun SortButton(
 }
 
 @Immutable
-private data class SearchSortLabels(
+internal data class SearchSortLabels(
     val match: String,
     val collection: String,
     val rank: String,
@@ -468,14 +468,14 @@ private data class SearchSortLabels(
 )
 
 @Composable
-private fun rememberSearchSortLabels(): SearchSortLabels = SearchSortLabels(
+internal fun rememberSearchSortLabels(): SearchSortLabels = SearchSortLabels(
     match = stringResource(Lang.exploration_search_sort_match),
     collection = stringResource(Lang.exploration_search_sort_collection),
     rank = stringResource(Lang.exploration_search_sort_rank),
     date = stringResource(Lang.exploration_search_sort_date),
 )
 
-private fun getSortText(currentSort: SearchSort, labels: SearchSortLabels): String = when (currentSort) {
+internal fun getSortText(currentSort: SearchSort, labels: SearchSortLabels): String = when (currentSort) {
     SearchSort.MATCH -> labels.match
     SearchSort.COLLECTION -> labels.collection
     SearchSort.RANK -> labels.rank

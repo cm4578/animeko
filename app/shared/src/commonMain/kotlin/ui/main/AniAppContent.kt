@@ -14,9 +14,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.add
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material3.Icon
@@ -108,6 +111,7 @@ import me.him188.ani.app.ui.qrlogin.QrLoginConfirmScreen
 import me.him188.ani.app.ui.qrlogin.QrLoginConfirmViewModel
 import me.him188.ani.app.ui.qrlogin.QrLoginScanScreen
 import me.him188.ani.app.ui.qrlogin.isQrCodeScannerSupported
+import me.him188.ani.app.ui.search.AppleSearchScreen
 import me.him188.ani.app.ui.search.SearchScreen
 import me.him188.ani.app.ui.settings.SettingsScreen
 import me.him188.ani.app.ui.settings.SettingsViewModel
@@ -434,19 +438,35 @@ private fun AniNavDisplay(
                 val navigator = LocalNavigator.current
                 val vm = viewModel(key = route.toString()) { SearchViewModel(route.toQuery()) }
 
-                SearchScreen(
-                    vm,
-                    onNavigateBack = {
-                        aniNavigator.popBackStack()
-                    },
-                    onNavigateToSubjectDetails = { subjectId, placeholder ->
-                        navigator.navigateSubjectDetails(subjectId, placeholder)
-                    },
-                    onNavigateToEpisodeDetails = { subjectId, episodeId ->
-                        navigator.navigateEpisodeDetails(subjectId, episodeId)
-                    },
-                    windowInsets = windowInsets,
-                )
+                if (appleMainPages != null) {
+                    AppleSearchScreen(
+                        vm,
+                        onNavigateBack = {
+                            aniNavigator.popBackStack()
+                        },
+                        onNavigateToSubjectDetails = { subjectId, placeholder ->
+                            navigator.navigateSubjectDetails(subjectId, placeholder)
+                        },
+                        onNavigateToEpisodeDetails = { subjectId, episodeId ->
+                            navigator.navigateEpisodeDetails(subjectId, episodeId)
+                        },
+                        contentPadding = WindowInsets.navigationBars.only(WindowInsetsSides.Bottom).asPaddingValues(),
+                    )
+                } else {
+                    SearchScreen(
+                        vm,
+                        onNavigateBack = {
+                            aniNavigator.popBackStack()
+                        },
+                        onNavigateToSubjectDetails = { subjectId, placeholder ->
+                            navigator.navigateSubjectDetails(subjectId, placeholder)
+                        },
+                        onNavigateToEpisodeDetails = { subjectId, episodeId ->
+                            navigator.navigateEpisodeDetails(subjectId, episodeId)
+                        },
+                        windowInsets = windowInsets,
+                    )
+                }
             }
             entry<NavRoutes.SubjectDetail> { route ->
                 val vm = viewModel<SubjectDetailsViewModel>(key = route.subjectId.toString()) {

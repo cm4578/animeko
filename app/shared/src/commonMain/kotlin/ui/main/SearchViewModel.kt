@@ -28,6 +28,8 @@ import kotlinx.coroutines.flow.update
 import me.him188.ani.app.data.models.preference.NsfwMode
 import me.him188.ani.app.data.models.subject.SubjectInfo
 import me.him188.ani.app.data.repository.episode.EpisodeCollectionRepository
+import me.him188.ani.app.data.repository.subject.SetSubjectCollectionTypeOrDeleteUseCase
+import me.him188.ani.app.data.repository.subject.SubjectCollectionRepository
 import me.him188.ani.app.data.repository.subject.SubjectSearchCompletionRepository
 import me.him188.ani.app.data.repository.subject.SubjectSearchHistoryRepository
 import me.him188.ani.app.data.repository.subject.SubjectSearchRepository
@@ -38,6 +40,7 @@ import me.him188.ani.app.domain.search.SubjectSearchQuery
 import me.him188.ani.app.domain.search.isExplicitR18
 import me.him188.ani.app.domain.search.withNsfwFilter
 import me.him188.ani.app.domain.search.withYearFilter
+import me.him188.ani.app.ui.exploration.follow.QuickFollowState
 import me.him188.ani.app.ui.exploration.search.SearchFilterState
 import me.him188.ani.app.ui.exploration.search.SearchPageEffect
 import me.him188.ani.app.ui.exploration.search.SearchPageIntent
@@ -71,6 +74,8 @@ open class SearchViewModel(
     private val settingsRepository: SettingsRepository by inject()
     private val getAnimeSeasonIdsFlowUseCase: GetAnimeSeasonIdsFlowUseCase by inject()
     val setEpisodeCollectionType: SetEpisodeCollectionTypeUseCase by inject()
+    private val subjectCollectionRepository: SubjectCollectionRepository by inject()
+    private val setSubjectCollectionTypeOrDeleteUseCase: SetSubjectCollectionTypeOrDeleteUseCase by inject()
 
     private val initialQuery = initialSearchQuery.normalized()
     private val hasInitialSearchQuery = initialQuery.shouldTriggerSearch()
@@ -134,6 +139,13 @@ open class SearchViewModel(
 
     val selfInfoFlow = SelfInfoStateProducer(koin = getKoin()).flow
     val subjectDetailsStateLoader = SubjectDetailsStateLoader(subjectDetailsStateFactory, backgroundScope)
+
+    /**
+     * Apple 版搜索结果的快速追番 (05 G2). 只在 Apple 版画面读取时创建.
+     */
+    val quickFollowState: QuickFollowState by lazy {
+        QuickFollowState(subjectCollectionRepository, setSubjectCollectionTypeOrDeleteUseCase)
+    }
 
     private var currentPreviewingSubject: SubjectInfo? = null
     private var initialSearchQueryStarted = false

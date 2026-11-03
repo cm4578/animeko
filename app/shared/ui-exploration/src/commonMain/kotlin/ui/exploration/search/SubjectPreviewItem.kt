@@ -65,6 +65,10 @@ class SubjectPreviewItemInfo(
     val hide: Boolean = false,
     /** 条目原名 (通常为日文), 供"显示原名"设置开启时使用; 默认与 [title] 相同. */
     val originalTitle: String = title,
+    /** 放送季度与话数, 例如「2024 年 10 月 · 全 24 话」. 是 [tags] 的前半部分, 供 Apple 版搜索结果分行显示. */
+    val airingText: String = tags,
+    /** 来源与类型标签, 例如「奇幻 / 战斗」. 是 [tags] 的后半部分. */
+    val genreText: String = "",
 ) {
     companion object {
         /**
@@ -80,16 +84,9 @@ class SubjectPreviewItemInfo(
             hide: Boolean = false,
         ): SubjectPreviewItemInfo {
             val airingInfo = SubjectAiringInfo.computeFromSubjectInfo(subjectInfo, mainEpisodeCount)
-            val tags = buildString {
-                if (subjectInfo.airDate.isValid) {
-                    append(getSubjectSeasonText(subjectInfo.airDate))
-                    append(" · ")
-                }
-                renderTotalEpisodesText(airingInfo)?.let {
-                    append(it)
-                    append(" · ")
-                }
-
+            val seasonText = if (subjectInfo.airDate.isValid) getSubjectSeasonText(subjectInfo.airDate) else null
+            val episodesText = renderTotalEpisodesText(airingInfo)
+            val genreText = run {
                 val sourceTag = subjectInfo.tags
                     .firstOrNull { it.kind == CanonicalTagKind.Source }
                     ?.let { sequenceOf(it) }.orEmpty()
@@ -99,11 +96,20 @@ class SubjectPreviewItemInfo(
                     .apply { sortByDescending { it.count } }
                     .asSequence()
 
-                append(
-                    (sourceTag + genreTags)
-                        .take(3)
-                        .joinToString(" / ") { it.name },
-                )
+                (sourceTag + genreTags)
+                    .take(3)
+                    .joinToString(" / ") { it.name }
+            }
+            val tags = buildString {
+                seasonText?.let {
+                    append(it)
+                    append(" · ")
+                }
+                episodesText?.let {
+                    append(it)
+                    append(" · ")
+                }
+                append(genreText)
             }
             val staff = relatedPersonList?.let {
                 val persons = relatedPersonList.asSequence()
@@ -157,6 +163,8 @@ class SubjectPreviewItemInfo(
                 nsfwMode = if (subjectInfo.nsfw) nsfwModeSettings else NsfwMode.DISPLAY,
                 hide = hide,
                 originalTitle = subjectInfo.nameOrNameCn,
+                airingText = listOfNotNull(seasonText, episodesText).joinToString(" · "),
+                genreText = genreText,
             )
         }
 

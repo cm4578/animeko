@@ -311,7 +311,7 @@ fun SeasonFilterChip(
     )
 }
 
-private fun renderChipLabel(
+internal fun renderChipLabel(
     state: SearchFilterChipState,
     labels: SearchFilterLabels,
 ): String {
@@ -335,7 +335,7 @@ private fun renderChipLabel(
 }
 
 @Immutable
-private data class SearchFilterLabels(
+internal data class SearchFilterLabels(
     val audience: String,
     val category: String,
     val character: String,
@@ -351,7 +351,7 @@ private data class SearchFilterLabels(
 )
 
 @Composable
-private fun rememberSearchFilterLabels(): SearchFilterLabels = SearchFilterLabels(
+internal fun rememberSearchFilterLabels(): SearchFilterLabels = SearchFilterLabels(
     audience = stringResource(Lang.exploration_search_filter_audience),
     category = stringResource(Lang.exploration_search_filter_category),
     character = stringResource(Lang.exploration_search_filter_character),
