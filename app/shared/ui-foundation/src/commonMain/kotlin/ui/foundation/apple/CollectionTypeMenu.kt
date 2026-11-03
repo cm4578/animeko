@@ -9,9 +9,18 @@
 
 package me.him188.ani.app.ui.foundation.apple
 
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import me.him188.ani.app.ui.lang.Lang
+import me.him188.ani.app.ui.lang.subject_collection_cancel
+import me.him188.ani.app.ui.lang.subject_collection_delete_action
+import me.him188.ani.app.ui.lang.subject_collection_delete_confirm_message
+import me.him188.ani.app.ui.lang.subject_collection_delete_confirm_title
 import me.him188.ani.app.ui.lang.subject_collection_doing
 import me.him188.ani.app.ui.lang.subject_collection_done
 import me.him188.ani.app.ui.lang.subject_collection_dropped
@@ -72,4 +81,33 @@ fun CollectionTypeMenuItems(
             checked = type == currentType,
         )
     }
+}
+
+/**
+ * 「取消追番」确认对话框, 文案同条目详情页的收藏菜单. 快速追番与 Apple 版条目详情共用.
+ *
+ * @param confirmButtonModifier 确认按钮的 Modifier, 例如测试标签.
+ */
+@Composable
+fun UnfollowConfirmDialog(
+    onConfirm: () -> Unit,
+    onDismissRequest: () -> Unit,
+    confirmButtonModifier: Modifier = Modifier,
+) {
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = { Text(stringResource(Lang.subject_collection_delete_confirm_title)) },
+        text = { Text(stringResource(Lang.subject_collection_delete_confirm_message)) },
+        icon = { Icon(AppleIcons.minusCircle(), contentDescription = null) },
+        confirmButton = {
+            TextButton(onConfirm, confirmButtonModifier) {
+                Text(stringResource(Lang.subject_collection_delete_action), color = MaterialTheme.colorScheme.error)
+            }
+        },
+        dismissButton = {
+            TextButton(onDismissRequest) {
+                Text(stringResource(Lang.subject_collection_cancel))
+            }
+        },
+    )
 }

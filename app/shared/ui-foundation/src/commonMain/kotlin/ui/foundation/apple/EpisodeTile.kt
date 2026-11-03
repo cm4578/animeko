@@ -9,9 +9,10 @@
 
 package me.him188.ani.app.ui.foundation.apple
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -50,13 +51,16 @@ enum class EpisodeTileState {
  * C13 选集方块: 52×52、圆角 12, 文字为 17 号等宽数字.
  *
  * @param label 集数文字. 整数集数用 [episodeTileLabel] 补零到两位.
+ * @param onLongClick 长按, 例如切换看过. `null` 时不响应长按.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun EpisodeTile(
     label: String,
     state: EpisodeTileState,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(12.dp)
@@ -91,7 +95,7 @@ fun EpisodeTile(
                 },
             )
             .semantics { selected = state == EpisodeTileState.Playing }
-            .clickable(role = Role.Button, onClick = onClick),
+            .combinedClickable(role = Role.Button, onLongClick = onLongClick, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Text(

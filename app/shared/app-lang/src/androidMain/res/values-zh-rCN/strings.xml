@@ -1307,6 +1307,11 @@
     <string name="comment_review_hidden">[隐藏内容]</string>
     <string name="subject_details_rate">打分</string>
     <string name="subject_details_summary">简介</string>
+    <string name="subject_details_rank">排名</string>
+    <string name="subject_details_all_episodes">全部 %1$d 话</string>
+    <string name="subject_details_share">分享</string>
+    <string name="subject_details_share_copy_link">复制链接</string>
+    <string name="subject_details_share_open_in_browser">在浏览器中打开</string>
     <string name="foundation_load_error_network">网络错误</string>
     <string name="foundation_load_error_rate_limited">操作过快，请重试</string>
     <string name="foundation_load_error_service_unavailable">服务暂不可用</string>

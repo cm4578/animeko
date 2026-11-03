@@ -232,6 +232,19 @@ object AppleIcons {
         stroke("M8.5 12.2l2.5 2.5 4.5-5")
     }
 
+    /** 分享: 方框与向上箭头. */
+    fun share(strokeWidth: Float = 2.2f): ImageVector = cached("share", strokeWidth) {
+        stroke("M12 14V3.5")
+        stroke("M8 7.5l4-4 4 4")
+        stroke("M7 10.5H6a1.5 1.5 0 0 0-1.5 1.5v7A1.5 1.5 0 0 0 6 20.5h12a1.5 1.5 0 0 0 1.5-1.5v-7a1.5 1.5 0 0 0-1.5-1.5h-1")
+    }
+
+    /** 复制. */
+    fun copy(strokeWidth: Float = 1.9f): ImageVector = cached("copy", strokeWidth) {
+        stroke(rect(8.5f, 8.5f, 11f, 11f, 2f))
+        stroke("M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2")
+    }
+
     /** 圆圈内的减号, 用于「取消追番」. */
     fun minusCircle(strokeWidth: Float = 1.9f): ImageVector = cached("minusCircle", strokeWidth) {
         stroke(circle(12f, 12f, 8.5f))

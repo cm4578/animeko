@@ -1270,6 +1270,11 @@
     <string name="comment_review_hidden">[隱藏內容]</string>
     <string name="subject_details_rate">打分</string>
     <string name="subject_details_summary">簡介</string>
+    <string name="subject_details_rank">排名</string>
+    <string name="subject_details_all_episodes">全部 %1$d 話</string>
+    <string name="subject_details_share">分享</string>
+    <string name="subject_details_share_copy_link">複製連結</string>
+    <string name="subject_details_share_open_in_browser">在瀏覽器中開啟</string>
     <string name="foundation_load_error_network">網絡錯誤</string>
     <string name="foundation_load_error_rate_limited">操作過快，請重試</string>
     <string name="foundation_load_error_service_unavailable">服務暫不可用</string>

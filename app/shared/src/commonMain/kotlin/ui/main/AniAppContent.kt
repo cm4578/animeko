@@ -45,6 +45,7 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import androidx.paging.compose.collectAsLazyPagingItemsWithLifecycle
 import me.him188.ani.app.data.models.subject.SubjectInfo
+import me.him188.ani.app.data.models.subject.Tag
 import me.him188.ani.app.domain.mediasource.jsonapi.JsonApiMediaSource
 import me.him188.ani.app.domain.mediasource.rss.RssMediaSource
 import me.him188.ani.app.domain.notification.NotificationBadgeManager
@@ -126,6 +127,7 @@ import me.him188.ani.app.ui.settings.notification.NotificationSettingsScreen
 import me.him188.ani.app.ui.settings.notification.NotificationSettingsViewModel
 import me.him188.ani.app.ui.settings.tabs.media.torrent.peer.PeerFilterSettingsScreen
 import me.him188.ani.app.ui.settings.tabs.media.torrent.peer.PeerFilterSettingsViewModel
+import me.him188.ani.app.ui.subject.details.AppleSubjectDetailsScreen
 import me.him188.ani.app.ui.subject.details.SubjectDetailsScreen
 import me.him188.ani.app.ui.subject.details.SubjectDetailsViewModel
 import me.him188.ani.app.ui.subject.episode.EpisodeScreen
@@ -475,34 +477,46 @@ private fun AniNavDisplay(
                     }
                     SubjectDetailsViewModel(route.subjectId, placeholder)
                 }
-                SubjectDetailsScreen(
-                    vm,
-                    onPlay = { aniNavigator.navigateEpisodeDetails(route.subjectId, it) },
-                    onLoadErrorRetry = { vm.reload() },
-                    onClickTag = {
-                        aniNavigator.navigateSubjectSearch(NavRoutes.SubjectSearch(tags = listOf(it.name)))
-                    },
-                    windowInsets = windowInsets,
-                    navigationIcon = {
-                        Row {
-                            BackNavigationIconButton(
-                                {
-                                    aniNavigator.popBackStack(route, inclusive = true)
-                                },
-                            )
-                            TopAppBarActionButton(
-                                {
-                                    aniNavigator.popBackOrNavigateToMain(mainSceneInitialPage)
-                                },
-                            ) {
-                                Icon(
-                                    Icons.Rounded.Home,
-                                    contentDescription = null,
+                val onClickTag: (Tag) -> Unit = {
+                    aniNavigator.navigateSubjectSearch(NavRoutes.SubjectSearch(tags = listOf(it.name)))
+                }
+                if (appleMainPages != null) {
+                    AppleSubjectDetailsScreen(
+                        vm,
+                        onPlay = { aniNavigator.navigateEpisodeDetails(route.subjectId, it) },
+                        onLoadErrorRetry = { vm.reload() },
+                        onClickTag = onClickTag,
+                        onBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else {
+                    SubjectDetailsScreen(
+                        vm,
+                        onPlay = { aniNavigator.navigateEpisodeDetails(route.subjectId, it) },
+                        onLoadErrorRetry = { vm.reload() },
+                        onClickTag = onClickTag,
+                        windowInsets = windowInsets,
+                        navigationIcon = {
+                            Row {
+                                BackNavigationIconButton(
+                                    {
+                                        aniNavigator.popBackStack(route, inclusive = true)
+                                    },
                                 )
+                                TopAppBarActionButton(
+                                    {
+                                        aniNavigator.popBackOrNavigateToMain(mainSceneInitialPage)
+                                    },
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.Home,
+                                        contentDescription = null,
+                                    )
+                                }
                             }
-                        }
-                    },
-                )
+                        },
+                    )
+                }
             }
             entry<NavRoutes.EpisodeDetail> { route ->
                 val context = LocalContext.current

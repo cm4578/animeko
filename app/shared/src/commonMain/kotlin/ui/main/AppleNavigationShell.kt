@@ -120,7 +120,8 @@ internal enum class AppleTabBarMode {
  */
 internal fun NavRoutes.appleTabBarMode(): AppleTabBarMode = when (this) {
     is NavRoutes.Main,
-    is NavRoutes.Schedule -> AppleTabBarMode.Overlay
+    is NavRoutes.Schedule,
+    is NavRoutes.SubjectDetail -> AppleTabBarMode.Overlay
 
     is NavRoutes.EpisodeDetail,
     is NavRoutes.SubjectSearch,

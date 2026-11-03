@@ -10,11 +10,6 @@
 package me.him188.ani.app.ui.exploration.follow
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -36,14 +31,11 @@ import me.him188.ani.app.ui.foundation.apple.AppleIcons
 import me.him188.ani.app.ui.foundation.apple.ApplePopoverMenu
 import me.him188.ani.app.ui.foundation.apple.CollectionTypeMenuItems
 import me.him188.ani.app.ui.foundation.apple.PopoverMenuItem
+import me.him188.ani.app.ui.foundation.apple.UnfollowConfirmDialog
 import me.him188.ani.app.ui.foundation.widgets.LocalToaster
 import me.him188.ani.app.ui.foundation.widgets.showLoadError
 import me.him188.ani.app.ui.lang.Lang
-import me.him188.ani.app.ui.lang.subject_collection_cancel
 import me.him188.ani.app.ui.lang.subject_collection_delete
-import me.him188.ani.app.ui.lang.subject_collection_delete_action
-import me.him188.ani.app.ui.lang.subject_collection_delete_confirm_message
-import me.him188.ani.app.ui.lang.subject_collection_delete_confirm_title
 import me.him188.ani.datasources.api.topic.UnifiedCollectionType
 import org.jetbrains.compose.resources.stringResource
 
@@ -168,34 +160,9 @@ fun QuickFollowAnchor(
                 launchAction { state.setCollectionType(subjectId, UnifiedCollectionType.NOT_COLLECTED) }
             },
             onDismissRequest = { confirmUnfollow = false },
+            confirmButtonModifier = Modifier.testTag(QuickFollowTestTags.ConfirmUnfollow),
         )
     }
-}
-
-/**
- * 「取消追番」确认对话框, 文案同条目详情页的收藏菜单.
- */
-@Composable
-private fun UnfollowConfirmDialog(
-    onConfirm: () -> Unit,
-    onDismissRequest: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismissRequest,
-        title = { Text(stringResource(Lang.subject_collection_delete_confirm_title)) },
-        text = { Text(stringResource(Lang.subject_collection_delete_confirm_message)) },
-        icon = { Icon(AppleIcons.minusCircle(), contentDescription = null) },
-        confirmButton = {
-            TextButton(onConfirm, Modifier.testTag(QuickFollowTestTags.ConfirmUnfollow)) {
-                Text(stringResource(Lang.subject_collection_delete_action), color = MaterialTheme.colorScheme.error)
-            }
-        },
-        dismissButton = {
-            TextButton(onDismissRequest) {
-                Text(stringResource(Lang.subject_collection_cancel))
-            }
-        },
-    )
 }
 
 internal object QuickFollowTestTags {

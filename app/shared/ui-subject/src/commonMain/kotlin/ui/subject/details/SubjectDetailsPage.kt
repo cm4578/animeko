@@ -1146,7 +1146,7 @@ sealed interface SubjectDetailsLoadState {
 
 @Stable
 @Composable
-private fun renderSubjectDetailsTab(tab: SubjectDetailsTab): String {
+internal fun renderSubjectDetailsTab(tab: SubjectDetailsTab): String {
     return when (tab) {
         SubjectDetailsTab.DETAILS -> stringResource(Lang.subject_details_tab_details)
         SubjectDetailsTab.COMMENTS -> stringResource(Lang.subject_details_tab_comments)

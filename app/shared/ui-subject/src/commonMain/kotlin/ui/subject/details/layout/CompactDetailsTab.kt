@@ -202,7 +202,7 @@ internal fun CompactDetailsTabContent(
 }
 
 @Composable
-private fun RelatedSubjectsCompactSection(
+internal fun RelatedSubjectsCompactSection(
     subjectId: Int,
     related: LazyPagingItems<RelatedSubjectInfo>,
     headerModifier: Modifier,

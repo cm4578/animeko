@@ -126,7 +126,7 @@ fun SubjectCollectionTypeButton(
 
 @Composable
 @Stable
-private fun renderCollectionTypeAsCurrent(type: UnifiedCollectionType): String {
+internal fun renderCollectionTypeAsCurrent(type: UnifiedCollectionType): String {
     return when (type) {
         UnifiedCollectionType.WISH -> stringResource(Lang.subject_collection_current_wish)
         UnifiedCollectionType.DOING -> stringResource(Lang.subject_collection_current_doing)
