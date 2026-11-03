@@ -141,7 +141,8 @@ class AppleNavigationShellTest {
     @Test
     fun `tab bar visibility follows the components spec`() {
         assertEquals(AppleTabBarMode.Overlay, NavRoutes.Main(MainScreenPage.Exploration).appleTabBarMode())
-        assertEquals(AppleTabBarMode.Inset, NavRoutes.Schedule().appleTabBarMode())
+        assertEquals(AppleTabBarMode.Overlay, NavRoutes.Schedule().appleTabBarMode())
+        assertEquals(AppleTabBarMode.Inset, NavRoutes.TrendingRanking.appleTabBarMode())
         assertEquals(AppleTabBarMode.Inset, NavRoutes.Settings(SettingsTab.THEME).appleTabBarMode())
         assertEquals(AppleTabBarMode.Hidden, NavRoutes.Settings(SettingsTab.PROFILE).appleTabBarMode())
         assertEquals(AppleTabBarMode.Hidden, NavRoutes.EpisodeDetail(1, 2).appleTabBarMode())

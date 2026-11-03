@@ -410,9 +410,12 @@ private fun renderScheduleDay(day: ScheduleDay): String {
     """.trimIndent()
 }
 
+/**
+ * 带周次的星期, 例如「上週五」「週五」「下週五」.
+ */
 @Stable
 @Composable
-private fun renderDayOfWeek(day: DayOfWeek, kind: ScheduleDay.Kind): String {
+internal fun renderDayOfWeek(day: DayOfWeek, kind: ScheduleDay.Kind): String {
     val weekday = renderWeekdayName(day)
     return when (kind) {
         ScheduleDay.Kind.LAST_WEEK -> stringResource(Lang.exploration_schedule_last_weekday, weekday)

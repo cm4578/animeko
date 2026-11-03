@@ -119,7 +119,8 @@ internal enum class AppleTabBarMode {
  * 02 C1 的显示规则: 全屏任务 (播放、搜索、资料源编辑器、登录/授权/扫码、合并收藏、编辑个人资料) 隐藏导航栏, 其余显示.
  */
 internal fun NavRoutes.appleTabBarMode(): AppleTabBarMode = when (this) {
-    is NavRoutes.Main -> AppleTabBarMode.Overlay
+    is NavRoutes.Main,
+    is NavRoutes.Schedule -> AppleTabBarMode.Overlay
 
     is NavRoutes.EpisodeDetail,
     is NavRoutes.SubjectSearch,

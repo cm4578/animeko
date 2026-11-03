@@ -35,6 +35,7 @@ import me.him188.ani.app.data.models.recommend.RecommendedSubjectInfo
 import me.him188.ani.app.data.models.trending.TrendingSubjectInfo
 import me.him188.ani.app.ui.exploration.follow.QuickFollowState
 import me.him188.ani.app.ui.exploration.follow.QuickFollowTestTags
+import me.him188.ani.app.ui.exploration.schedule.currentWeek
 import me.him188.ani.app.ui.foundation.LocalPlatform
 import me.him188.ani.app.ui.foundation.ProvideCompositionLocalsForPreview
 import me.him188.ani.app.ui.framework.runAniComposeUiTest

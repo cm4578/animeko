@@ -69,6 +69,11 @@ object AppleIcons {
         stroke("M12 7.5V12l3 2")
     }
 
+    /** 上一项 `‹`, 例如时间表的上一周. */
+    fun chevronLeft(strokeWidth: Float = 2f): ImageVector = cached("chevronLeft", strokeWidth) {
+        stroke("M15 6l-6 6 6 6")
+    }
+
     /** 进入下一页 `›`. */
     fun chevronRight(strokeWidth: Float = 2f): ImageVector = cached("chevronRight", strokeWidth) {
         stroke("M9 6l6 6-6 6")

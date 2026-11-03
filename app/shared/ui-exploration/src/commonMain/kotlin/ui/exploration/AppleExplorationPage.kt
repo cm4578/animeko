@@ -55,11 +55,8 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItemsWithLifecycle
-import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.minus
-import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import me.him188.ani.app.data.models.recommend.RecommendedItemInfo
 import me.him188.ani.app.data.models.recommend.RecommendedSubjectInfo
@@ -70,7 +67,8 @@ import me.him188.ani.app.navigation.LocalNavigator
 import me.him188.ani.app.navigation.SubjectDetailPlaceholder
 import me.him188.ani.app.ui.exploration.follow.QuickFollowAnchor
 import me.him188.ani.app.ui.exploration.follow.QuickFollowState
-import me.him188.ani.app.ui.exploration.schedule.renderWeekdayName
+import me.him188.ani.app.ui.exploration.schedule.AppleWeekdayStrip
+import me.him188.ani.app.ui.exploration.schedule.currentWeek
 import me.him188.ani.app.ui.foundation.AsyncImage
 import me.him188.ani.app.ui.foundation.LocalSubjectAppearanceSettings
 import me.him188.ani.app.ui.foundation.apple.AppleCircleButton
@@ -336,19 +334,13 @@ private fun WeekScheduleCard(
             .clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerLow),
     ) {
-        Row(
-            Modifier.fillMaxWidth().padding(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            for (date in week) {
-                WeekdayCell(
-                    date,
-                    isToday = date == today,
-                    onClick = { onClickSchedule(date) },
-                    Modifier.weight(1f),
-                )
-            }
-        }
+        AppleWeekdayStrip(
+            week,
+            selectedDate = today,
+            onClickDay = { onClickSchedule(it) },
+            Modifier.padding(8.dp),
+            cellModifier = { Modifier.testTag(AppleExplorationTestTags.weekday(it)) },
+        )
         AppleDivider(startIndent = 16.dp)
         Row(
             Modifier
@@ -375,52 +367,6 @@ private fun WeekScheduleCard(
             )
         }
     }
-}
-
-/**
- * 星期格: 高 52、圆角 14; 周名 `caption`, 日期 `headline`. 今天为 tint 底 + onTint、日期字重 700.
- */
-@Composable
-private fun WeekdayCell(
-    date: LocalDate,
-    isToday: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val colorScheme = MaterialTheme.colorScheme
-    Column(
-        modifier
-            .height(52.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(if (isToday) colorScheme.secondaryContainer else Color.Transparent)
-            .clickable(role = Role.Button, onClick = onClick)
-            .semantics { selected = isToday }
-            .testTag(AppleExplorationTestTags.weekday(date)),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
-    ) {
-        Text(
-            renderWeekdayName(date.dayOfWeek),
-            style = AniTextStyles.caption,
-            color = if (isToday) colorScheme.onSecondaryContainer else colorScheme.secondary,
-            maxLines = 1,
-        )
-        Text(
-            date.day.toString(),
-            style = AniTextStyles.headline,
-            fontWeight = if (isToday) FontWeight.Bold else FontWeight.Medium,
-            color = if (isToday) colorScheme.onSecondaryContainer else AniColors.labelSoft,
-            maxLines = 1,
-        )
-    }
-}
-
-/**
- * [today] 所在一周的 7 天, 周一在前.
- */
-internal fun currentWeek(today: LocalDate): List<LocalDate> {
-    val monday = today.minus(DatePeriod(days = today.dayOfWeek.ordinal))
-    return List(7) { monday.plus(DatePeriod(days = it)) }
 }
 
 /**

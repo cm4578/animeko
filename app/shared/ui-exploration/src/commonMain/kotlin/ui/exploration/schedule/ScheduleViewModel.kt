@@ -33,10 +33,13 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
+import me.him188.ani.app.data.repository.subject.SetSubjectCollectionTypeOrDeleteUseCase
+import me.him188.ani.app.data.repository.subject.SubjectCollectionRepository
 import me.him188.ani.app.domain.episode.AiringScheduleForDate
 import me.him188.ani.app.domain.episode.GetAnimeScheduleFlowUseCase
 import me.him188.ani.app.domain.foundation.LoadError
 import me.him188.ani.app.domain.usecase.GlobalKoin
+import me.him188.ani.app.ui.exploration.follow.QuickFollowState
 import me.him188.ani.app.ui.foundation.AbstractViewModel
 import me.him188.ani.utils.coroutines.flows.FlowRestarter
 import me.him188.ani.utils.coroutines.flows.catching
@@ -69,6 +72,8 @@ open class ScheduleViewModel(
     initialDate: LocalDate? = null,
 ) : AbstractViewModel() {
     private val getAnimeScheduleFlowUseCase: GetAnimeScheduleFlowUseCase by koin.inject()
+    private val subjectCollectionRepository: SubjectCollectionRepository by koin.inject()
+    private val setSubjectCollectionTypeOrDeleteUseCase: SetSubjectCollectionTypeOrDeleteUseCase by koin.inject()
 
     private fun currentToday(): LocalDate = clock.now().toLocalDateTime(timeZone).date
 
@@ -144,6 +149,13 @@ open class ScheduleViewModel(
      * 页面状态. 日期列来自 [presentationFlow] (经由 [presentationState]), 与列内容同源.
      */
     val pageState = ScheduleScreenState(initialDate) { presentationState.value.days }
+
+    /**
+     * Apple 版时间表每列的快速追番 (05 G2). 只在 Apple 版画面读取时创建.
+     */
+    val quickFollowState: QuickFollowState by lazy {
+        QuickFollowState(subjectCollectionRepository, setSubjectCollectionTypeOrDeleteUseCase)
+    }
 
     /**
      * 日期列和列内容都由 [ScheduleLoad.today] 派生, 所以二者的日期序列总是相同.

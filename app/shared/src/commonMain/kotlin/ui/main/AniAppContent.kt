@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.add
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Home
@@ -68,6 +69,8 @@ import me.him188.ani.app.ui.download.details.MediaCacheDetailsScreen
 import me.him188.ani.app.ui.download.details.MediaDetails
 import me.him188.ani.app.ui.download.details.MediaDetailsLazyGrid
 import me.him188.ani.app.ui.download.subject.SubjectDownloadsScreen
+import me.him188.ani.app.ui.exploration.schedule.AiringScheduleItemPresentation
+import me.him188.ani.app.ui.exploration.schedule.AppleSchedulePage
 import me.him188.ani.app.ui.exploration.schedule.ScheduleScreen
 import me.him188.ani.app.ui.exploration.schedule.ScheduleViewModel
 import me.him188.ani.app.ui.exploration.trends.TrendingRankingScreen
@@ -812,31 +815,46 @@ private fun AniNavDisplay(
             entry<NavRoutes.Schedule> { route ->
                 val vm = viewModel { ScheduleViewModel(initialDate = route.initialDate) }
                 val presentation by vm.presentationFlow.collectAsStateWithLifecycle()
-                ScheduleScreen(
-                    presentation,
-                    onRetry = { vm.refresh() },
-                    onClickItem = {
-                        aniNavigator.navigateSubjectDetails(
-                            it.subjectId,
-                            placeholder = SubjectDetailPlaceholder(
-                                id = it.subjectId,
-                                name = it.subjectOriginalTitle,
-                                nameCN = it.subjectTitle,
-                                coverUrl = it.imageUrl,
-                            ),
-                        )
-                    },
-                    Modifier.fillMaxSize(),
-                    windowInsets = windowInsets,
-                    navigationIcon = {
-                        BackNavigationIconButton(
-                            {
-                                aniNavigator.popBackStack(route, inclusive = true)
-                            },
-                        )
-                    },
-                    state = vm.pageState,
-                )
+                val onClickItem: (AiringScheduleItemPresentation) -> Unit = {
+                    aniNavigator.navigateSubjectDetails(
+                        it.subjectId,
+                        placeholder = SubjectDetailPlaceholder(
+                            id = it.subjectId,
+                            name = it.subjectOriginalTitle,
+                            nameCN = it.subjectTitle,
+                            coverUrl = it.imageUrl,
+                        ),
+                    )
+                }
+                if (appleMainPages != null) {
+                    val selfInfo by remember { SelfInfoStateProducer() }.flow.collectAsState(null)
+                    AppleSchedulePage(
+                        presentation,
+                        state = vm.pageState,
+                        quickFollowState = vm.quickFollowState.takeIf { selfInfo?.isSessionValid == true },
+                        onRetry = { vm.refresh() },
+                        onClickItem = onClickItem,
+                        onBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        Modifier.fillMaxSize(),
+                        contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else {
+                    ScheduleScreen(
+                        presentation,
+                        onRetry = { vm.refresh() },
+                        onClickItem = onClickItem,
+                        Modifier.fillMaxSize(),
+                        windowInsets = windowInsets,
+                        navigationIcon = {
+                            BackNavigationIconButton(
+                                {
+                                    aniNavigator.popBackStack(route, inclusive = true)
+                                },
+                            )
+                        },
+                        state = vm.pageState,
+                    )
+                }
             }
             entry<NavRoutes.TrendingRanking> { route ->
                 val vm = viewModel { TrendingRankingViewModel() }

@@ -155,6 +155,23 @@ object ScheduleItemDefaults {
         episodeName: String?,
         modifier: Modifier = Modifier,
     ) {
+        Text(
+            renderEpisode(episodeSort, episodeEp, episodeName),
+            overflow = TextOverflow.Ellipsis,
+            maxLines = 1,
+            modifier = modifier,
+        )
+    }
+
+    /**
+     * 集数与剧集名, 例如「第 5 話  不可思議的糖果」; 序号与集数不同时为「第 5 (17) 話」.
+     */
+    @Composable
+    fun renderEpisode(
+        episodeSort: EpisodeSort,
+        episodeEp: EpisodeSort?,
+        episodeName: String?,
+    ): String {
         val epText = episodeEp?.toString()?.removePrefix("0")
         val sortText = episodeSort.toString().removePrefix("0")
         val sortDisplay = if (episodeEp == null || episodeEp == episodeSort) {
@@ -171,13 +188,7 @@ object ScheduleItemDefaults {
                 "$epText ($sortText)"
             }
         }
-        val text = if (episodeName == null) sortDisplay else "$sortDisplay  $episodeName"
-        Text(
-            text,
-            overflow = TextOverflow.Ellipsis,
-            maxLines = 1,
-            modifier = modifier,
-        )
+        return if (episodeName == null) sortDisplay else "$sortDisplay  $episodeName"
     }
 
     /**

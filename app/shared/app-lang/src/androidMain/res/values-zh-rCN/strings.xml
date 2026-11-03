@@ -697,6 +697,12 @@
     <string name="exploration_schedule_this_weekday">周%1$s</string>
     <string name="exploration_schedule_last_weekday">上周%1$s</string>
     <string name="exploration_schedule_next_weekday">下周%1$s</string>
+    <string name="exploration_schedule_this_week">本周</string>
+    <string name="exploration_schedule_last_week">上周</string>
+    <string name="exploration_schedule_next_week">下周</string>
+    <string name="exploration_schedule_day_title">%1$s · %2$d 月 %3$d 日</string>
+    <string name="exploration_schedule_count">%1$d 部</string>
+    <string name="exploration_schedule_day_empty">这天没有更新的番剧</string>
     <string name="exploration_continue_watching">继续观看</string>
     <string name="exploration_recommendations">推荐</string>
     <string name="exploration_schedule_full">完整时间表</string>
