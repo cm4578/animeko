@@ -810,7 +810,7 @@ private fun AniNavDisplay(
                 )
             }
             entry<NavRoutes.Schedule> { route ->
-                val vm = viewModel { ScheduleViewModel() }
+                val vm = viewModel { ScheduleViewModel(initialDate = route.initialDate) }
                 val presentation by vm.presentationFlow.collectAsStateWithLifecycle()
                 ScheduleScreen(
                     presentation,

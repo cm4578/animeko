@@ -23,6 +23,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.datetime.LocalDate
 import me.him188.ani.datasources.api.source.FactoryId
 
 /**
@@ -204,8 +205,11 @@ interface AniNavigator {
         navigate(NavRoutes.CacheDetail(cacheId))
     }
 
-    fun navigateSchedule() {
-        navigate(NavRoutes.Schedule)
+    /**
+     * @param initialDate 打开时选中的日期, 见 [NavRoutes.Schedule.initialDate].
+     */
+    fun navigateSchedule(initialDate: LocalDate? = null) {
+        navigate(NavRoutes.Schedule(initialDate))
     }
 
     fun navigateTrendingRanking() {

@@ -64,15 +64,15 @@ class AppleNavigationShellTest {
         val pages = AppleMainPages(backStack)
         setShell(navigator, backStack, pages)
 
-        runOnIdle { navigator.navigate(NavRoutes.Schedule) }
-        onNodeWithText("route Schedule").assertExists()
+        runOnIdle { navigator.navigate(NavRoutes.Schedule()) }
+        onNodeWithText("route ${NavRoutes.Schedule()}").assertExists()
         tabNodes()[MainScreenPage.visibleEntries.indexOf(MainScreenPage.Collection)].assertIsSelected()
     }
 
     @Test
     fun `tapping a tab on a pushed page returns to main and switches the page`() = runAniComposeUiTest {
         val main = NavRoutes.Main(MainScreenPage.Exploration)
-        val backStack = mutableStateListOf<NavRoutes>(main, NavRoutes.Schedule, NavRoutes.TrendingRanking)
+        val backStack = mutableStateListOf<NavRoutes>(main, NavRoutes.Schedule(), NavRoutes.TrendingRanking)
         val navigator = AniNavigator().apply { setBackStack(backStack) }
         val pages = AppleMainPages(backStack)
         setShell(navigator, backStack, pages)
@@ -88,7 +88,7 @@ class AppleNavigationShellTest {
     @Test
     fun `tapping the source tab on a pushed page returns to its root`() = runAniComposeUiTest {
         val main = NavRoutes.Main(MainScreenPage.Exploration)
-        val backStack = mutableStateListOf<NavRoutes>(main, NavRoutes.Schedule)
+        val backStack = mutableStateListOf<NavRoutes>(main, NavRoutes.Schedule())
         val navigator = AniNavigator().apply { setBackStack(backStack) }
         val pages = AppleMainPages(backStack)
         setShell(navigator, backStack, pages)
@@ -114,7 +114,7 @@ class AppleNavigationShellTest {
     fun `each main entry keeps its own page`() {
         val first = NavRoutes.Main(MainScreenPage.Exploration)
         val second = NavRoutes.Main(MainScreenPage.Exploration)
-        val backStack = mutableListOf<NavRoutes>(first, NavRoutes.Schedule, second)
+        val backStack = mutableListOf<NavRoutes>(first, NavRoutes.Schedule(), second)
         val pages = AppleMainPages(backStack)
 
         pages.setPage(second, MainScreenPage.CacheManagement)
@@ -125,14 +125,14 @@ class AppleNavigationShellTest {
 
     @Test
     fun `pages are restored by back stack position`() {
-        val backStack = mutableListOf<NavRoutes>(NavRoutes.Main(MainScreenPage.Exploration), NavRoutes.Schedule)
+        val backStack = mutableListOf<NavRoutes>(NavRoutes.Main(MainScreenPage.Exploration), NavRoutes.Schedule())
         val pages = AppleMainPages(backStack)
         pages.setPage(backStack[0] as NavRoutes.Main, MainScreenPage.Collection)
 
         val saver = AppleMainPages.saver(backStack)
         val saved = with(saver) { SaverScope { true }.save(pages) }!!
         // 进程重建后返回栈是新的实例
-        val restoredStack = mutableListOf<NavRoutes>(NavRoutes.Main(MainScreenPage.Exploration), NavRoutes.Schedule)
+        val restoredStack = mutableListOf<NavRoutes>(NavRoutes.Main(MainScreenPage.Exploration), NavRoutes.Schedule())
         val restored = AppleMainPages.saver(restoredStack).restore(saved)!!
 
         assertEquals(MainScreenPage.Collection, restored.pageOf(restoredStack[0] as NavRoutes.Main))
@@ -141,7 +141,7 @@ class AppleNavigationShellTest {
     @Test
     fun `tab bar visibility follows the components spec`() {
         assertEquals(AppleTabBarMode.Overlay, NavRoutes.Main(MainScreenPage.Exploration).appleTabBarMode())
-        assertEquals(AppleTabBarMode.Inset, NavRoutes.Schedule.appleTabBarMode())
+        assertEquals(AppleTabBarMode.Inset, NavRoutes.Schedule().appleTabBarMode())
         assertEquals(AppleTabBarMode.Inset, NavRoutes.Settings(SettingsTab.THEME).appleTabBarMode())
         assertEquals(AppleTabBarMode.Hidden, NavRoutes.Settings(SettingsTab.PROFILE).appleTabBarMode())
         assertEquals(AppleTabBarMode.Hidden, NavRoutes.EpisodeDetail(1, 2).appleTabBarMode())

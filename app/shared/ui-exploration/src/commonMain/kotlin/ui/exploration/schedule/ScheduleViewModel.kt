@@ -60,11 +60,13 @@ import org.koin.core.Koin
  * 本 ViewModel 由 androidx `viewModel {}` 取得, 不会被 compose remember, 所以不使用 [AbstractViewModel.init].
  *
  * @param clock 时钟. 测试用假时钟驱动跨午夜.
+ * @param initialDate 打开时选中的日期, 见 [ScheduleScreenState].
  */
 open class ScheduleViewModel(
     koin: Koin = GlobalKoin,
     private val timeZone: TimeZone = TimeZone.currentSystemDefault(),
     private val clock: Clock = Clock.System,
+    initialDate: LocalDate? = null,
 ) : AbstractViewModel() {
     private val getAnimeScheduleFlowUseCase: GetAnimeScheduleFlowUseCase by koin.inject()
 
@@ -141,7 +143,7 @@ open class ScheduleViewModel(
     /**
      * 页面状态. 日期列来自 [presentationFlow] (经由 [presentationState]), 与列内容同源.
      */
-    val pageState = ScheduleScreenState { presentationState.value.days }
+    val pageState = ScheduleScreenState(initialDate) { presentationState.value.days }
 
     /**
      * 日期列和列内容都由 [ScheduleLoad.today] 派生, 所以二者的日期序列总是相同.

@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.navigation3.runtime.NavKey
+import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
 import me.him188.ani.app.ui.lang.Lang
 import me.him188.ani.app.ui.lang.main_screen_page_cache_management
@@ -133,8 +134,13 @@ sealed class NavRoutes : NavKey {
         val cacheId: String,
     ) : NavRoutes()
 
+    /**
+     * @param initialDate 打开时选中的日期, 需在时间表的日期范围内 (今天前后 7 天). `null` 或不在范围内时选中今天.
+     */
     @Serializable
-    data object Schedule : NavRoutes()
+    data class Schedule(
+        val initialDate: LocalDate? = null,
+    ) : NavRoutes()
 
     @Serializable
     data object TrendingRanking : NavRoutes()

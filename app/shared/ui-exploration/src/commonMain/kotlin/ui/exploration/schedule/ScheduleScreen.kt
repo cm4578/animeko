@@ -63,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowSizeClass
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.number
 import me.him188.ani.app.ui.adaptive.AniTopAppBar
 import me.him188.ani.app.ui.adaptive.HorizontalScrollControlScaffoldOnDesktop
@@ -93,11 +94,17 @@ import me.him188.ani.utils.platform.annotations.TestOnly
 import me.him188.ani.utils.platform.isDesktop
 import org.jetbrains.compose.resources.stringResource
 
+/**
+ * @param initialDate 打开时选中的日期. `null` 或不在 [daysProvider] 的日期中时选中今天.
+ */
 fun ScheduleScreenState(
+    initialDate: LocalDate? = null,
     daysProvider: () -> List<ScheduleDay>,
 ): ScheduleScreenState {
+    val days = daysProvider()
     return ScheduleScreenState(
-        initialSelected = daysProvider().firstOrNull { it.kind == ScheduleDay.Kind.TODAY },
+        initialSelected = days.firstOrNull { it.date == initialDate }
+            ?: days.firstOrNull { it.kind == ScheduleDay.Kind.TODAY },
         daysProvider = daysProvider,
     )
 }
@@ -404,20 +411,9 @@ private fun renderScheduleDay(day: ScheduleDay): String {
 }
 
 @Stable
-@Suppress("REDUNDANT_ELSE_IN_WHEN") // Compiler works fine, but IDE complains about this, so we suppress it.
 @Composable
 private fun renderDayOfWeek(day: DayOfWeek, kind: ScheduleDay.Kind): String {
-    val weekday = when (day) {
-        DayOfWeek.MONDAY -> stringResource(Lang.exploration_schedule_weekday_monday)
-        DayOfWeek.TUESDAY -> stringResource(Lang.exploration_schedule_weekday_tuesday)
-        DayOfWeek.WEDNESDAY -> stringResource(Lang.exploration_schedule_weekday_wednesday)
-        DayOfWeek.THURSDAY -> stringResource(Lang.exploration_schedule_weekday_thursday)
-        DayOfWeek.FRIDAY -> stringResource(Lang.exploration_schedule_weekday_friday)
-        DayOfWeek.SATURDAY -> stringResource(Lang.exploration_schedule_weekday_saturday)
-        DayOfWeek.SUNDAY -> stringResource(Lang.exploration_schedule_weekday_sunday)
-        else -> day.toString()
-    }
-
+    val weekday = renderWeekdayName(day)
     return when (kind) {
         ScheduleDay.Kind.LAST_WEEK -> stringResource(Lang.exploration_schedule_last_weekday, weekday)
         ScheduleDay.Kind.THIS_WEEK,
@@ -425,6 +421,23 @@ private fun renderDayOfWeek(day: DayOfWeek, kind: ScheduleDay.Kind): String {
 
         ScheduleDay.Kind.NEXT_WEEK -> stringResource(Lang.exploration_schedule_next_weekday, weekday)
     }
+}
+
+/**
+ * 星期的短名称, 例如「一」「Mon」.
+ */
+@Stable
+@Suppress("REDUNDANT_ELSE_IN_WHEN") // Compiler works fine, but IDE complains about this, so we suppress it.
+@Composable
+internal fun renderWeekdayName(day: DayOfWeek): String = when (day) {
+    DayOfWeek.MONDAY -> stringResource(Lang.exploration_schedule_weekday_monday)
+    DayOfWeek.TUESDAY -> stringResource(Lang.exploration_schedule_weekday_tuesday)
+    DayOfWeek.WEDNESDAY -> stringResource(Lang.exploration_schedule_weekday_wednesday)
+    DayOfWeek.THURSDAY -> stringResource(Lang.exploration_schedule_weekday_thursday)
+    DayOfWeek.FRIDAY -> stringResource(Lang.exploration_schedule_weekday_friday)
+    DayOfWeek.SATURDAY -> stringResource(Lang.exploration_schedule_weekday_saturday)
+    DayOfWeek.SUNDAY -> stringResource(Lang.exploration_schedule_weekday_sunday)
+    else -> day.toString()
 }
 
 @Composable
