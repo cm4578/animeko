@@ -43,6 +43,8 @@ import me.him188.ani.app.ui.foundation.layout.AniWindowInsets
 import me.him188.ani.app.ui.foundation.session.LocalSelfAvatarUnreadDot
 import me.him188.ani.app.ui.foundation.theme.LocalAppChromeOverlayInsets
 import me.him188.ani.app.ui.foundation.theme.LocalThemeSettings
+import me.him188.ani.app.ui.foundation.widgets.LocalToaster
+import me.him188.ani.app.ui.foundation.widgets.showLoadError
 import me.him188.ani.app.ui.settings.account.AppleProfilePage
 import me.him188.ani.app.ui.settings.account.ProfileViewModel
 import me.him188.ani.app.ui.subject.collection.COLLECTION_TABS_SORTED
@@ -75,6 +77,7 @@ internal fun AppleMainScreen(
 
     val navigator = LocalNavigator.current
     val coroutineScope = rememberCoroutineScope()
+    val toaster = LocalToaster.current
 
     // 与 MainScreen 相同: 未登录 (包括 token 过期且因网络错误未能刷新) 时不显示红点.
     val notificationDotVisible = showNotificationDot && selfInfo.isSessionValid == true && selfInfo.selfInfo != null
@@ -115,6 +118,15 @@ internal fun AppleMainScreen(
                             onClickLogin = { navigator.navigateEmailLoginStart() },
                             onClickSubject = { navigator.navigateSubjectDetails(it.subjectId, it.toNavPlaceholder()) },
                             onPlay = { subjectId, episodeId -> navigator.navigateEpisodeDetails(subjectId, episodeId) },
+                            onMarkEpisodeWatched = { subjectId, episode ->
+                                coroutineScope.launch {
+                                    userCollectionsViewModel.toggleEpisodeCollection(
+                                        subjectId,
+                                        episode.episodeId,
+                                        episode.collectionType,
+                                    )?.let { toaster.showLoadError(it) }
+                                }
+                            },
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = bottomPadding,
                         )

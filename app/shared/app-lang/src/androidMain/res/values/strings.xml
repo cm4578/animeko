@@ -672,6 +672,7 @@
     <string name="collection_episode_progress">%1$d / %2$d</string>
     <string name="collection_layout_list">List</string>
     <string name="collection_layout_grid">Grid</string>
+    <string name="collection_mark_episode_watched">Mark Ep. %1$s as watched</string>
 
     <!-- ThemePreferences -->
     <string name="settings_theme_title">Theme</string>

@@ -12,6 +12,7 @@ package me.him188.ani.app.ui.subject.collection
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,6 +46,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -55,7 +57,10 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
@@ -75,6 +80,8 @@ import androidx.paging.compose.collectWithLifecycle
 import androidx.paging.compose.itemKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
+import me.him188.ani.app.data.models.episode.EpisodeCollectionInfo
 import me.him188.ani.app.data.models.player.EpisodeHistory
 import me.him188.ani.app.data.models.preference.CollectionLayout
 import me.him188.ani.app.data.models.preference.NsfwMode
@@ -82,6 +89,7 @@ import me.him188.ani.app.data.models.subject.FollowedSubjectInfo
 import me.him188.ani.app.data.models.subject.SubjectCollectionCounts
 import me.him188.ani.app.data.models.subject.SubjectCollectionInfo
 import me.him188.ani.app.data.models.subject.SubjectInfo
+import me.him188.ani.app.data.models.subject.hasNewEpisodeToPlay
 import me.him188.ani.app.data.models.subject.listCoverUrl
 import me.him188.ani.app.data.models.subject.preferredDisplayName
 import me.him188.ani.app.data.models.subject.subjectInfo
@@ -95,19 +103,24 @@ import me.him188.ani.app.ui.foundation.apple.AppleCircleButton
 import me.him188.ani.app.ui.foundation.apple.AppleCover
 import me.him188.ani.app.ui.foundation.apple.AppleDivider
 import me.him188.ani.app.ui.foundation.apple.AppleIcons
+import me.him188.ani.app.ui.foundation.apple.ApplePopoverMenu
 import me.him188.ani.app.ui.foundation.apple.AppleProgressBar
 import me.him188.ani.app.ui.foundation.apple.CoverAspect
 import me.him188.ani.app.ui.foundation.apple.LargeTitleHeader
 import me.him188.ani.app.ui.foundation.apple.PillTab
+import me.him188.ani.app.ui.foundation.apple.PopoverMenuItem
 import me.him188.ani.app.ui.foundation.layout.AniWindowInsets
 import me.him188.ani.app.ui.foundation.theme.AniTextStyles
+import me.him188.ani.app.ui.foundation.widgets.LocalToaster
 import me.him188.ani.app.ui.foundation.widgets.NsfwMask
 import me.him188.ani.app.ui.foundation.widgets.PullToRefreshBox
+import me.him188.ani.app.ui.foundation.widgets.showLoadError
 import me.him188.ani.app.ui.lang.Lang
 import me.him188.ani.app.ui.lang.collection_continue_watching_remaining_minutes
 import me.him188.ani.app.ui.lang.collection_episode_progress
 import me.him188.ani.app.ui.lang.collection_layout_grid
 import me.him188.ani.app.ui.lang.collection_layout_list
+import me.him188.ani.app.ui.lang.collection_mark_episode_watched
 import me.him188.ani.app.ui.lang.exploration_continue_watching
 import me.him188.ani.app.ui.lang.exploration_search
 import me.him188.ani.app.ui.lang.login_sign_in
@@ -125,6 +138,8 @@ import me.him188.ani.app.ui.search.LoadErrorCard
 import me.him188.ani.app.ui.search.isLoadingFirstPageOrRefreshing
 import me.him188.ani.app.ui.search.isLoadingNextPage
 import me.him188.ani.app.ui.subject.AiringLabelState
+import me.him188.ani.app.ui.subject.collection.components.EditableSubjectCollectionTypeDialogsHost
+import me.him188.ani.app.ui.subject.collection.components.EditableSubjectCollectionTypeState
 import me.him188.ani.app.ui.subject.rememberSubjectStatusStrings
 import me.him188.ani.app.ui.subject.renderEpAndSort
 import me.him188.ani.app.ui.user.SelfInfoUiState
@@ -139,10 +154,12 @@ import kotlin.math.ceil
  *
  * 从上到下: C2 大标题「追番」与搜索钮; 继续观看 (05 G3、G27); 我的追番: 状态胶囊与列表/网格切换 (05 C1), 列表或 3 栏网格.
  * 页头不放头像 (05 G14), 个人入口在「我的」分页. 「管理」在 05 G8 实现前不显示.
+ * 长按「我的追番」的项目打开 [CollectionItemMenu], 修改收藏状态或把下一集标为看过.
  *
  * @param continueWatching 继续观看的条目, 见 [UserCollectionsViewModel.continueWatchingPager].
  * @param episodeHistoryFlow 一集的播放记录, 见 [UserCollectionsViewModel.episodePlayHistoryFlow].
  * @param nextEpisodeCachedFlow 条目的下一集是否已快取, 见 [UserCollectionsViewModel.nextEpisodeCachedFlow].
+ * @param onMarkEpisodeWatched 把一集标为看过, 见 [UserCollectionsViewModel.toggleEpisodeCollection].
  * @param contentPadding 内容底部要留出浮动导航栏的空间.
  */
 @Composable
@@ -158,11 +175,18 @@ fun AppleCollectionPage(
     onClickLogin: () -> Unit,
     onClickSubject: (SubjectInfo) -> Unit,
     onPlay: (subjectId: Int, episodeId: Int) -> Unit,
+    onMarkEpisodeWatched: (subjectId: Int, episode: EpisodeCollectionInfo) -> Unit,
     modifier: Modifier = Modifier,
     windowInsets: WindowInsets = AniWindowInsets.forTopAppBar(),
     contentPadding: PaddingValues = PaddingValues(),
 ) {
     val typeIndex = state.selectedTypeIndex.coerceAtLeast(0)
+    val scope = rememberCoroutineScope()
+    val toaster = LocalToaster.current
+    // 改为「看过」后项目会移出当前列表, 询问「同时将所有剧集设为看过」的对话框由页面显示.
+    var markAllWatchedState by remember { mutableStateOf<EditableSubjectCollectionTypeState?>(null) }
+    markAllWatchedState?.let { EditableSubjectCollectionTypeDialogsHost(it) }
+
     AppleCollectionPageLayout(
         items = state.getCollectionLazyPagingItems(typeIndex).collectWithLifecycle(),
         continueWatching = continueWatching.collectAsLazyPagingItems(),
@@ -179,6 +203,18 @@ fun AppleCollectionPage(
         onClickLogin = onClickLogin,
         onClickSubject = onClickSubject,
         onPlay = onPlay,
+        onSetCollectionType = { item, type ->
+            scope.launch {
+                val editState = state.createEditableSubjectCollectionTypeState(item)
+                val error = editState.setSelfCollectionType(type)
+                if (error != null) {
+                    toaster.showLoadError(error)
+                } else if (editState.shouldOfferMarkAllWatched) {
+                    markAllWatchedState = editState
+                }
+            }
+        },
+        onMarkEpisodeWatched = onMarkEpisodeWatched,
         modifier = modifier,
         windowInsets = windowInsets,
         contentPadding = contentPadding,
@@ -205,11 +241,14 @@ internal fun AppleCollectionPageLayout(
     onClickLogin: () -> Unit,
     onClickSubject: (SubjectInfo) -> Unit,
     onPlay: (subjectId: Int, episodeId: Int) -> Unit,
+    onSetCollectionType: (SubjectCollectionInfo, UnifiedCollectionType) -> Unit,
+    onMarkEpisodeWatched: (subjectId: Int, episode: EpisodeCollectionInfo) -> Unit,
     modifier: Modifier = Modifier,
     windowInsets: WindowInsets = AniWindowInsets.forTopAppBar(),
     contentPadding: PaddingValues = PaddingValues(),
 ) {
     val listState = rememberLazyListState()
+    val itemActions = CollectionItemActions(onClickSubject, onSetCollectionType, onMarkEpisodeWatched)
     val pullToRefreshState = rememberPullToRefreshState()
 
     PullToRefreshBox(
@@ -267,8 +306,8 @@ internal fun AppleCollectionPageLayout(
             }
 
             when (layout) {
-                CollectionLayout.LIST -> collectionListItems(items, nextEpisodeCachedFlow, onClickSubject)
-                CollectionLayout.GRID -> collectionGridItems(items, onClickSubject)
+                CollectionLayout.LIST -> collectionListItems(items, nextEpisodeCachedFlow, itemActions)
+                CollectionLayout.GRID -> collectionGridItems(items, itemActions)
             }
 
             if (items.isLoadingNextPage) {
@@ -554,7 +593,7 @@ private fun LayoutToggleButton(
 private fun LazyListScope.collectionListItems(
     items: LazyPagingItems<SubjectCollectionInfo>,
     nextEpisodeCachedFlow: (subjectId: Int) -> Flow<Boolean>,
-    onClickSubject: (SubjectInfo) -> Unit,
+    actions: CollectionItemActions,
 ) {
     val count = items.itemCount
     items(count, key = items.itemKey { "list-" + it.subjectId }) { index ->
@@ -571,14 +610,115 @@ private fun LazyListScope.collectionListItems(
                 .clip(shape)
                 .background(MaterialTheme.colorScheme.surfaceContainerLow),
         ) {
-            NsfwCollectionItem(item) {
-                CollectionListRow(item, nextEpisodeCachedFlow, onClick = { onClickSubject(item.subjectInfo) })
+            CollectionItemWithMenu(item, actions) { onLongClick ->
+                NsfwCollectionItem(item) {
+                    CollectionListRow(
+                        item,
+                        nextEpisodeCachedFlow,
+                        onClick = { actions.onClickSubject(item.subjectInfo) },
+                        onLongClick = onLongClick,
+                    )
+                }
             }
             if (index > 0) {
                 AppleDivider(Modifier.align(Alignment.TopStart), startIndent = 84.dp)
             }
         }
     }
+}
+
+/**
+ * 「我的追番」项目的动作.
+ */
+private class CollectionItemActions(
+    val onClickSubject: (SubjectInfo) -> Unit,
+    val onSetCollectionType: (SubjectCollectionInfo, UnifiedCollectionType) -> Unit,
+    val onMarkEpisodeWatched: (subjectId: Int, episode: EpisodeCollectionInfo) -> Unit,
+)
+
+/**
+ * 长按 [content] 时轻触回馈并打开 [CollectionItemMenu]. 菜单以项目为锚点.
+ */
+@Composable
+private fun CollectionItemWithMenu(
+    item: SubjectCollectionInfo,
+    actions: CollectionItemActions,
+    content: @Composable (onLongClick: () -> Unit) -> Unit,
+) {
+    var menuExpanded by remember(item.subjectId) { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
+    Box {
+        content {
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            menuExpanded = true
+        }
+        CollectionItemMenu(
+            expanded = menuExpanded,
+            onDismissRequest = { menuExpanded = false },
+            currentType = item.collectionType,
+            nextEpisode = remember(item) { item.nextEpisodeToMarkWatched() },
+            onSetType = { actions.onSetCollectionType(item, it) },
+            onMarkEpisodeWatched = { actions.onMarkEpisodeWatched(item.subjectId, it) },
+        )
+    }
+}
+
+/**
+ * C15 长按菜单: 五种收藏状态 (顺序同状态胶囊, 当前状态前有勾号), 以及「第 N 集标为看过」.
+ *
+ * 选当前状态只关闭菜单. [nextEpisode] 为 `null` 时不显示「标为看过」, 见 [nextEpisodeToMarkWatched].
+ */
+@Composable
+internal fun CollectionItemMenu(
+    expanded: Boolean,
+    onDismissRequest: () -> Unit,
+    currentType: UnifiedCollectionType,
+    nextEpisode: EpisodeCollectionInfo?,
+    onSetType: (UnifiedCollectionType) -> Unit,
+    onMarkEpisodeWatched: (EpisodeCollectionInfo) -> Unit,
+) {
+    ApplePopoverMenu(expanded, onDismissRequest, Modifier.testTag(CollectionItemMenuTestTags.Menu)) {
+        AppleCollectionTypes.forEachIndexed { index, type ->
+            PopoverMenuItem(
+                stringResource(type.label()),
+                onClick = {
+                    onDismissRequest()
+                    if (type != currentType) onSetType(type)
+                },
+                Modifier.testTag(CollectionItemMenuTestTags.type(type)),
+                showDivider = index > 0,
+                checked = type == currentType,
+            )
+        }
+        if (nextEpisode != null) {
+            val episode = nextEpisode.episodeInfo
+            PopoverMenuItem(
+                stringResource(Lang.collection_mark_episode_watched, renderEpAndSort(episode.ep, episode.sort)),
+                onClick = {
+                    onDismissRequest()
+                    onMarkEpisodeWatched(nextEpisode)
+                },
+                Modifier.testTag(CollectionItemMenuTestTags.MarkWatched),
+                icon = AppleIcons.checkCircle(),
+                showDivider = true,
+            )
+        }
+    }
+}
+
+internal object CollectionItemMenuTestTags {
+    const val Menu = "collection-item-menu"
+    const val MarkWatched = "collection-item-menu-mark-watched"
+    fun type(type: UnifiedCollectionType) = "collection-item-menu-${type.name}"
+}
+
+/**
+ * 长按菜单可以标为看过的一集: 有可以看的新集时, 即将播放的那一集. 没有或已看过时为 `null`.
+ */
+internal fun SubjectCollectionInfo.nextEpisodeToMarkWatched(): EpisodeCollectionInfo? {
+    if (!progressInfo.hasNewEpisodeToPlay) return null
+    val episodeId = progressInfo.nextEpisodeIdToPlay ?: return null
+    return episodes.firstOrNull { it.episodeId == episodeId }?.takeUnless { it.collectionType.isDoneOrDropped() }
 }
 
 @Composable
@@ -594,13 +734,14 @@ private fun CollectionListRow(
     item: SubjectCollectionInfo,
     nextEpisodeCachedFlow: (subjectId: Int) -> Flow<Boolean>,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
 ) {
     val title = item.subjectInfo.preferredDisplayName(LocalSubjectAppearanceSettings.current.useOriginalTitle)
     val progress = remember(item) { item.episodeProgress() }
     Row(
         Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .combinedClickable(onLongClick = onLongClick, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -717,7 +858,7 @@ private fun EpisodeProgressText(progress: CollectionEpisodeProgress, modifier: M
  */
 private fun LazyListScope.collectionGridItems(
     items: LazyPagingItems<SubjectCollectionInfo>,
-    onClickSubject: (SubjectInfo) -> Unit,
+    actions: CollectionItemActions,
 ) {
     val rows = (items.itemCount + GridColumns - 1) / GridColumns
     items(rows, key = { "grid-row-$it" }) { row ->
@@ -733,8 +874,14 @@ private fun LazyListScope.collectionGridItems(
                 Box(Modifier.weight(1f)) {
                     val item = if (index < items.itemCount) items[index] else null
                     if (item != null) {
-                        NsfwCollectionItem(item) {
-                            CollectionGridCell(item, onClick = { onClickSubject(item.subjectInfo) })
+                        CollectionItemWithMenu(item, actions) { onLongClick ->
+                            NsfwCollectionItem(item) {
+                                CollectionGridCell(
+                                    item,
+                                    onClick = { actions.onClickSubject(item.subjectInfo) },
+                                    onLongClick = onLongClick,
+                                )
+                            }
                         }
                     }
                 }
@@ -749,12 +896,13 @@ private const val GridColumns = 3
 private fun CollectionGridCell(
     item: SubjectCollectionInfo,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
 ) {
     val title = item.subjectInfo.preferredDisplayName(LocalSubjectAppearanceSettings.current.useOriginalTitle)
     val progress = remember(item) { item.episodeProgress() }
     val fresh = remember(item) { AiringLabelState(item.airingInfo, item.progressInfo) }.highlightProgress
     Column(
-        Modifier.fillMaxWidth().clickable(onClick = onClick),
+        Modifier.fillMaxWidth().combinedClickable(onLongClick = onLongClick, onClick = onClick),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         AppleCover(

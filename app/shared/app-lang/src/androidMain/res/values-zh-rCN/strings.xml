@@ -712,6 +712,7 @@
     <string name="collection_episode_progress">%1$d / %2$d 集</string>
     <string name="collection_layout_list">列表排版</string>
     <string name="collection_layout_grid">网格排版</string>
+    <string name="collection_mark_episode_watched">第 %1$s 集标为看过</string>
 
     <!-- ThemePreferences -->
     <string name="settings_theme_title">主题</string>

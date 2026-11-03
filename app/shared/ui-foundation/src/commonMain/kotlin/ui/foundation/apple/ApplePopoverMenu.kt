@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -40,6 +41,8 @@ import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
@@ -111,6 +114,7 @@ fun ApplePopoverMenu(
  * 悬停的行为 accentFill 底 + onAccentFill 文字. 分隔线左右各缩进 10.
  *
  * @param value 当前值, 行尾显示 accent W600 文字 + `›` (例如「追番状态 在看 ›」).
+ * @param checked 单选项是否选中. 不为 `null` 时, 图标位置显示 accent 勾号 (未选中则留空), 同组的行文字对齐; [icon] 不显示.
  * @param shortcut macOS 的快捷键提示, 例如「⌘I」. 只写 05 C2 批准的快捷键. 手机不显示.
  * @param showDivider 在行上方画分隔线. 用于分组的第一行.
  */
@@ -124,9 +128,10 @@ fun PopoverMenuItem(
     shortcut: String? = null,
     showDivider: Boolean = false,
     enabled: Boolean = true,
+    checked: Boolean? = null,
 ) {
     if (isMacStyle) {
-        MacPopoverMenuItem(text, onClick, modifier, icon, value, shortcut, showDivider, enabled)
+        MacPopoverMenuItem(text, onClick, modifier, icon, value, shortcut, showDivider, enabled, checked)
         return
     }
     Box(modifier.fillMaxWidth()) {
@@ -136,11 +141,14 @@ fun PopoverMenuItem(
                 .height(48.dp)
                 .alpha(if (enabled) 1f else AppleComponentDefaults.DisabledAlpha)
                 .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+                .then(if (checked != null) Modifier.semantics { selected = checked } else Modifier)
                 .padding(start = 16.dp, end = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (icon != null) {
+            if (checked != null) {
+                CheckSlot(checked, Modifier.size(20.dp), MaterialTheme.colorScheme.primary)
+            } else if (icon != null) {
                 Icon(icon, contentDescription = null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurface)
             }
             Text(
@@ -188,6 +196,7 @@ private fun MacPopoverMenuItem(
     shortcut: String?,
     showDivider: Boolean,
     enabled: Boolean,
+    checked: Boolean?,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val highlighted = enabled && interactionSource.collectIsHoveredAsState().value
@@ -220,11 +229,18 @@ private fun MacPopoverMenuItem(
                     role = Role.Button,
                     onClick = onClick,
                 )
+                .then(if (checked != null) Modifier.semantics { selected = checked } else Modifier)
                 .padding(start = 10.dp, end = if (icon != null) 8.dp else 10.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (icon != null) {
+            if (checked != null) {
+                CheckSlot(
+                    checked,
+                    Modifier.size(16.dp),
+                    if (highlighted) AniColors.onAccentFill else MaterialTheme.colorScheme.primary,
+                )
+            } else if (icon != null) {
                 Icon(icon, contentDescription = null, Modifier.size(16.dp), tint = labelColor)
             }
             Text(
@@ -253,6 +269,18 @@ private fun MacPopoverMenuItem(
             if (shortcut != null) {
                 Text(shortcut, style = AniTextStyles.macCallout, color = secondaryColor, maxLines = 1)
             }
+        }
+    }
+}
+
+/**
+ * 单选项的勾号位置: 选中时画勾, 未选中时留空.
+ */
+@Composable
+private fun CheckSlot(checked: Boolean, modifier: Modifier, color: Color) {
+    Box(modifier, contentAlignment = Alignment.Center) {
+        if (checked) {
+            Icon(AppleIcons.check(2.4f), contentDescription = null, Modifier.fillMaxSize(), tint = color)
         }
     }
 }
