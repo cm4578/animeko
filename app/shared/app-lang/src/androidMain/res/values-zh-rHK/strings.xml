@@ -1007,6 +1007,13 @@
     <string name="cache_management_delete_cache_confirmation">刪除後不可恢復，確認刪除嗎？</string>
     <string name="cache_management_finished_count">%1$d/%2$d 已完成</string>
     <string name="cache_management_downloading_count">%1$d 個下載中</string>
+    <string name="cache_management_download_label">下載</string>
+    <string name="cache_management_upload_label">上傳</string>
+    <string name="cache_filter_status_all">全部</string>
+    <string name="cache_management_failed_count">%1$d 個下載失敗</string>
+    <string name="cache_management_select">選擇</string>
+    <string name="cache_management_done">完成</string>
+    <string name="cache_filter_and_sort">篩選與排序</string>
     <string name="cache_subject_pause_all">全部暫停</string>
     <string name="cache_subject_resume_all">全部繼續</string>
     <string name="cache_management_selection_downloading_count">含 %1$d 個下載中</string>

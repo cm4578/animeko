@@ -12,7 +12,6 @@ package me.him188.ani.app.ui.main
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.add
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -34,14 +33,12 @@ import me.him188.ani.app.navigation.LocalNavigator
 import me.him188.ani.app.navigation.MainScreenPage
 import me.him188.ani.app.navigation.SettingsTab
 import me.him188.ani.app.ui.bangumi.merge.BangumiConflictNotifier
-import me.him188.ani.app.ui.download.DownloadManagementScreen
+import me.him188.ani.app.ui.download.AppleDownloadManagementPage
 import me.him188.ani.app.ui.download.createDownloadManagementViewModel
 import me.him188.ani.app.ui.exploration.AppleExplorationPage
 import me.him188.ani.app.ui.exploration.ExplorationPageViewModel
 import me.him188.ani.app.ui.foundation.animation.LocalAniMotionScheme
-import me.him188.ani.app.ui.foundation.layout.AniWindowInsets
 import me.him188.ani.app.ui.foundation.session.LocalSelfAvatarUnreadDot
-import me.him188.ani.app.ui.foundation.theme.LocalAppChromeOverlayInsets
 import me.him188.ani.app.ui.foundation.theme.LocalThemeSettings
 import me.him188.ani.app.ui.foundation.widgets.LocalToaster
 import me.him188.ani.app.ui.foundation.widgets.showLoadError
@@ -81,7 +78,6 @@ internal fun AppleMainScreen(
 
     // 与 MainScreen 相同: 未登录 (包括 token 过期且因网络错误未能刷新) 时不显示红点.
     val notificationDotVisible = showNotificationDot && selfInfo.isSessionValid == true && selfInfo.selfInfo != null
-    val pageWindowInsets = AniWindowInsets.forPageContent().add(LocalAppChromeOverlayInsets.current)
     val bottomPadding = appleBottomInsets().asPaddingValues()
 
     CompositionLocalProvider(LocalSelfAvatarUnreadDot provides notificationDotVisible) {
@@ -132,15 +128,11 @@ internal fun AppleMainScreen(
                     }
 
                     MainScreenPage.CacheManagement -> {
-                        DownloadManagementScreen(
+                        AppleDownloadManagementPage(
                             downloadManagementViewModel,
-                            selfInfo = selfInfo,
-                            onPlay = { navigator.navigateEpisodeDetails(it.subjectId, it.episodeId) },
-                            onNavigateCacheDetail = { navigator.navigateCacheDetails(it) },
-                            onClickLogin = { onNavigateToPage(MainScreenPage.Profile) },
+                            onOpenSubject = { navigator.navigateSubjectCaches(it) },
                             modifier = Modifier.fillMaxSize(),
-                            navigationIcon = { },
-                            windowInsets = pageWindowInsets,
+                            contentPadding = bottomPadding,
                         )
                     }
 

@@ -172,6 +172,34 @@ object AppleIcons {
         fill("M8 5v14l11-7z")
     }
 
+    /** 实心暂停. */
+    fun pauseFilled(): ImageVector = cached("pauseFilled", 0f) {
+        fill(rect(6f, 5f, 4f, 14f, 1f))
+        fill(rect(14f, 5f, 4f, 14f, 1f))
+    }
+
+    /** 快取页「筛选与排序」. */
+    fun sliders(strokeWidth: Float = 2.2f): ImageVector = cached("sliders", strokeWidth) {
+        stroke("M4 7h10")
+        stroke("M18 7h2")
+        stroke(circle(16f, 7f, 2f))
+        stroke("M4 17h2")
+        stroke("M10 17h10")
+        stroke(circle(8f, 17f, 2f))
+    }
+
+    /** 下载速度. */
+    fun arrowDown(strokeWidth: Float = 2.4f): ImageVector = cached("arrowDown", strokeWidth) {
+        stroke("M12 5v14")
+        stroke("M6 13l6 6 6-6")
+    }
+
+    /** 上传速度. */
+    fun arrowUp(strokeWidth: Float = 2.4f): ImageVector = cached("arrowUp", strokeWidth) {
+        stroke("M12 19V5")
+        stroke("M6 11l6-6 6 6")
+    }
+
     /** 追番「列表排版」. */
     fun listLayout(strokeWidth: Float = 2f): ImageVector = cached("listLayout", strokeWidth) {
         stroke("M9 6h11")
