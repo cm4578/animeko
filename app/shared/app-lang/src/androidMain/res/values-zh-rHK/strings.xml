@@ -654,6 +654,10 @@
     <string name="exploration_schedule_next_weekday">下周%1$s</string>
     <string name="exploration_continue_watching">繼續觀看</string>
     <string name="exploration_recommendations">推薦</string>
+    <string name="exploration_schedule_full">完整時間表</string>
+    <string name="exploration_schedule_today">查看今天更新的番劇</string>
+    <string name="exploration_quick_follow">將 %1$s 加入追番</string>
+    <string name="exploration_quick_follow_followed">已追番：%1$s</string>
     <string name="exploration_horizontal_scroll_tip">按住 Shift + 滑鼠滾輪 同樣可以水平滾動</string>
 
     <!-- MainScreenPage -->

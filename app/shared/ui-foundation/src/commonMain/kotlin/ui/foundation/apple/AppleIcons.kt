@@ -199,6 +199,12 @@ object AppleIcons {
         stroke("M8.5 12.2l2.5 2.5 4.5-5")
     }
 
+    /** 圆圈内的减号, 用于「取消追番」. */
+    fun minusCircle(strokeWidth: Float = 1.9f): ImageVector = cached("minusCircle", strokeWidth) {
+        stroke(circle(12f, 12f, 8.5f))
+        stroke("M8.5 12h7")
+    }
+
     // 以下为设定分类图标: 手机「我的」页的设定列与 macOS 设定窗口的分类栏共用.
 
     /** 设定「介面」. */

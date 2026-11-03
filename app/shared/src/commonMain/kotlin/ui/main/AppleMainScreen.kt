@@ -36,8 +36,8 @@ import me.him188.ani.app.navigation.SettingsTab
 import me.him188.ani.app.ui.bangumi.merge.BangumiConflictNotifier
 import me.him188.ani.app.ui.download.DownloadManagementScreen
 import me.him188.ani.app.ui.download.createDownloadManagementViewModel
+import me.him188.ani.app.ui.exploration.AppleExplorationPage
 import me.him188.ani.app.ui.exploration.ExplorationPageViewModel
-import me.him188.ani.app.ui.exploration.ExplorationScreen
 import me.him188.ani.app.ui.foundation.animation.LocalAniMotionScheme
 import me.him188.ani.app.ui.foundation.layout.AniWindowInsets
 import me.him188.ani.app.ui.foundation.session.LocalSelfAvatarUnreadDot
@@ -94,14 +94,13 @@ internal fun AppleMainScreen(
             ) { page ->
                 when (page) {
                     MainScreenPage.Exploration -> {
-                        ExplorationScreen(
+                        AppleExplorationPage(
                             explorationPageViewModel.explorationPageState,
+                            explorationPageViewModel.quickFollowState,
                             selfInfo,
                             onSearch = { navigator.navigateSubjectSearch() },
-                            onClickSettings = { onNavigateToPage(MainScreenPage.Profile) },
-                            onClickLogin = { onNavigateToPage(MainScreenPage.Profile) },
                             modifier = Modifier.fillMaxSize(),
-                            windowInsets = pageWindowInsets,
+                            contentPadding = bottomPadding,
                         )
                     }
 

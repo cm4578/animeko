@@ -100,15 +100,18 @@ import me.him188.ani.app.ui.foundation.apple.AlertDot
 import me.him188.ani.app.ui.foundation.apple.AppleButton
 import me.him188.ani.app.ui.foundation.apple.AppleButtonStyle
 import me.him188.ani.app.ui.foundation.apple.AppleCircleButton
+import me.him188.ani.app.ui.foundation.apple.AppleCollectionTypes
 import me.him188.ani.app.ui.foundation.apple.AppleCover
 import me.him188.ani.app.ui.foundation.apple.AppleDivider
 import me.him188.ani.app.ui.foundation.apple.AppleIcons
 import me.him188.ani.app.ui.foundation.apple.ApplePopoverMenu
 import me.him188.ani.app.ui.foundation.apple.AppleProgressBar
+import me.him188.ani.app.ui.foundation.apple.CollectionTypeMenuItems
 import me.him188.ani.app.ui.foundation.apple.CoverAspect
 import me.him188.ani.app.ui.foundation.apple.LargeTitleHeader
 import me.him188.ani.app.ui.foundation.apple.PillTab
 import me.him188.ani.app.ui.foundation.apple.PopoverMenuItem
+import me.him188.ani.app.ui.foundation.apple.collectionTypeName
 import me.him188.ani.app.ui.foundation.layout.AniWindowInsets
 import me.him188.ani.app.ui.foundation.theme.AniTextStyles
 import me.him188.ani.app.ui.foundation.widgets.LocalToaster
@@ -126,13 +129,8 @@ import me.him188.ani.app.ui.lang.exploration_search
 import me.him188.ani.app.ui.lang.login_sign_in
 import me.him188.ani.app.ui.lang.playback_history_episode_label
 import me.him188.ani.app.ui.lang.settings_app_my_collections
-import me.him188.ani.app.ui.lang.subject_collection_doing
-import me.him188.ani.app.ui.lang.subject_collection_done
-import me.him188.ani.app.ui.lang.subject_collection_dropped
 import me.him188.ani.app.ui.lang.subject_collection_guest_mode_tip
-import me.him188.ani.app.ui.lang.subject_collection_on_hold
 import me.him188.ani.app.ui.lang.subject_collection_page_title
-import me.him188.ani.app.ui.lang.subject_collection_wish
 import me.him188.ani.app.ui.lang.subject_episode_cached
 import me.him188.ani.app.ui.search.LoadErrorCard
 import me.him188.ani.app.ui.search.isLoadingFirstPageOrRefreshing
@@ -145,7 +143,6 @@ import me.him188.ani.app.ui.subject.renderEpAndSort
 import me.him188.ani.app.ui.user.SelfInfoUiState
 import me.him188.ani.datasources.api.topic.UnifiedCollectionType
 import me.him188.ani.datasources.api.topic.isDoneOrDropped
-import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.ceil
 
@@ -530,7 +527,7 @@ private fun MyCollectionsHeader(
             ) {
                 for (type in AppleCollectionTypes) {
                     PillTab(
-                        stringResource(type.label()),
+                        stringResource(type.collectionTypeName()),
                         selected = type == selectedType,
                         onClick = { onSelectType(type) },
                         count = collectionCounts?.getCount(type)?.toString(),
@@ -678,18 +675,12 @@ internal fun CollectionItemMenu(
     onMarkEpisodeWatched: (EpisodeCollectionInfo) -> Unit,
 ) {
     ApplePopoverMenu(expanded, onDismissRequest, Modifier.testTag(CollectionItemMenuTestTags.Menu)) {
-        AppleCollectionTypes.forEachIndexed { index, type ->
-            PopoverMenuItem(
-                stringResource(type.label()),
-                onClick = {
-                    onDismissRequest()
-                    if (type != currentType) onSetType(type)
-                },
-                Modifier.testTag(CollectionItemMenuTestTags.type(type)),
-                showDivider = index > 0,
-                checked = type == currentType,
-            )
-        }
+        CollectionTypeMenuItems(
+            currentType,
+            onDismissRequest,
+            onSetType,
+            itemModifier = { Modifier.testTag(CollectionItemMenuTestTags.type(it)) },
+        )
         if (nextEpisode != null) {
             val episode = nextEpisode.episodeInfo
             PopoverMenuItem(
@@ -949,24 +940,4 @@ internal fun SubjectCollectionInfo.episodeProgress(): CollectionEpisodeProgress?
         watched = episodes.count { it.collectionType.isDoneOrDropped() },
         total = episodes.size,
     )
-}
-
-/**
- * Apple 版的状态胶囊顺序: 设计稿的在看、想看、看过在前, 搁置与抛弃在后.
- */
-private val AppleCollectionTypes = listOf(
-    UnifiedCollectionType.DOING,
-    UnifiedCollectionType.WISH,
-    UnifiedCollectionType.DONE,
-    UnifiedCollectionType.ON_HOLD,
-    UnifiedCollectionType.DROPPED,
-)
-
-private fun UnifiedCollectionType.label(): StringResource = when (this) {
-    UnifiedCollectionType.WISH -> Lang.subject_collection_wish
-    UnifiedCollectionType.DOING -> Lang.subject_collection_doing
-    UnifiedCollectionType.DONE -> Lang.subject_collection_done
-    UnifiedCollectionType.ON_HOLD -> Lang.subject_collection_on_hold
-    UnifiedCollectionType.DROPPED -> Lang.subject_collection_dropped
-    UnifiedCollectionType.NOT_COLLECTED -> Lang.subject_collection_doing
 }
