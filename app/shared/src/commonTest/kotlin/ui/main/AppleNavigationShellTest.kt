@@ -14,6 +14,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -108,6 +110,34 @@ class AppleNavigationShellTest {
         runOnIdle { navigator.navigate(NavRoutes.EpisodeDetail(1, 2)) }
         waitForIdle()
         assertEquals(0, tabNodes().fetchSemanticsNodes().size)
+    }
+
+    @Test
+    fun `switching between tab bar and rail keeps the content state`() = runAniComposeUiTest {
+        val backStack = mutableStateListOf<NavRoutes>(NavRoutes.Main(MainScreenPage.Exploration), NavRoutes.Schedule())
+        val navigator = AniNavigator().apply { setBackStack(backStack) }
+        val pages = AppleMainPages(backStack)
+        val layoutType = mutableStateOf(NavigationSuiteType.NavigationBar)
+        val instances = mutableSetOf<Any>()
+        setContent {
+            CompositionLocalProvider(
+                LocalPlatform provides Platform.Ios,
+                LocalPlatformFontFamily provides PlatformFontFamily(null),
+            ) {
+                MaterialTheme(colorScheme = aniColorScheme(DefaultSeedColor, isDark = false)) {
+                    AppleNavigationShell(backStack, navigator, pages, layoutType.value) {
+                        instances += remember { Any() }
+                    }
+                }
+            }
+        }
+
+        runOnIdle { layoutType.value = NavigationSuiteType.NavigationRail }
+        waitForIdle()
+        runOnIdle { layoutType.value = NavigationSuiteType.NavigationBar }
+        waitForIdle()
+
+        assertEquals(1, instances.size)
     }
 
     @Test

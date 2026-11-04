@@ -170,21 +170,25 @@ internal fun AppleNavigationShell(
         }
     }
 
-    if (layoutType == NavigationSuiteType.NavigationBar) {
-        CompositionLocalProvider(
-            LocalAppChromeOverlayInsets provides WindowInsets(bottom = FloatingTabBarDefaults.ContentBottomSpace),
-        ) {
-            Box(modifier) {
-                content()
+    // content 在两种版式下组合在同一位置: iPhone 旋转时版式会切换, 换位置会重建 NavDisplay, 页面的状态与 ViewModel 随之丢失.
+    val floatingTabBar = layoutType == NavigationSuiteType.NavigationBar
+    CompositionLocalProvider(
+        LocalAppChromeOverlayInsets provides if (floatingTabBar) {
+            WindowInsets(bottom = FloatingTabBarDefaults.ContentBottomSpace)
+        } else {
+            LocalAppChromeOverlayInsets.current
+        },
+    ) {
+        Row(modifier) {
+            if (!floatingTabBar) {
                 AnimatedVisibility(
                     visible,
-                    Modifier.align(Alignment.BottomCenter),
-                    enter = slideInVertically { it } + fadeIn(),
-                    exit = slideOutVertically { it } + fadeOut(),
+                    enter = expandHorizontally() + fadeIn(),
+                    exit = shrinkHorizontally() + fadeOut(),
                 ) {
-                    FloatingTabBar {
+                    AppleNavigationRail {
                         for (page in MainScreenPage.visibleEntries) {
-                            FloatingTabBarItem(
+                            AppleNavigationRailItem(
                                 selected = page == selectedPage,
                                 onClick = { onClickPage(page) },
                                 icon = page.appleIcon(1.8f),
@@ -195,32 +199,12 @@ internal fun AppleNavigationShell(
                     }
                 }
             }
-        }
-    } else {
-        Row(modifier) {
-            AnimatedVisibility(
-                visible,
-                enter = expandHorizontally() + fadeIn(),
-                exit = shrinkHorizontally() + fadeOut(),
-            ) {
-                AppleNavigationRail {
-                    for (page in MainScreenPage.visibleEntries) {
-                        AppleNavigationRailItem(
-                            selected = page == selectedPage,
-                            onClick = { onClickPage(page) },
-                            icon = page.appleIcon(1.8f),
-                            selectedIcon = page.appleIcon(2f),
-                            label = page.getText(),
-                        )
-                    }
-                }
-            }
             Box(
                 Modifier
                     .weight(1f)
                     .fillMaxSize()
                     .then(
-                        if (visible) {
+                        if (!floatingTabBar && visible) {
                             Modifier.consumeWindowInsets(AniWindowInsets.forNavigationRail().only(WindowInsetsSides.Start))
                         } else {
                             Modifier
@@ -228,6 +212,41 @@ internal fun AppleNavigationShell(
                     ),
             ) {
                 content()
+                if (floatingTabBar) {
+                    AppleFloatingTabBar(
+                        visible,
+                        selectedPage,
+                        onClickPage = ::onClickPage,
+                        Modifier.align(Alignment.BottomCenter),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AppleFloatingTabBar(
+    visible: Boolean,
+    selectedPage: MainScreenPage?,
+    onClickPage: (MainScreenPage) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AnimatedVisibility(
+        visible,
+        modifier,
+        enter = slideInVertically { it } + fadeIn(),
+        exit = slideOutVertically { it } + fadeOut(),
+    ) {
+        FloatingTabBar {
+            for (page in MainScreenPage.visibleEntries) {
+                FloatingTabBarItem(
+                    selected = page == selectedPage,
+                    onClick = { onClickPage(page) },
+                    icon = page.appleIcon(1.8f),
+                    selectedIcon = page.appleIcon(2f),
+                    label = page.getText(),
+                )
             }
         }
     }
