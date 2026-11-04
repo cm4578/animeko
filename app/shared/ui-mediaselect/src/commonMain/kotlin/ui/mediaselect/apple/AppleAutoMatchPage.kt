@@ -205,7 +205,7 @@ private fun AppleWebSourceRow(
             )
             source.tier?.let { AppleTierBadge(it) }
         }
-        AppleWebSourceStatus(source, onResolveCaptcha, Modifier.widthIn(max = 168.dp))
+        AppleWebSourceStatus(source, onResolveCaptcha, Modifier.widthIn(max = AppleAutoMatchDefaults.StatusMaxWidth))
         if (source.channels.isNotEmpty()) {
             Icon(
                 AppleIcons.chevronDown(),
@@ -398,4 +398,9 @@ internal fun AppleTierBadge(tier: MediaSourceTier, modifier: Modifier = Modifier
             maxLines = 1,
         )
     }
+}
+
+internal object AppleAutoMatchDefaults {
+    /** 资料源列右侧状态的最大宽度: 容得下一行 13 号的「需要網頁驗證，當前平台不支援」, 更长的文字换行. */
+    val StatusMaxWidth = 192.dp
 }
