@@ -34,6 +34,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
@@ -61,6 +62,7 @@ import me.him188.ani.app.ui.media.webCaptchaRequiredMessage
 import me.him188.ani.app.ui.mediaselect.auto.AutoMatchPageTestTags
 import me.him188.ani.app.ui.mediaselect.common.SourceIcon
 import me.him188.ani.datasources.api.Media
+import me.him188.ani.datasources.api.source.MediaSourceTier
 import me.him188.ani.utils.platform.annotations.TestOnly
 import me.him188.ani.utils.platform.currentTimeMillis
 import org.jetbrains.compose.resources.stringResource
@@ -89,6 +91,8 @@ data class WebSource(
     val rateLimitedUntilMillis: Long? = null,
     /** 当前平台是否支持交互解决验证码 (iOS 为 false, 显示降级提示). */
     val isCaptchaSupported: Boolean = true,
+    /** 数据源的阶级, 与数据源设置页的标签一致; 没有设置时为 null. */
+    val tier: MediaSourceTier? = null,
 ) {
     val isCaptchaRequired: Boolean get() = captchaRequest != null
     val captchaKind: WebCaptchaKind? get() = captchaRequest?.kind
@@ -297,16 +301,7 @@ private fun WebSourceCard(
 
 @Composable
 private fun RateLimitedCountdownText(untilMillis: Long, modifier: Modifier = Modifier) {
-    val remainingSeconds by produceState(
-        initialValue = remainingSecondsUntil(untilMillis),
-        key1 = untilMillis,
-    ) {
-        while (true) {
-            value = remainingSecondsUntil(untilMillis)
-            if (value <= 0L) break
-            delay(1000)
-        }
-    }
+    val remainingSeconds by rememberRateLimitRemainingSeconds(untilMillis)
     Text(
         text = stringResource(Lang.media_selector_web_rate_limited, remainingSeconds),
         color = MaterialTheme.colorScheme.tertiary,
@@ -315,6 +310,21 @@ private fun RateLimitedCountdownText(untilMillis: Long, modifier: Modifier = Mod
             .minimumInteractiveComponentSize()
             .padding(vertical = 8.dp),
     )
+}
+
+/**
+ * 距离 [untilMillis] 还有几秒, 每秒更新, 到 0 为止.
+ */
+@Composable
+internal fun rememberRateLimitRemainingSeconds(untilMillis: Long): State<Long> = produceState(
+    initialValue = remainingSecondsUntil(untilMillis),
+    key1 = untilMillis,
+) {
+    while (true) {
+        value = remainingSecondsUntil(untilMillis)
+        if (value <= 0L) break
+        delay(1000)
+    }
 }
 
 private fun remainingSecondsUntil(untilMillis: Long): Long =

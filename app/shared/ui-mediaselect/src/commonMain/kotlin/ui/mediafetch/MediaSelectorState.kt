@@ -371,6 +371,7 @@ class MediaSelectorState(
                     isResolvingCaptcha = source.instanceId in resolvingCaptchaInstanceIds,
                     rateLimitedUntilMillis = rateLimitedUntil,
                     isCaptchaSupported = webSessionManager.isInteractiveSupported,
+                    tier = source.sourceInfo.tier,
                 )
             }
         }

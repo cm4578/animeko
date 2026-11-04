@@ -22,10 +22,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -63,6 +66,7 @@ import me.him188.ani.app.ui.foundation.theme.AniTextStyles
  * 手机圆角 14、宽 232. macOS 圆角 10、内距 5、宽 232 (可用 [modifier] 改为 220–232).
  *
  * 放在锚点元素所在的 `Box` 内. 菜单的右缘与锚点对齐, 显示在锚点下方 8; 下方空间不足时显示在上方.
+ * 菜单最高 [ApplePopoverMenuDefaults.MaxHeight], 项目更多时在菜单内滚动.
  * 点菜单外或按返回键 (macOS 为 Esc) 时调用 [onDismissRequest].
  */
 @Composable
@@ -92,6 +96,7 @@ fun ApplePopoverMenu(
             Column(
                 modifier
                     .width(ApplePopoverMenuDefaults.Width)
+                    .heightIn(max = ApplePopoverMenuDefaults.MaxHeight)
                     .dropShadow(
                         shape,
                         Shadow(radius = 24.dp, color = AniColors.floatingShadowColor, offset = DpOffset(0.dp, 8.dp)),
@@ -99,6 +104,7 @@ fun ApplePopoverMenu(
                     .clip(shape)
                     .background(MaterialTheme.colorScheme.surfaceContainer)
                     .border(1.dp, AniColors.floatingBorder, shape)
+                    .verticalScroll(rememberScrollState())
                     .padding(if (mac) 5.dp else 0.dp),
                 content = content,
             )
@@ -287,6 +293,9 @@ private fun CheckSlot(checked: Boolean, modifier: Modifier, color: Color) {
 
 object ApplePopoverMenuDefaults {
     val Width = 232.dp
+
+    /** 菜单的最大高度, 约 10 列; 更多时在菜单内滚动. */
+    val MaxHeight = 480.dp
 
     /** 弹出窗口四周为阴影留出的空间. */
     val ShadowPadding = 32.dp

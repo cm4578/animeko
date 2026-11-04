@@ -88,11 +88,11 @@ import me.him188.ani.app.ui.media.MediaDetailsStrings
 import me.him188.ani.app.ui.media.rememberMediaDetailsStrings
 import me.him188.ani.app.ui.media.renderResolution
 import me.him188.ani.app.ui.media.renderSubtitleLanguage
+import me.him188.ani.app.ui.mediaselect.apple.AppleMediaSelectorSheet
 import me.him188.ani.app.ui.mediaselect.common.SourceIcon
 import me.him188.ani.app.ui.mediaselect.summary.MediaSelectorSummary
 import me.him188.ani.app.ui.search.LoadErrorCard
 import me.him188.ani.app.ui.subject.collection.components.EditableSubjectCollectionTypeDialogsHost
-import me.him188.ani.app.ui.subject.episode.details.CompactMediaSelectorSheet
 import me.him188.ani.app.ui.subject.episode.details.DanmakuInfoSheet
 import me.him188.ani.app.ui.subject.episode.details.DanmakuTimeShiftEditor
 import me.him188.ani.app.ui.subject.episode.details.SubjectDetailsSheet
@@ -224,7 +224,7 @@ internal fun AppleEpisodePhoneDetails(
 }
 
 /**
- * 「詳情」分页: 选集、资料来源卡; 之后沿用现有的弹幕匹配信息与相关推荐.
+ * 「詳情」分页: 选集、资料来源卡 (「更換」打开 [AppleMediaSelectorSheet]); 之后沿用现有的弹幕匹配信息与相关推荐.
  */
 @Composable
 private fun AppleEpisodeDetailsTab(
@@ -332,9 +332,9 @@ private fun AppleEpisodeDetailsTab(
     }
 
     if (showMediaSelector) {
-        CompactMediaSelectorSheet(
+        AppleMediaSelectorSheet(
             vm.mediaSelectorMode ?: page.initialMediaSelectorMode,
-            onMediaSelectorModeChange = { vm.mediaSelectorMode = it },
+            onModeChange = { vm.mediaSelectorMode = it },
             page.mediaSelectorState,
             page.mediaSourceResultListPresentation,
             page.watchingEpisode,
