@@ -530,7 +530,7 @@ private fun AniNavDisplay(
                         context,
                     )
                 }
-                EpisodeScreen(vm, Modifier.fillMaxSize(), windowInsets)
+                EpisodeScreen(vm, Modifier.fillMaxSize(), windowInsets, appleStyle = appleMainPages != null)
             }
             entry<NavRoutes.Settings> { route ->
                 SettingsScreen(

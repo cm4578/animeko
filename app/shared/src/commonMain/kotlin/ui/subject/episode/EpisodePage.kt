@@ -205,12 +205,15 @@ import org.openani.mediamp.source.MediaData
 
 /**
  * 番剧详情 (播放) 页面
+ *
+ * @param appleStyle 窄屏非全屏时, 播放器的顶栏与控制列、播放器下方的内容使用 Apple 版 (03 §3.7).
  */
 @Composable
 fun EpisodeScreen(
     viewModel: EpisodeViewModel,
     modifier: Modifier = Modifier,
     windowInsets: WindowInsets = ScaffoldDefaults.contentWindowInsets,
+    appleStyle: Boolean = false,
 ) {
     val themeSettings = LocalThemeSettings.current
     AniTheme(
@@ -225,6 +228,7 @@ fun EpisodeScreen(
                     viewModel,
                     Modifier,
                     windowInsets = windowInsets,
+                    appleStyle = appleStyle,
                 )
             }
         }
@@ -236,6 +240,7 @@ private fun EpisodeScreenContent(
     vm: EpisodeViewModel,
     modifier: Modifier = Modifier,
     windowInsets: WindowInsets = ScaffoldDefaults.contentWindowInsets,
+    appleStyle: Boolean = false,
 ) {
     // 处理当用户点击返回键时, 如果是全屏, 则退出全屏
     // 按返回退出全屏
@@ -424,6 +429,7 @@ private fun EpisodeScreenContent(
                         setShowEditCommentSheet = { showEditCommentSheet = it },
                         modifier = Modifier.fillMaxSize(),
                         windowInsets = windowInsets,
+                        appleStyle = appleStyle,
                     )
                 }
             }
@@ -509,6 +515,7 @@ private fun EpisodeScreenBody(
     setShowEditCommentSheet: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     windowInsets: WindowInsets = ScaffoldDefaults.contentWindowInsets,
+    appleStyle: Boolean = false,
 ) {
     val compactWindowInsets = windowInsets
         .union(WindowInsets.desktopTitleBar)
@@ -546,6 +553,7 @@ private fun EpisodeScreenBody(
                 vm.playerControllerState,
                 expanded = showExpandedUI || vm.isFullscreen,
                 windowInsets = videoWindowInsets,
+                appleStyle = appleStyle,
             )
         },
         secondary = {
@@ -556,6 +564,16 @@ private fun EpisodeScreenBody(
                     page.fetchRequest,
                     { vm.updateFetchRequest(it) },
                     pauseOnPlaying = pauseOnPlaying,
+                    setShowEditCommentSheet = setShowEditCommentSheet,
+                    windowInsets = windowInsets,
+                )
+            } else if (appleStyle) {
+                AppleEpisodePhoneDetails(
+                    vm,
+                    page,
+                    danmakuEditorState,
+                    pauseOnPlaying = pauseOnPlaying,
+                    tryUnpause = tryUnpause,
                     setShowEditCommentSheet = setShowEditCommentSheet,
                     windowInsets = windowInsets,
                 )
@@ -881,39 +899,56 @@ private fun EpisodeScreenPhoneDetails(
     )
 
     if (showDanmakuEditor) {
-        val focusRequester = remember { FocusRequester() }
-        val dismiss = {
-            showDanmakuEditor = false
-            tryUnpause()
-        }
-        val scope = rememberCoroutineScope()
-        ModalBottomSheet(
-            onDismissRequest = dismiss,
-            modifier = Modifier.desktopTitleBarPadding().statusBarsPadding(),
-            contentWindowInsets = { BottomSheetDefaults.windowInsets.union(windowInsets) },
-        ) {
-            DetachedDanmakuEditorLayout(
-                danmakuEditorState,
-                onSend = { text ->
-                    scope.launch {
-                        danmakuEditorState.post(
-                            DanmakuContent(
-                                vm.player.currentPositionMillis.value,
-                                text = text,
-                                color = danmakuEditorState.style.color,
-                                location = danmakuEditorState.style.location,
-                            ),
-                        )
-                        dismiss()
-                    }
-                },
-                focusRequester,
-                onDismiss = dismiss,
-                modifier = Modifier.imePadding(),
-            )
-            LaunchedEffect(true) {
-                focusRequester.requestFocus()
-            }
+        DanmakuEditorSheet(
+            vm,
+            danmakuEditorState,
+            onDismissRequest = {
+                showDanmakuEditor = false
+                tryUnpause()
+            },
+            windowInsets = windowInsets,
+        )
+    }
+}
+
+/**
+ * 窄屏发送弹幕的底部弹窗: 输入框与弹幕样式. 打开时聚焦输入框, 发送后关闭.
+ */
+@Composable
+internal fun DanmakuEditorSheet(
+    vm: EpisodeViewModel,
+    danmakuEditorState: DanmakuEditorState,
+    onDismissRequest: () -> Unit,
+    windowInsets: WindowInsets = ScaffoldDefaults.contentWindowInsets,
+) {
+    val focusRequester = remember { FocusRequester() }
+    val scope = rememberCoroutineScope()
+    ModalBottomSheet(
+        onDismissRequest = onDismissRequest,
+        modifier = Modifier.desktopTitleBarPadding().statusBarsPadding(),
+        contentWindowInsets = { BottomSheetDefaults.windowInsets.union(windowInsets) },
+    ) {
+        DetachedDanmakuEditorLayout(
+            danmakuEditorState,
+            onSend = { text ->
+                scope.launch {
+                    danmakuEditorState.post(
+                        DanmakuContent(
+                            vm.player.currentPositionMillis.value,
+                            text = text,
+                            color = danmakuEditorState.style.color,
+                            location = danmakuEditorState.style.location,
+                        ),
+                    )
+                    onDismissRequest()
+                }
+            },
+            focusRequester,
+            onDismiss = onDismissRequest,
+            modifier = Modifier.imePadding(),
+        )
+        LaunchedEffect(true) {
+            focusRequester.requestFocus()
         }
     }
 }
@@ -1062,6 +1097,7 @@ private fun EpisodeVideo(
     modifier: Modifier = Modifier,
     maintainAspectRatio: Boolean = !expanded,
     windowInsets: WindowInsets = ScaffoldDefaults.contentWindowInsets,
+    appleStyle: Boolean = false,
 ) {
     val context by rememberUpdatedState(LocalContext.current)
     val navigator = LocalNavigator.current
@@ -1334,6 +1370,18 @@ private fun EpisodeVideo(
         fastForwardSpeed = vm.videoScaffoldConfig.fastForwardSpeed,
         pictureInPictureController = pictureInPictureController,
         isInPictureInPicture = isInPictureInPicture,
+        appleChrome = if (appleStyle) {
+            val episode = page.episodePresentation
+            val useOriginalTitle = LocalSubjectAppearanceSettings.current.useOriginalTitle
+            AppleEpisodeVideoChrome(
+                episodeTitle = appleEpisodeLabel(episode.ep, if (useOriginalTitle) episode.originalTitle else episode.title),
+                collectionTypeState = vm.editableSubjectCollectionTypeState,
+                isLoggedIn = page.selfInfo.isSessionValid != false,
+                onClickLogin = { navigator.navigateEmailLoginStart() },
+            )
+        } else {
+            null
+        },
     )
 }
 
@@ -1415,7 +1463,7 @@ private fun FullscreenMediaSelectorContainer(
 }
 
 @Composable
-private fun EpisodeCommentColumn(
+internal fun EpisodeCommentColumn(
     commentState: CommentState,
     commentReportState: CommentReportState,
     commentEditorState: CommentEditorState,

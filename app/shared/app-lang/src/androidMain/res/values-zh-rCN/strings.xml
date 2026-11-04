@@ -909,6 +909,9 @@
     <string name="video_player_next_episode">下一集</string>
     <string name="video_player_play">播放</string>
     <string name="video_player_pause">暂停</string>
+    <string name="video_player_danmaku_toggle_label">弹</string>
+    <string name="video_player_enter_fullscreen">全屏</string>
+    <string name="video_player_exit_fullscreen">退出全屏</string>
     <string name="video_player_select_episode">选集</string>
     <string name="video_player_send">发送</string>
     <string name="video_player_speed">倍速</string>
@@ -1464,6 +1467,8 @@
     <string name="episode_danmaku_match_select_subject">选择条目</string>
     <string name="episode_danmaku_match_select_episode">选择剧集</string>
     <string name="episode_send_danmaku">发送弹幕</string>
+    <string name="episode_danmaku_style">弹幕样式</string>
+    <string name="episode_menu_collection_state">追番状态</string>
     <string name="danmaku_send_style">弹幕样式</string>
     <string name="danmaku_send_style_color">颜色</string>
     <string name="danmaku_send_style_location">位置</string>

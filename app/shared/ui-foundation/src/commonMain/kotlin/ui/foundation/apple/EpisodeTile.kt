@@ -32,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import me.him188.ani.app.ui.foundation.theme.AniTextStyles
+import me.him188.ani.datasources.api.EpisodeSort
 
 /**
  * C13 选集方块的状态.
@@ -121,6 +122,14 @@ fun EpisodeTile(
  * 整数集数补零到两位: 4 → "04", 12 → "12", 120 → "120".
  */
 fun episodeTileLabel(number: Int): String = number.toString().padStart(2, '0')
+
+/**
+ * 整数集数补零到两位, 其他 (例如 SP、12.5) 用原文.
+ */
+fun episodeTileLabel(sort: EpisodeSort): String {
+    val number = (sort as? EpisodeSort.Normal)?.number
+    return if (number != null && number.toInt().toFloat() == number) episodeTileLabel(number.toInt()) else sort.toString()
+}
 
 object EpisodeTileDefaults {
     val Size = 52.dp

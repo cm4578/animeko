@@ -869,6 +869,9 @@
     <string name="video_player_next_episode">Next episode</string>
     <string name="video_player_play">Play</string>
     <string name="video_player_pause">Pause</string>
+    <string name="video_player_danmaku_toggle_label">D</string>
+    <string name="video_player_enter_fullscreen">Fullscreen</string>
+    <string name="video_player_exit_fullscreen">Exit fullscreen</string>
     <string name="video_player_select_episode">Episodes</string>
     <string name="video_player_send">Send</string>
     <string name="video_player_speed">Speed</string>
@@ -1424,6 +1427,8 @@
     <string name="episode_danmaku_match_select_subject">Select subject</string>
     <string name="episode_danmaku_match_select_episode">Select episode</string>
     <string name="episode_send_danmaku">Send</string>
+    <string name="episode_danmaku_style">Danmaku style</string>
+    <string name="episode_menu_collection_state">Collection status</string>
     <string name="danmaku_send_style">Danmaku style</string>
     <string name="danmaku_send_style_color">Color</string>
     <string name="danmaku_send_style_location">Position</string>

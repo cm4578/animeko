@@ -57,7 +57,6 @@ import me.him188.ani.app.ui.subject.details.sections.SubjectInfoTable
 import me.him188.ani.app.ui.subject.details.sections.SubjectTagsSection
 import me.him188.ani.app.ui.subject.details.state.SubjectDetailsState
 import me.him188.ani.app.ui.subject.episode.list.EpisodeListItem
-import me.him188.ani.datasources.api.EpisodeSort
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -116,7 +115,7 @@ internal fun AppleDetailsTabContent(
                     ) {
                         items(episodes, key = { it.episodeId }) { episode ->
                             EpisodeTile(
-                                episodeTileText(episode.sort),
+                                episodeTileLabel(episode.sort),
                                 state = when {
                                     episode.isDoneOrDropped -> EpisodeTileState.Watched
                                     episode.episodeId == currentEpisodeId -> EpisodeTileState.Playing
@@ -190,14 +189,6 @@ internal fun AppleDetailsTabContent(
 
 private fun PaddingValues.plusBottom(other: PaddingValues): PaddingValues =
     PaddingValues(top = calculateTopPadding(), bottom = other.calculateBottomPadding())
-
-/**
- * 整数集数补零到两位, 其他 (例如 SP、12.5) 用原文.
- */
-internal fun episodeTileText(sort: EpisodeSort): String {
-    val number = (sort as? EpisodeSort.Normal)?.number
-    return if (number != null && number.toInt().toFloat() == number) episodeTileLabel(number.toInt()) else sort.toString()
-}
 
 /**
  * 区块标题 `title`, 右侧可放 accent 文字链接. 标题行左右内缩 20.

@@ -31,6 +31,7 @@ import me.him188.ani.app.domain.foundation.LoadError
 import me.him188.ani.app.ui.comment.createTestCommentState
 import me.him188.ani.app.ui.foundation.LocalPlatform
 import me.him188.ani.app.ui.foundation.ProvideCompositionLocalsForPreview
+import me.him188.ani.app.ui.foundation.apple.episodeTileLabel
 import me.him188.ani.app.ui.framework.runAniComposeUiTest
 import me.him188.ani.app.ui.rating.EditableRatingActions
 import me.him188.ani.app.ui.rating.TestEditableRatingUiState
@@ -38,7 +39,6 @@ import me.him188.ani.app.ui.search.createTestPager
 import me.him188.ani.app.ui.subject.TestSubjectAiringInfo
 import me.him188.ani.app.ui.subject.collection.components.EditableSubjectCollectionTypeState
 import me.him188.ani.app.ui.subject.details.layout.AppleSubjectDetailsTestTags
-import me.him188.ani.app.ui.subject.details.layout.episodeTileText
 import me.him188.ani.app.ui.subject.details.state.SubjectDetailsActions
 import me.him188.ani.app.ui.subject.details.state.SubjectDetailsState
 import me.him188.ani.app.ui.subject.details.state.SubjectDetailsUiState
@@ -144,9 +144,9 @@ class AppleSubjectDetailsPageTest {
 
     @Test
     fun `episode tile text pads integers`() {
-        assertEquals("04", episodeTileText(EpisodeSort(4)))
-        assertEquals("12", episodeTileText(EpisodeSort(12)))
-        assertEquals(EpisodeSort("SP").toString(), episodeTileText(EpisodeSort("SP")))
+        assertEquals("04", episodeTileLabel(EpisodeSort(4)))
+        assertEquals("12", episodeTileLabel(EpisodeSort(12)))
+        assertEquals(EpisodeSort("SP").toString(), episodeTileLabel(EpisodeSort("SP")))
         assertEquals("https://bgm.tv/subject/1", bangumiSubjectUrl(1))
     }
 
