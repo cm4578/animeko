@@ -111,8 +111,16 @@ public final class InputAgent {
             }
             case "type":
                 return type(frame, a.length > 1 ? a[1] : "");
-            case "key":
-                return key(frame, Integer.parseInt(a[1]));
+            case "key": {
+                // key <AWT keycode> [meta] [shift] [ctrl] [alt], e.g. `key 75 meta` = Cmd+K
+                String[] p = a[1].split("\\s+");
+                java.util.List<String> mods = java.util.Arrays.asList(p).subList(1, p.length);
+                int modifiers = (mods.contains("meta") ? KeyEvent.META_DOWN_MASK : 0)
+                        | (mods.contains("shift") ? KeyEvent.SHIFT_DOWN_MASK : 0)
+                        | (mods.contains("ctrl") ? KeyEvent.CTRL_DOWN_MASK : 0)
+                        | (mods.contains("alt") ? KeyEvent.ALT_DOWN_MASK : 0);
+                return key(frame, Integer.parseInt(p[0]), modifiers);
+            }
             case "resize": {
                 String[] wh = a[1].split("\\s+");
                 int w = Integer.parseInt(wh[0]), h = Integer.parseInt(wh[1]);
@@ -412,15 +420,15 @@ public final class InputAgent {
         return result[0];
     }
 
-    static String key(Frame frame, int keyCode) throws Exception {
+    static String key(Frame frame, int keyCode, int modifiers) throws Exception {
         final String[] result = new String[1];
         EventQueue.invokeAndWait(() -> {
             Component target = focusTarget(frame);
             KeyboardFocusManager kfm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
             long when = System.currentTimeMillis();
-            kfm.redispatchEvent(target, new KeyEvent(target, KeyEvent.KEY_PRESSED, when, 0, keyCode, KeyEvent.CHAR_UNDEFINED));
-            kfm.redispatchEvent(target, new KeyEvent(target, KeyEvent.KEY_RELEASED, when + 20, 0, keyCode, KeyEvent.CHAR_UNDEFINED));
-            result[0] = "ok key " + keyCode + " -> " + target.getClass().getName();
+            kfm.redispatchEvent(target, new KeyEvent(target, KeyEvent.KEY_PRESSED, when, modifiers, keyCode, KeyEvent.CHAR_UNDEFINED));
+            kfm.redispatchEvent(target, new KeyEvent(target, KeyEvent.KEY_RELEASED, when + 20, modifiers, keyCode, KeyEvent.CHAR_UNDEFINED));
+            result[0] = "ok key " + keyCode + (modifiers != 0 ? " modifiers=" + modifiers : "") + " -> " + target.getClass().getName();
         });
         return result[0];
     }
