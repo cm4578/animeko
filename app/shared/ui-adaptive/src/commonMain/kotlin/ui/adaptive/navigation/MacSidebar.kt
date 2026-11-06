@@ -43,6 +43,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -143,6 +145,7 @@ fun MacSidebar(
  *
  * 可直接输入 (05 G11). 搜索中 ([active]) 加 1.5 accent 内描边, 框内显示查询词.
  *
+ * @param focusRequester 用于 ⌘K 聚焦输入框 (05 C2).
  * @param onSearch 按下 Enter 时调用.
  */
 @Composable
@@ -153,6 +156,7 @@ fun MacSidebarSearchField(
     modifier: Modifier = Modifier,
     shortcutHint: String? = "⌘K",
     active: Boolean = query.isNotEmpty(),
+    focusRequester: FocusRequester? = null,
     onSearch: () -> Unit = {},
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -172,7 +176,9 @@ fun MacSidebarSearchField(
         BasicTextField(
             value = query,
             onValueChange = onQueryChange,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier),
             singleLine = true,
             textStyle = AniTextStyles.macCallout.copy(color = colorScheme.onSurface),
             cursorBrush = SolidColor(colorScheme.primary),
@@ -298,11 +304,13 @@ fun MacSidebarItem(
 /**
  * C17 底部帐号行: C11 28 号头像 + 名称 13 W600 + [status] 11 label2 (「N 项待同步」, 05 G15).
  * 放在 [MacSidebar] 的 `footer` 内, 通常加 `Modifier.weight(1f)`.
+ *
+ * @param status 为 `null` 时只显示名称.
  */
 @Composable
 fun MacSidebarAccount(
     name: String,
-    status: String,
+    status: String?,
     initial: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -330,14 +338,16 @@ fun MacSidebarAccount(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Text(
-                status,
-                style = AniTextStyles.macSidebarSection,
-                fontWeight = FontWeight.Normal,
-                color = colorScheme.secondary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            if (status != null) {
+                Text(
+                    status,
+                    style = AniTextStyles.macSidebarSection,
+                    fontWeight = FontWeight.Normal,
+                    color = colorScheme.secondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }

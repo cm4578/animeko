@@ -677,6 +677,13 @@
     <string name="main_screen_page_collection">Collection</string>
     <string name="main_screen_page_cache_management">Downloads</string>
     <string name="main_screen_page_profile">Me</string>
+    <string name="main_toolbar_back">Back</string>
+    <string name="main_toolbar_forward">Forward</string>
+    <string name="main_sidebar_hide">Hide Sidebar</string>
+    <string name="main_sidebar_show">Show Sidebar</string>
+    <string name="main_sidebar_browse">Browse</string>
+    <string name="main_sidebar_library">Library</string>
+    <string name="main_sidebar_search_placeholder">Search anime</string>
     <string name="profile_pending_sync_count">%1$d pending sync</string>
     <string name="collection_continue_watching_remaining_minutes">%1$d min left</string>
     <string name="collection_episode_progress">%1$d / %2$d</string>

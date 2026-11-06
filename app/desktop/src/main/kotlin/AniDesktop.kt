@@ -95,6 +95,8 @@ import me.him188.ani.app.torrent.anitorrent.AnitorrentLibraryLoader
 import me.him188.ani.app.ui.foundation.LocalPlatform
 import me.him188.ani.app.ui.foundation.LocalWindowState
 import me.him188.ani.app.ui.foundation.WindowDropHost
+import me.him188.ani.app.ui.foundation.apple.LocalMacKeyboardShortcuts
+import me.him188.ani.app.ui.foundation.apple.MacKeyboardShortcuts
 import me.him188.ani.app.ui.foundation.input.ProvideTouchViewConfiguration
 import me.him188.ani.app.ui.foundation.effects.OverrideCaptionButtonAppearance
 import me.him188.ani.app.ui.foundation.ifThen
@@ -528,6 +530,8 @@ object AniDesktop {
                 OnBackPressedDispatcher(fallback = { navigator.popBackStack() })
             }
             val backKeyEventHandler = remember { BackKeyEventHandler() }
+            // macOS 主窗口的 ⌘ 快捷键 (05 C2), 由各页面注册
+            val macKeyboardShortcuts = remember { if (currentPlatformDesktop().isMacOS()) MacKeyboardShortcuts() else null }
             Window(
                 visible = !trayState.isWindowHiddenToTray,
                 onCloseRequest = {
@@ -543,7 +547,10 @@ object AniDesktop {
                 // 只在没有任何节点消费按键时才会走到这里 (通常是没有焦点, 例如侧边栏关闭后清除了焦点).
                 // 不接管的话, Compose Desktop 会把这个 Escape 直接交给 Navigation 3 出栈,
                 // 绕过播放页全屏等 BackHandler, 表现为「全屏按 ESC 返回了上一页」.
-                onKeyEvent = { event -> backKeyEventHandler.onKeyEvent(event, backPressedDispatcher::onBackPressed) },
+                onKeyEvent = { event ->
+                    macKeyboardShortcuts?.dispatch(event) == true ||
+                            backKeyEventHandler.onKeyEvent(event, backPressedDispatcher::onBackPressed)
+                },
             ) {
                 // In dev mode this enables hot reload,
                 // In release mode this just executes the content
@@ -596,6 +603,7 @@ object AniDesktop {
                     LocalAppWindowVisible provides remember(trayState) {
                         derivedStateOf { !trayState.isWindowHiddenToTray }
                     },
+                    LocalMacKeyboardShortcuts provides macKeyboardShortcuts,
                     // 二级窗口 (图片查看器) 沿用主窗口的自定义外观
                     LocalSecondaryWindowFrame provides if (isRunningUnderWine()) {
                         null
