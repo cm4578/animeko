@@ -690,6 +690,10 @@
     <string name="collection_layout_list">List</string>
     <string name="collection_layout_grid">Grid</string>
     <string name="collection_mark_episode_watched">Mark Ep. %1$s as watched</string>
+    <string name="collection_all_playback_history">All History</string>
+    <string name="collection_table_name">Name</string>
+    <string name="collection_table_progress">Progress</string>
+    <string name="collection_table_activity">Updates</string>
 
     <!-- ThemePreferences -->
     <string name="settings_theme_title">Theme</string>

@@ -24,6 +24,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.launch
+import me.him188.ani.app.data.models.subject.toNavPlaceholder
 import me.him188.ani.app.domain.foundation.VersionExpiryService
 import me.him188.ani.app.navigation.LocalNavigator
 import me.him188.ani.app.navigation.MainScreenPage
@@ -38,7 +39,7 @@ import me.him188.ani.app.ui.foundation.session.LocalSelfAvatarUnreadDot
 import me.him188.ani.app.ui.foundation.theme.LocalAppChromeHazeState
 import me.him188.ani.app.ui.foundation.widgets.LocalToaster
 import me.him188.ani.app.ui.foundation.widgets.showLoadError
-import me.him188.ani.app.ui.subject.collection.CollectionPage
+import me.him188.ani.app.ui.subject.collection.MacCollectionPage
 import me.him188.ani.app.ui.subject.collection.UserCollectionsViewModel
 import me.him188.ani.app.ui.user.SelfInfoUiState
 import org.koin.mp.KoinPlatform
@@ -95,14 +96,20 @@ internal fun MacMainScreen(
                     }
 
                     MainScreenPage.Collection -> {
-                        CollectionPage(
+                        MacCollectionPage(
                             state = userCollectionsViewModel.state,
                             selfInfo = selfInfo,
-                            fullSyncState = userCollectionsViewModel.fullSyncState.collectAsStateWithLifecycle().value,
+                            continueWatching = userCollectionsViewModel.continueWatchingPager,
+                            layout = userCollectionsViewModel.myCollectionsSettings.layout,
+                            onLayoutChange = { userCollectionsViewModel.setCollectionLayout(it) },
+                            episodeHistoryFlow = userCollectionsViewModel::episodePlayHistoryFlow,
+                            nextEpisodeCachedFlow = userCollectionsViewModel::nextEpisodeCachedFlow,
                             onClickSearch = { navigator.navigateSubjectSearch() },
                             onClickLogin = { navigator.navigateEmailLoginStart() },
-                            onClickSettings = { onOpenSettings(null) },
-                            onCollectionUpdate = { subjectId, episode ->
+                            onClickPlaybackHistory = { navigator.navigatePlaybackHistory() },
+                            onClickSubject = { navigator.navigateSubjectDetails(it.subjectId, it.toNavPlaceholder()) },
+                            onPlay = { subjectId, episodeId -> navigator.navigateEpisodeDetails(subjectId, episodeId) },
+                            onMarkEpisodeWatched = { subjectId, episode ->
                                 coroutineScope.launch {
                                     userCollectionsViewModel.toggleEpisodeCollection(
                                         subjectId,
@@ -112,7 +119,6 @@ internal fun MacMainScreen(
                                 }
                             },
                             modifier = Modifier.fillMaxSize(),
-                            enableAnimation = userCollectionsViewModel.myCollectionsSettings.enableListAnimation1,
                         )
                     }
 

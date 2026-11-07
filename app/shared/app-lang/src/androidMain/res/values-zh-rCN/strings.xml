@@ -730,6 +730,10 @@
     <string name="collection_layout_list">列表排版</string>
     <string name="collection_layout_grid">网格排版</string>
     <string name="collection_mark_episode_watched">第 %1$s 集标为看过</string>
+    <string name="collection_all_playback_history">全部播放记录</string>
+    <string name="collection_table_name">名称</string>
+    <string name="collection_table_progress">进度</string>
+    <string name="collection_table_activity">动态</string>
 
     <!-- ThemePreferences -->
     <string name="settings_theme_title">主题</string>

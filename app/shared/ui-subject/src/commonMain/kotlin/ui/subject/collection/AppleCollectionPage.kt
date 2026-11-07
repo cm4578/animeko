@@ -17,6 +17,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -627,7 +628,7 @@ private fun LazyListScope.collectionListItems(
 /**
  * 「我的追番」项目的动作.
  */
-private class CollectionItemActions(
+internal class CollectionItemActions(
     val onClickSubject: (SubjectInfo) -> Unit,
     val onSetCollectionType: (SubjectCollectionInfo, UnifiedCollectionType) -> Unit,
     val onMarkEpisodeWatched: (subjectId: Int, episode: EpisodeCollectionInfo) -> Unit,
@@ -675,25 +676,39 @@ internal fun CollectionItemMenu(
     onMarkEpisodeWatched: (EpisodeCollectionInfo) -> Unit,
 ) {
     ApplePopoverMenu(expanded, onDismissRequest, Modifier.testTag(CollectionItemMenuTestTags.Menu)) {
-        CollectionTypeMenuItems(
-            currentType,
-            onDismissRequest,
-            onSetType,
-            itemModifier = { Modifier.testTag(CollectionItemMenuTestTags.type(it)) },
+        CollectionItemMenuItems(currentType, nextEpisode, onDismissRequest, onSetType, onMarkEpisodeWatched)
+    }
+}
+
+/**
+ * [CollectionItemMenu] 的菜单项. macOS 的右键菜单 ([AppleContextMenu]) 也用这一组.
+ */
+@Composable
+internal fun ColumnScope.CollectionItemMenuItems(
+    currentType: UnifiedCollectionType,
+    nextEpisode: EpisodeCollectionInfo?,
+    onDismissRequest: () -> Unit,
+    onSetType: (UnifiedCollectionType) -> Unit,
+    onMarkEpisodeWatched: (EpisodeCollectionInfo) -> Unit,
+) {
+    CollectionTypeMenuItems(
+        currentType,
+        onDismissRequest,
+        onSetType,
+        itemModifier = { Modifier.testTag(CollectionItemMenuTestTags.type(it)) },
+    )
+    if (nextEpisode != null) {
+        val episode = nextEpisode.episodeInfo
+        PopoverMenuItem(
+            stringResource(Lang.collection_mark_episode_watched, renderEpAndSort(episode.ep, episode.sort)),
+            onClick = {
+                onDismissRequest()
+                onMarkEpisodeWatched(nextEpisode)
+            },
+            Modifier.testTag(CollectionItemMenuTestTags.MarkWatched),
+            icon = AppleIcons.checkCircle(),
+            showDivider = true,
         )
-        if (nextEpisode != null) {
-            val episode = nextEpisode.episodeInfo
-            PopoverMenuItem(
-                stringResource(Lang.collection_mark_episode_watched, renderEpAndSort(episode.ep, episode.sort)),
-                onClick = {
-                    onDismissRequest()
-                    onMarkEpisodeWatched(nextEpisode)
-                },
-                Modifier.testTag(CollectionItemMenuTestTags.MarkWatched),
-                icon = AppleIcons.checkCircle(),
-                showDivider = true,
-            )
-        }
     }
 }
 
@@ -713,7 +728,7 @@ internal fun SubjectCollectionInfo.nextEpisodeToMarkWatched(): EpisodeCollection
 }
 
 @Composable
-private fun NsfwCollectionItem(item: SubjectCollectionInfo, content: @Composable () -> Unit) {
+internal fun NsfwCollectionItem(item: SubjectCollectionInfo, content: @Composable () -> Unit) {
     var nsfwMode: NsfwMode by rememberSaveable(item) { mutableStateOf(item.nsfwMode) }
     NsfwMask(nsfwMode, onTemporarilyDisplay = { nsfwMode = NsfwMode.DISPLAY }, shape = RoundedCornerShape(0.dp)) {
         content()
@@ -819,7 +834,7 @@ private fun StatusText(text: String, color: Color, fontWeight: FontWeight) {
  * 「**8** / 28 集」: 数字 label W600, 其余 label2.
  */
 @Composable
-private fun EpisodeProgressText(progress: CollectionEpisodeProgress, modifier: Modifier = Modifier) {
+internal fun EpisodeProgressText(progress: CollectionEpisodeProgress, modifier: Modifier = Modifier) {
     val colorScheme = MaterialTheme.colorScheme
     val watched = progress.watched.toString()
     val full = stringResource(Lang.collection_episode_progress, progress.watched, progress.total)

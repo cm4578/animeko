@@ -84,6 +84,19 @@ fun ApplePopoverMenu(
             shadowPadding = with(density) { ApplePopoverMenuDefaults.ShadowPadding.roundToPx() },
         )
     }
+    PopoverMenuPopup(positionProvider, onDismissRequest, modifier, content)
+}
+
+/**
+ * C15 菜单的弹出窗口与外观, 由 [positionProvider] 决定位置. 位置要扣除四周的阴影空间 [ApplePopoverMenuDefaults.ShadowPadding].
+ */
+@Composable
+internal fun PopoverMenuPopup(
+    positionProvider: PopupPositionProvider,
+    onDismissRequest: () -> Unit,
+    modifier: Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
     val mac = isMacStyle
     val shape = RoundedCornerShape(if (mac) 10.dp else 14.dp)
     Popup(
