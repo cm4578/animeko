@@ -1447,6 +1447,12 @@
     <string name="media_selector_bt_col_subtitle">字幕</string>
     <string name="media_selector_bt_col_size">大小</string>
     <string name="media_selector_bt_col_published">发布</string>
+    <string name="media_selector_mac_channels_of">%1$s 的线路</string>
+    <string name="media_selector_mac_done">完成</string>
+    <string name="media_selector_mac_cancel">取消</string>
+    <string name="media_selector_mac_play_episode">播放%1$s</string>
+    <string name="media_selector_mac_play_selected">播放所选资源</string>
+    <string name="media_selector_mac_filter_summary">已应用 %1$d 个筛选条件，显示 %2$d 条</string>
     <string name="settings_mediasource_selector_episode_open_link_failed">无法打开链接</string>
     <string name="settings_mediasource_selector_episode_open_original_link">打开原始链接 %1$s</string>
     <string name="settings_mediasource_selector_episode_edit_config">编辑配置</string>

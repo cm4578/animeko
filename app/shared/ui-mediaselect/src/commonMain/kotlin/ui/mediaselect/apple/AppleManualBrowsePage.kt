@@ -611,7 +611,7 @@ private fun AppleManualSearchField(
 }
 
 @Composable
-private fun AppleManualLoading(modifier: Modifier = Modifier) {
+internal fun AppleManualLoading(modifier: Modifier = Modifier) {
     Box(modifier, contentAlignment = Alignment.Center) {
         CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
     }
@@ -621,7 +621,7 @@ private fun AppleManualLoading(modifier: Modifier = Modifier) {
  * 载入失败: 错误文字 + 「重試」; 被验证码挡住而平台不支持时只显示提示.
  */
 @Composable
-private fun AppleManualFailed(
+internal fun AppleManualFailed(
     failed: ManualLoadState.Failed,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
@@ -644,7 +644,7 @@ private fun AppleManualFailed(
 }
 
 @Composable
-private fun AppleManualMessage(text: String, modifier: Modifier = Modifier) {
+internal fun AppleManualMessage(text: String, modifier: Modifier = Modifier) {
     Box(modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
         Text(text, style = AniTextStyles.footnote, color = MaterialTheme.colorScheme.secondary)
     }

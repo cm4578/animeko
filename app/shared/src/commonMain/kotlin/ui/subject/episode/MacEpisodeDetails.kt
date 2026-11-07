@@ -26,21 +26,13 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -53,8 +45,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -64,7 +54,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import me.him188.ani.app.data.models.episode.EpisodeCollectionInfo
-import me.him188.ani.app.domain.media.selector.SelectTrigger
 import me.him188.ani.app.navigation.LocalNavigator
 import me.him188.ani.app.platform.LocalContext
 import me.him188.ani.app.platform.navigation.LocalBrowserNavigator
@@ -76,12 +65,8 @@ import me.him188.ani.app.ui.foundation.apple.EpisodeTile
 import me.him188.ani.app.ui.foundation.apple.EpisodeTileDefaults
 import me.him188.ani.app.ui.foundation.apple.PillTab
 import me.him188.ani.app.ui.foundation.apple.episodeTileLabel
-import me.him188.ani.app.ui.foundation.layout.AniWindowInsets
-import me.him188.ani.app.ui.foundation.navigation.BackHandler
 import me.him188.ani.app.ui.foundation.theme.AniTextStyles
 import me.him188.ani.app.ui.foundation.widgets.LocalToaster
-import me.him188.ani.app.ui.foundation.widgets.ModalSideSheet
-import me.him188.ani.app.ui.foundation.widgets.rememberModalSideSheetState
 import me.him188.ani.app.ui.foundation.widgets.showLoadError
 import me.him188.ani.app.ui.lang.Lang
 import me.him188.ani.app.ui.lang.episode_comments
@@ -94,22 +79,13 @@ import me.him188.ani.app.ui.lang.subject_details_all_episodes
 import me.him188.ani.app.ui.lang.subject_details_episodes
 import me.him188.ani.app.ui.lang.subject_details_show_less
 import me.him188.ani.app.ui.lang.subject_details_tab_details
-import me.him188.ani.app.ui.lang.subject_episode_close_selector
 import me.him188.ani.app.ui.lang.subject_episode_danmaku_list_empty
 import me.him188.ani.app.ui.lang.subject_episode_danmaku_list_empty_filtered
 import me.him188.ani.app.ui.lang.subject_episode_danmaku_list_title
 import me.him188.ani.app.ui.lang.subject_episode_related_recommendations
-import me.him188.ani.app.ui.lang.subject_episode_select_media_source
 import me.him188.ani.app.ui.media.rememberMediaDetailsStrings
-import me.him188.ani.app.ui.mediaselect.MediaSelectorMode
-import me.him188.ani.app.ui.mediaselect.auto.AutoMatchPage
-import me.him188.ani.app.ui.mediaselect.bt.BtResourcesPage
-import me.him188.ani.app.ui.mediaselect.common.MediaSelectorDialog
-import me.him188.ani.app.ui.mediaselect.common.MediaSelectorDialogContent
-import me.him188.ani.app.ui.mediaselect.common.MediaSelectorModeChip
+import me.him188.ani.app.ui.mediaselect.apple.MacMediaSelectorSheet
 import me.him188.ani.app.ui.mediaselect.common.SourceIcon
-import me.him188.ani.app.ui.mediaselect.manual.ManualBrowsePage
-import me.him188.ani.app.ui.mediaselect.needsContainer
 import me.him188.ani.app.ui.mediaselect.summary.MediaSelectorSummary
 import me.him188.ani.app.ui.search.LoadErrorCard
 import me.him188.ani.app.ui.subject.collection.components.EditableSubjectCollectionTypeDialogsHost
@@ -309,7 +285,19 @@ private fun MacEpisodeDetailsTab(
     }
 
     if (showMediaSelector) {
-        MacMediaSelectorHost(vm, page, onDismissRequest = { showMediaSelector = false })
+        MacMediaSelectorSheet(
+            vm.mediaSelectorMode ?: page.initialMediaSelectorMode,
+            onModeChange = { vm.mediaSelectorMode = it },
+            page.mediaSelectorState,
+            page.mediaSourceResultListPresentation,
+            page.watchingEpisode,
+            page.fetchRequest,
+            onFetchRequestChange = { vm.updateFetchRequest(it) },
+            onRestartSource = { vm.restartSource(it) },
+            vm.manualBrowseState,
+            onDismissRequest = { showMediaSelector = false },
+            topOffset = MacEpisodeVideoDefaults.TopBarHeight,
+        )
     }
     if (showDanmakuInfoSheet) {
         DanmakuInfoSheet(
@@ -378,121 +366,6 @@ private fun MacEpisodeTitle(
     }
 }
 
-
-/**
- * 「更換」打开的选择资料来源, 沿用现有宽屏版: 侧边 sheet 里切换自动匹配、手动查找与 BT;
- * 窗口太矮时手动查找与 BT 用窗口级对话框, 关掉对话框回到 sheet 的自动匹配. 选中播放后全部关闭.
- * 桌面的 Esc 由窗口交给 App 的返回分派, 这里接住, 只关闭 sheet 或对话框.
- */
-@Composable
-private fun MacMediaSelectorHost(
-    vm: EpisodeViewModel,
-    page: EpisodePageState,
-    onDismissRequest: () -> Unit,
-) {
-    val mode = vm.mediaSelectorMode ?: page.initialMediaSelectorMode
-    val onModeChange: (MediaSelectorMode) -> Unit = { vm.mediaSelectorMode = it }
-    val sourceResults = page.mediaSourceResultListPresentation
-    val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
-    if (mode.needsContainer(windowHeight)) {
-        val backToSheet = { onModeChange(MediaSelectorMode.AUTO) }
-        BackHandler(onBack = backToSheet)
-        MediaSelectorDialog(onDismissRequest = backToSheet) { compact ->
-            MediaSelectorDialogContent(
-                mode,
-                compact,
-                onModeChange = onModeChange,
-                onClose = backToSheet,
-                onPlayed = onDismissRequest,
-                mediaSelectorState = page.mediaSelectorState,
-                sourceResults = sourceResults,
-                watching = page.watchingEpisode,
-                fetchRequest = page.fetchRequest,
-                onFetchRequestChange = { vm.updateFetchRequest(it) },
-                onRestartSource = { vm.restartSource(it) },
-                manualBrowseState = vm.manualBrowseState,
-            )
-        }
-        return
-    }
-
-    val sheetState = rememberModalSideSheetState()
-    BackHandler { sheetState.close() }
-    ModalSideSheet(
-        onDismissRequest,
-        state = sheetState,
-        containerColor = BottomSheetDefaults.ContainerColor,
-    ) {
-        val closeSelectorText = stringResource(Lang.subject_episode_close_selector)
-        val closeButton = @Composable {
-            IconButton(onClick = { sheetState.close() }, Modifier.padding(end = 8.dp)) {
-                Icon(Icons.Rounded.Close, contentDescription = closeSelectorText)
-            }
-        }
-        val topBar = @Composable {
-            TopAppBar(
-                title = {
-                    Text(stringResource(Lang.subject_episode_select_media_source), Modifier.padding(start = 8.dp))
-                },
-                actions = {
-                    MediaSelectorModeChip(mode, onModeChange, showBt = sourceResults.btSources.isNotEmpty())
-                    closeButton()
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BottomSheetDefaults.ContainerColor),
-            )
-        }
-        Column(
-            Modifier
-                .fillMaxHeight()
-                .widthIn(300.dp, 400.dp)
-                .windowInsetsPadding(AniWindowInsets.safeDrawing),
-        ) {
-            when (mode) {
-                MediaSelectorMode.AUTO -> {
-                    topBar()
-                    AutoMatchPage(
-                        page.mediaSelectorState,
-                        onClickItem = {
-                            page.mediaSelectorState.select(it, SelectTrigger.MANUAL_AUTO_PAGE)
-                            onDismissRequest()
-                        },
-                        onRestartSource = { vm.restartSource(it) },
-                        onRequestManualSearch = { onModeChange(MediaSelectorMode.MANUAL) },
-                        modifier = Modifier
-                            .padding(vertical = 12.dp, horizontal = 16.dp)
-                            .fillMaxWidth(),
-                    )
-                }
-
-                MediaSelectorMode.MANUAL -> ManualBrowsePage(
-                    vm.manualBrowseState,
-                    page.watchingEpisode,
-                    onPlayed = onDismissRequest,
-                    topBar = topBar,
-                    modifier = Modifier.fillMaxSize(),
-                    closeButton = closeButton,
-                )
-
-                MediaSelectorMode.BT -> {
-                    topBar()
-                    BtResourcesPage(
-                        page.mediaSelectorState,
-                        sourceResults,
-                        page.watchingEpisode,
-                        page.fetchRequest,
-                        onFetchRequestChange = { vm.updateFetchRequest(it) },
-                        onClickItem = {
-                            page.mediaSelectorState.select(it, SelectTrigger.MANUAL_BT_PAGE)
-                            onDismissRequest()
-                        },
-                        onRestartSource = { vm.restartSource(it) },
-                        modifier = Modifier.fillMaxWidth().weight(1f),
-                    )
-                }
-            }
-        }
-    }
-}
 
 /**
  * 选集: 标题「選集」与 accent「全部 N 話」, 下方 6 栏方块 (1:1, 圆角 10; 正在播放的集底部 accent 短横).

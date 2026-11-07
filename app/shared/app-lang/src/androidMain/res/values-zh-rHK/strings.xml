@@ -1410,6 +1410,12 @@
     <string name="media_selector_bt_col_subtitle">字幕</string>
     <string name="media_selector_bt_col_size">大小</string>
     <string name="media_selector_bt_col_published">發佈</string>
+    <string name="media_selector_mac_channels_of">%1$s 的線路</string>
+    <string name="media_selector_mac_done">完成</string>
+    <string name="media_selector_mac_cancel">取消</string>
+    <string name="media_selector_mac_play_episode">播放%1$s</string>
+    <string name="media_selector_mac_play_selected">播放所選資源</string>
+    <string name="media_selector_mac_filter_summary">已套用 %1$d 個篩選條件，顯示 %2$d 條</string>
     <string name="settings_mediasource_selector_episode_open_link_failed">無法打開連結</string>
     <string name="settings_mediasource_selector_episode_open_original_link">打開原始連結 %1$s</string>
     <string name="settings_mediasource_selector_episode_edit_config">編輯配置</string>

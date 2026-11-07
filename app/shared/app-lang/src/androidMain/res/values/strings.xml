@@ -1407,6 +1407,12 @@
     <string name="media_selector_bt_col_subtitle">Subtitle</string>
     <string name="media_selector_bt_col_size">Size</string>
     <string name="media_selector_bt_col_published">Published</string>
+    <string name="media_selector_mac_channels_of">Lines of %1$s</string>
+    <string name="media_selector_mac_done">Done</string>
+    <string name="media_selector_mac_cancel">Cancel</string>
+    <string name="media_selector_mac_play_episode">Play %1$s</string>
+    <string name="media_selector_mac_play_selected">Play Selected</string>
+    <string name="media_selector_mac_filter_summary">%1$d filters applied, showing %2$d</string>
     <string name="settings_mediasource_selector_episode_open_link_failed">Unable to open the link</string>
     <string name="settings_mediasource_selector_episode_open_original_link">Open original link %1$s</string>
     <string name="settings_mediasource_selector_episode_edit_config">Edit configuration</string>

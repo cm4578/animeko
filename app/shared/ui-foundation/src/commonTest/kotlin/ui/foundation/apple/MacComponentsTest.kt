@@ -11,6 +11,7 @@ package me.him188.ani.app.ui.foundation.apple
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -264,6 +265,38 @@ class MacComponentsTest {
         assertEquals(actionCenter, boundsOf("c2").let { (it.left + it.right) / 2 }.value, SIZE_TOLERANCE)
         assertEquals(actionCenter, boundsOf("groupAction").let { (it.left + it.right) / 2 }.value, SIZE_TOLERANCE)
         assertEquals(52f, heightOf("row").value, SIZE_TOLERANCE)
+    }
+
+    @Test
+    fun `table rows can grow with their content and use an end padding`() = runAniComposeUiTest {
+        val columns = MacTableColumns(
+            listOf(MacTableColumn(), MacTableColumn(width = 40.dp, alignment = Alignment.End)),
+            horizontalPadding = 12.dp,
+            endPadding = 16.dp,
+        )
+        setAniStyleContent(MacOSPlatform) {
+            Box(Modifier.width(300.dp)) {
+                MacTable {
+                    MacTableRow(columns, Modifier.testTag("fixed")) {
+                        Box(Modifier.height(80.dp))
+                        Text("A")
+                    }
+                    MacTableRow(columns, Modifier.testTag("wrap"), wrapContentHeight = true) {
+                        Box(Modifier.width(20.dp).height(80.dp).testTag("tall"))
+                        Text("B", Modifier.testTag("end"))
+                    }
+                    MacTableRow(columns, Modifier.testTag("short"), wrapContentHeight = true) {
+                        Text("C")
+                    }
+                }
+            }
+        }
+        assertEquals(52f, heightOf("fixed").value, SIZE_TOLERANCE)
+        // 80 + 上下各 8
+        assertEquals(96f, heightOf("wrap").value, SIZE_TOLERANCE)
+        assertEquals(52f, heightOf("short").value, SIZE_TOLERANCE)
+        assertEquals(12f, boundsOf("tall").left.value, SIZE_TOLERANCE)
+        assertEquals(300f - 16f, boundsOf("end").right.value, SIZE_TOLERANCE)
     }
 
     @Test
