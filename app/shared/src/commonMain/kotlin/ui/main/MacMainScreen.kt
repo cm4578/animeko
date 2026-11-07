@@ -33,7 +33,8 @@ import me.him188.ani.app.ui.bangumi.merge.BangumiConflictNotifier
 import me.him188.ani.app.ui.download.DownloadManagementScreen
 import me.him188.ani.app.ui.download.createDownloadManagementViewModel
 import me.him188.ani.app.ui.exploration.ExplorationPageViewModel
-import me.him188.ani.app.ui.exploration.ExplorationScreen
+import me.him188.ani.app.ui.exploration.MacExplorationPage
+import me.him188.ani.app.ui.exploration.schedule.ScheduleViewModel
 import me.him188.ani.app.ui.foundation.animation.LocalAniMotionScheme
 import me.him188.ani.app.ui.foundation.session.LocalSelfAvatarUnreadDot
 import me.him188.ani.app.ui.foundation.theme.LocalAppChromeHazeState
@@ -85,12 +86,15 @@ internal fun MacMainScreen(
                 when (page) {
                     // macOS 没有「我的」分页, 按探索处理
                     MainScreenPage.Exploration, MainScreenPage.Profile -> {
-                        ExplorationScreen(
+                        // 新番时间表小工具 (05 G4) 读取时间表的数据源, 只有 macOS 探索页创建与订阅
+                        val scheduleViewModel = viewModel { ScheduleViewModel() }
+                        val schedule by scheduleViewModel.presentationFlow.collectAsStateWithLifecycle()
+                        MacExplorationPage(
                             explorationPageViewModel.explorationPageState,
+                            explorationPageViewModel.quickFollowState,
                             selfInfo,
-                            onSearch = { navigator.navigateSubjectSearch() },
-                            onClickLogin = { navigator.navigateEmailLoginStart() },
-                            onClickSettings = { onOpenSettings(null) },
+                            schedule = schedule,
+                            onRefreshSchedule = { scheduleViewModel.refresh() },
                             modifier = Modifier.fillMaxSize(),
                         )
                     }

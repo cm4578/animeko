@@ -667,6 +667,10 @@
     <string name="exploration_recommendations">Recommendations</string>
     <string name="exploration_schedule_full">Full Schedule</string>
     <string name="exploration_schedule_today">See today’s episodes</string>
+    <string name="exploration_schedule_today_count">See %1$d anime airing today</string>
+    <string name="exploration_refresh">Refresh</string>
+    <string name="exploration_trending_previous">Previous</string>
+    <string name="exploration_trending_next">Next</string>
     <string name="exploration_quick_follow">Follow %1$s</string>
     <string name="exploration_quick_follow_followed">Following %1$s</string>
     <string name="exploration_horizontal_scroll_tip">Hold Shift + mouse wheel to scroll horizontally</string>

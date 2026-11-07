@@ -218,6 +218,12 @@ object AppleIcons {
         stroke(rect(13.5f, 13.5f, 6.5f, 6.5f, 1.5f))
     }
 
+    /** macOS 工具栏「重新整理」(⌘R). */
+    fun refresh(strokeWidth: Float = 2f): ImageVector = cached("refresh", strokeWidth) {
+        stroke("M19.5 12a7.5 7.5 0 1 1-2.2-5.3")
+        stroke("M19.5 4.5v4h-4")
+    }
+
     /** 「我的」页「Bangumi 同步」. */
     fun sync(strokeWidth: Float = 2f): ImageVector = cached("sync", strokeWidth) {
         stroke("M20 12a8 8 0 0 1-14.3 4.9")

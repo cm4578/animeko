@@ -51,6 +51,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.paging.compose.LazyPagingItems
@@ -459,20 +460,23 @@ private fun RecommendationCard(
 }
 
 /**
- * 封面上的快速追番按钮: 点击区 36, 内为 26 圆 (阴影 `0 1 3` 黑 18%). 未追番 card 底 + accent 加号; 已追番 tint 底 + accent 勾.
+ * 封面上的快速追番按钮: 点击区 [hitSize] (手机 36, macOS 32), 内为 [circleSize] 圆 (手机 26, macOS 24; 阴影 `0 1 3` 黑 18%).
+ * 未追番 card 底 + accent 加号; 已追番 tint 底 + accent 勾.
  */
 @Composable
-private fun CoverFollowButton(
+internal fun CoverFollowButton(
     followed: Boolean,
     enabled: Boolean,
     onClick: () -> Unit,
     contentDescription: String,
     modifier: Modifier = Modifier,
+    hitSize: Dp = 36.dp,
+    circleSize: Dp = 26.dp,
 ) {
     val colorScheme = MaterialTheme.colorScheme
     Box(
         modifier
-            .size(36.dp)
+            .size(hitSize)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .semantics {
                 this.contentDescription = contentDescription
@@ -482,7 +486,7 @@ private fun CoverFollowButton(
     ) {
         Box(
             Modifier
-                .size(26.dp)
+                .size(circleSize)
                 .dropShadow(
                     CircleShape,
                     Shadow(radius = 3.dp, color = Color.Black.copy(alpha = 0.18f), offset = DpOffset(0.dp, 1.dp)),
