@@ -130,6 +130,7 @@ import me.him188.ani.app.ui.settings.notification.NotificationSettingsViewModel
 import me.him188.ani.app.ui.settings.tabs.media.torrent.peer.PeerFilterSettingsScreen
 import me.him188.ani.app.ui.settings.tabs.media.torrent.peer.PeerFilterSettingsViewModel
 import me.him188.ani.app.ui.subject.details.AppleSubjectDetailsScreen
+import me.him188.ani.app.ui.subject.details.MacSubjectDetailsScreen
 import me.him188.ani.app.ui.subject.details.SubjectDetailsScreen
 import me.him188.ani.app.ui.subject.details.SubjectDetailsViewModel
 import me.him188.ani.app.ui.subject.episode.EpisodeScreen
@@ -610,6 +611,14 @@ private fun AniNavDisplay(
                         onClickTag = onClickTag,
                         onBack = { aniNavigator.popBackStack(route, inclusive = true) },
                         contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else if (appleShell == AppleShell.Mac) {
+                    MacSubjectDetailsScreen(
+                        vm,
+                        onPlay = { aniNavigator.navigateEpisodeDetails(route.subjectId, it) },
+                        onLoadErrorRetry = { vm.reload() },
+                        onClickTag = onClickTag,
+                        modifier = Modifier.fillMaxSize(),
                     )
                 } else {
                     SubjectDetailsScreen(

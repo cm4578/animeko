@@ -254,15 +254,7 @@ fun SubjectInfoTable(
     labelWidth: Dp = 78.dp,
     rowSpacing: Dp = 12.dp,
 ) {
-    val rows = buildList {
-        if (info.airDate.isValid) {
-            add(stringResource(Lang.subject_details_air_date) to formatAirDate(info.airDate))
-        }
-        if (mainEpisodeCount != null && mainEpisodeCount > 0) {
-            add(stringResource(Lang.subject_details_total_episodes) to mainEpisodeCount.toString())
-        }
-        if (info.aliases.isNotEmpty()) add(stringResource(Lang.subject_details_aliases) to info.aliases.joinToString(" / "))
-    }
+    val rows = subjectInfoRows(info, mainEpisodeCount)
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(rowSpacing)) {
         rows.forEach { (label, value) ->
             Row(Modifier.fillMaxWidth()) {
@@ -281,6 +273,20 @@ fun SubjectInfoTable(
             }
         }
     }
+}
+
+/**
+ * 作品信息的键值行: 放送开始、话数、别名, 没有的项不列出.
+ */
+@Composable
+internal fun subjectInfoRows(info: SubjectInfo, mainEpisodeCount: Int?): List<Pair<String, String>> = buildList {
+    if (info.airDate.isValid) {
+        add(stringResource(Lang.subject_details_air_date) to formatAirDate(info.airDate))
+    }
+    if (mainEpisodeCount != null && mainEpisodeCount > 0) {
+        add(stringResource(Lang.subject_details_total_episodes) to mainEpisodeCount.toString())
+    }
+    if (info.aliases.isNotEmpty()) add(stringResource(Lang.subject_details_aliases) to info.aliases.joinToString(" / "))
 }
 
 @Composable

@@ -257,6 +257,12 @@ object AppleIcons {
         stroke("M8.5 12h7")
     }
 
+    /** 铅笔, 用于「写评价」. */
+    fun pencil(strokeWidth: Float = 1.9f): ImageVector = cached("pencil", strokeWidth) {
+        stroke("M5 19l1-4.5L15.5 5a2.1 2.1 0 0 1 3 3L9 17.5L5 19z")
+        stroke("M13.5 7l3 3")
+    }
+
     // 以下为设定分类图标: 手机「我的」页的设定列与 macOS 设定窗口的分类栏共用.
 
     /** 设定「介面」. */

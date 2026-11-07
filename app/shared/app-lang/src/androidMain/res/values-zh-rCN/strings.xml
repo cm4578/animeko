@@ -1352,6 +1352,8 @@
     <string name="subject_details_share">分享</string>
     <string name="subject_details_share_copy_link">复制链接</string>
     <string name="subject_details_share_open_in_browser">在浏览器中打开</string>
+    <string name="subject_details_open_in_bangumi">在 Bangumi 打开</string>
+    <string name="subject_details_watched_episodes">已看 %1$d / %2$d 话</string>
     <string name="foundation_load_error_network">网络错误</string>
     <string name="foundation_load_error_rate_limited">操作过快，请重试</string>
     <string name="foundation_load_error_service_unavailable">服务暂不可用</string>

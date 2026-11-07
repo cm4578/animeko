@@ -681,22 +681,27 @@ private fun ActionsRow(
 
 /**
  * 收藏状态按钮: 已收藏为「已在看」等, 未收藏为「追番」, 点击打开 C15 菜单 (五种状态; 已收藏时加「取消追番」, 先确认).
+ *
+ * @param height 手机 48; macOS 条目详情 32.
  */
 @Composable
-private fun CollectionTypeButton(
+internal fun CollectionTypeButton(
     presentation: EditableSubjectCollectionTypeState.Presentation,
     onSetType: (UnifiedCollectionType) -> Unit,
+    modifier: Modifier = Modifier,
+    height: Dp = 48.dp,
 ) {
     val current = presentation.selfCollectionType
     var expanded by remember { mutableStateOf(false) }
     var confirmUnfollow by remember { mutableStateOf(false) }
-    Box {
+    // 外部给定宽度 (macOS 占满剩余宽) 时按钮跟着撑满, 否则按内容宽
+    Box(modifier, propagateMinConstraints = true) {
         AppleButton(
             { expanded = true },
             Modifier.testTag(AppleSubjectDetailsTestTags.CollectionButton),
             style = AppleButtonStyle.Tinted,
             enabled = !presentation.isSetSelfCollectionTypeWorking && !presentation.isPlaceholder,
-            height = 48.dp,
+            height = height,
             contentPadding = PaddingValues(horizontal = 16.dp),
         ) {
             Text(
@@ -746,11 +751,7 @@ private fun CollectionTypeButton(
  */
 @Composable
 private fun ShareButton(subjectId: Int, style: AppleCircleButtonStyle) {
-    val clipboard = LocalClipboard.current
-    val uriHandler = LocalUriHandler.current
-    val scope = rememberCoroutineScope()
     var expanded by remember { mutableStateOf(false) }
-    val url = bangumiSubjectUrl(subjectId)
     Box {
         AppleCircleButton(
             { expanded = true },
@@ -759,25 +760,37 @@ private fun ShareButton(subjectId: Int, style: AppleCircleButtonStyle) {
             Modifier.testTag(AppleSubjectDetailsTestTags.Share),
             style = style,
         )
-        ApplePopoverMenu(expanded, onDismissRequest = { expanded = false }, Modifier.testTag(AppleSubjectDetailsTestTags.ShareMenu)) {
-            PopoverMenuItem(
-                stringResource(Lang.subject_details_share_copy_link),
-                onClick = {
-                    expanded = false
-                    scope.launch { clipboard.setClipEntryText(url) }
-                },
-                icon = AppleIcons.copy(),
-            )
-            PopoverMenuItem(
-                stringResource(Lang.subject_details_share_open_in_browser),
-                onClick = {
-                    expanded = false
-                    uriHandler.openUri(url)
-                },
-                icon = AppleIcons.externalLink(),
-                showDivider = true,
-            )
-        }
+        SubjectShareMenu(subjectId, expanded, onDismissRequest = { expanded = false })
+    }
+}
+
+/**
+ * 分享菜单 (05 G6): 「复制链接」「在浏览器中打开」, 链接为 Bangumi 条目页. 放在分享按钮所在的 [Box] 里.
+ */
+@Composable
+internal fun SubjectShareMenu(subjectId: Int, expanded: Boolean, onDismissRequest: () -> Unit) {
+    val clipboard = LocalClipboard.current
+    val uriHandler = LocalUriHandler.current
+    val scope = rememberCoroutineScope()
+    val url = bangumiSubjectUrl(subjectId)
+    ApplePopoverMenu(expanded, onDismissRequest = onDismissRequest, Modifier.testTag(AppleSubjectDetailsTestTags.ShareMenu)) {
+        PopoverMenuItem(
+            stringResource(Lang.subject_details_share_copy_link),
+            onClick = {
+                onDismissRequest()
+                scope.launch { clipboard.setClipEntryText(url) }
+            },
+            icon = AppleIcons.copy(),
+        )
+        PopoverMenuItem(
+            stringResource(Lang.subject_details_share_open_in_browser),
+            onClick = {
+                onDismissRequest()
+                uriHandler.openUri(url)
+            },
+            icon = AppleIcons.externalLink(),
+            showDivider = true,
+        )
     }
 }
 
