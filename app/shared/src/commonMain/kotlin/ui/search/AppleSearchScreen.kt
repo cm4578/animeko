@@ -19,6 +19,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.collectLatest
 import me.him188.ani.app.navigation.SubjectDetailPlaceholder
 import me.him188.ani.app.ui.exploration.search.AppleSearchPage
+import me.him188.ani.app.ui.exploration.search.MacSearchPage
 import me.him188.ani.app.ui.exploration.search.SearchPageEffect
 import me.him188.ani.app.ui.exploration.search.SearchPageIntent
 import me.him188.ani.app.ui.main.SearchViewModel
@@ -39,7 +40,58 @@ fun AppleSearchScreen(
 ) {
     val searchPageState by vm.searchPageState.collectAsStateWithLifecycle()
     val selfInfo by vm.selfInfoFlow.collectAsStateWithLifecycle(null)
+    SearchPageEffectsHandler(vm, onNavigateToSubjectDetails, onNavigateToEpisodeDetails)
 
+    AppleSearchPage(
+        state = searchPageState,
+        onIntent = vm::onSearchPageIntent,
+        suggestionsPager = vm::suggestionsPager,
+        quickFollowState = vm.quickFollowState.takeIf { selfInfo?.isSessionValid == true },
+        onCancel = onNavigateBack,
+        modifier = modifier.fillMaxSize(),
+        contentPadding = contentPadding,
+    )
+    LaunchedEffect(vm) {
+        vm.onSearchPageIntent(SearchPageIntent.StartInitialSearch)
+    }
+}
+
+/**
+ * macOS 搜索页的状态接入: 搜索框在侧边栏, 结果点击或 ↩ 进入条目详情.
+ *
+ * 与 [SearchScreen] 同一个 [SearchViewModel]; 不使用列表与详情并排的版式.
+ */
+@Composable
+fun MacSearchScreen(
+    vm: SearchViewModel,
+    onNavigateToSubjectDetails: (subjectId: Int, placeholder: SubjectDetailPlaceholder?) -> Unit,
+    onNavigateToEpisodeDetails: (subjectId: Int, episodeId: Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val searchPageState by vm.searchPageState.collectAsStateWithLifecycle()
+    val selfInfo by vm.selfInfoFlow.collectAsStateWithLifecycle(null)
+    SearchPageEffectsHandler(vm, onNavigateToSubjectDetails, onNavigateToEpisodeDetails)
+
+    MacSearchPage(
+        state = searchPageState,
+        onIntent = vm::onSearchPageIntent,
+        quickFollowState = vm.quickFollowState.takeIf { selfInfo?.isSessionValid == true },
+        modifier = modifier.fillMaxSize(),
+    )
+    LaunchedEffect(vm) {
+        vm.onSearchPageIntent(SearchPageIntent.StartInitialSearch)
+    }
+}
+
+/**
+ * 处理搜索页的导航效果: 进入条目详情或剧集.
+ */
+@Composable
+private fun SearchPageEffectsHandler(
+    vm: SearchViewModel,
+    onNavigateToSubjectDetails: (subjectId: Int, placeholder: SubjectDetailPlaceholder?) -> Unit,
+    onNavigateToEpisodeDetails: (subjectId: Int, episodeId: Int) -> Unit,
+) {
     LaunchedEffect(vm) {
         vm.searchPageEffects.collectLatest { effect ->
             when (effect) {
@@ -60,18 +112,5 @@ fun AppleSearchScreen(
                 }
             }
         }
-    }
-
-    AppleSearchPage(
-        state = searchPageState,
-        onIntent = vm::onSearchPageIntent,
-        suggestionsPager = vm::suggestionsPager,
-        quickFollowState = vm.quickFollowState.takeIf { selfInfo?.isSessionValid == true },
-        onCancel = onNavigateBack,
-        modifier = modifier.fillMaxSize(),
-        contentPadding = contentPadding,
-    )
-    LaunchedEffect(vm) {
-        vm.onSearchPageIntent(SearchPageIntent.StartInitialSearch)
     }
 }

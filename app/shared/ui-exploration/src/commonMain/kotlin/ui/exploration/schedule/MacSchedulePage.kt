@@ -347,7 +347,7 @@ private fun ScheduleCard(
  * 22 圆形追番切换钮 (点击区 28): 已追番为 tint 底 + accent 勾, 未追番为 fill 底 + label2「+」.
  */
 @Composable
-private fun MacFollowToggle(
+internal fun MacFollowToggle(
     followed: Boolean,
     enabled: Boolean,
     onClick: () -> Unit,

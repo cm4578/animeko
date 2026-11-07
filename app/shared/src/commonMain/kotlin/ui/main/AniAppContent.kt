@@ -115,6 +115,7 @@ import me.him188.ani.app.ui.qrlogin.QrLoginConfirmViewModel
 import me.him188.ani.app.ui.qrlogin.QrLoginScanScreen
 import me.him188.ani.app.ui.qrlogin.isQrCodeScannerSupported
 import me.him188.ani.app.ui.search.AppleSearchScreen
+import me.him188.ani.app.ui.search.MacSearchScreen
 import me.him188.ani.app.ui.search.SearchScreen
 import me.him188.ani.app.ui.settings.SettingsScreen
 import me.him188.ani.app.ui.settings.SettingsViewModel
@@ -576,6 +577,16 @@ private fun AniNavDisplay(
                             navigator.navigateEpisodeDetails(subjectId, episodeId)
                         },
                         contentPadding = WindowInsets.navigationBars.only(WindowInsetsSides.Bottom).asPaddingValues(),
+                    )
+                } else if (appleShell == AppleShell.Mac) {
+                    MacSearchScreen(
+                        vm,
+                        onNavigateToSubjectDetails = { subjectId, placeholder ->
+                            navigator.navigateSubjectDetails(subjectId, placeholder)
+                        },
+                        onNavigateToEpisodeDetails = { subjectId, episodeId ->
+                            navigator.navigateEpisodeDetails(subjectId, episodeId)
+                        },
                     )
                 } else {
                     SearchScreen(

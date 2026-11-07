@@ -439,7 +439,7 @@ private fun SearchResults(
 }
 
 @Composable
-private fun LoadingIndicator() {
+internal fun LoadingIndicator() {
     Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
         CircularProgressIndicator()
     }
@@ -451,7 +451,7 @@ private fun LoadingIndicator() {
  * 排序、年份、季度为单选, 选后关闭菜单; 标签分类可多选, 点选项切换选中, 菜单保持打开.
  */
 @Composable
-private fun SearchFilterPills(
+internal fun SearchFilterPills(
     state: SearchPageState,
     onIntent: (SearchPageIntent) -> Unit,
     modifier: Modifier = Modifier,
@@ -667,7 +667,7 @@ private fun SearchResultRow(
 /**
  * 标题中命中 [keywords] 的部分 (不分大小写; 以空白分隔的每个词) 改为 accent W700.
  */
-private fun highlightKeywords(
+internal fun highlightKeywords(
     title: String,
     keywords: String,
     color: Color,
