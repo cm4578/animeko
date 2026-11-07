@@ -43,6 +43,14 @@
     <string name="settings_category_data_playback">数据源与播放</string>
     <string name="settings_category_network_storage">网络与存储</string>
     <string name="settings_category_others">其他</string>
+    <string name="settings_mac_account_and_sync">帐号与同步</string>
+    <string name="settings_mac_edit_profile">编辑个人资料…</string>
+    <string name="settings_mac_sync_and_notifications">同步与通知</string>
+    <string name="settings_mac_sign_in_and_devices">登录与设备</string>
+    <string name="settings_mac_bangumi_connected">已连接 Bangumi · %1$s</string>
+    <string name="settings_mac_bangumi_not_connected">未连接 Bangumi</string>
+    <string name="settings_mac_notifications_description">评论互动、举报结果与公告</string>
+    <string name="settings_mac_open_settings_hint">按 ⌘, 随时打开设置</string>
     <string name="settings_debug_mode_enabled">已进入调试模式</string>
     <string name="settings_tab_appearance">界面</string>
     <string name="settings_tab_theme">主题与色彩</string>

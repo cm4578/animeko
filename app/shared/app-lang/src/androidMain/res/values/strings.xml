@@ -43,6 +43,14 @@
     <string name="settings_category_data_playback">Data Source &amp; Playback</string>
     <string name="settings_category_network_storage">Network &amp; Storage</string>
     <string name="settings_category_others">Others</string>
+    <string name="settings_mac_account_and_sync">Account &amp; Sync</string>
+    <string name="settings_mac_edit_profile">Edit Profile…</string>
+    <string name="settings_mac_sync_and_notifications">Sync &amp; Notifications</string>
+    <string name="settings_mac_sign_in_and_devices">Sign-in &amp; Devices</string>
+    <string name="settings_mac_bangumi_connected">Connected to Bangumi · %1$s</string>
+    <string name="settings_mac_bangumi_not_connected">Not connected to Bangumi</string>
+    <string name="settings_mac_notifications_description">Comment replies, report results, and announcements</string>
+    <string name="settings_mac_open_settings_hint">Press ⌘, to open Settings anytime</string>
     <string name="settings_debug_mode_enabled">Debug mode enabled</string>
     <string name="settings_tab_appearance">Appearance</string>
     <string name="settings_tab_theme">Theme &amp; Colors</string>

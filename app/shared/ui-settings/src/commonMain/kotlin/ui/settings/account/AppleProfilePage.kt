@@ -352,18 +352,18 @@ private fun ProfileCard(
     }
 }
 
-private val ProfileStats = listOf(
+internal val ProfileStats = listOf(
     UnifiedCollectionType.DOING to Lang.subject_collection_doing,
     UnifiedCollectionType.WISH to Lang.subject_collection_wish,
     UnifiedCollectionType.DONE to Lang.subject_collection_done,
 )
 
-private class SettingsGroup(val title: StringResource, val tabs: List<SettingsTab>)
+internal class SettingsGroup(val title: StringResource, val tabs: List<SettingsTab>)
 
 /**
  * 与设置页的分组相同 (05 G16): 「软件更新」在「其他」.
  */
-private fun settingsGroups(showDebugSettings: Boolean): List<SettingsGroup> = listOf(
+internal fun settingsGroups(showDebugSettings: Boolean): List<SettingsGroup> = listOf(
     SettingsGroup(Lang.settings_category_app_ui, listOf(SettingsTab.APPEARANCE, SettingsTab.THEME)),
     SettingsGroup(
         Lang.settings_category_data_playback,
@@ -385,7 +385,7 @@ private fun settingsGroups(showDebugSettings: Boolean): List<SettingsGroup> = li
     ),
 )
 
-private fun settingsTabIcon(tab: SettingsTab): ImageVector = when (tab) {
+internal fun settingsTabIcon(tab: SettingsTab): ImageVector = when (tab) {
     SettingsTab.PROFILE -> AppleIcons.profile(2f)
     SettingsTab.APPEARANCE -> AppleIcons.settingsAppearance()
     SettingsTab.THEME -> AppleIcons.settingsTheme()

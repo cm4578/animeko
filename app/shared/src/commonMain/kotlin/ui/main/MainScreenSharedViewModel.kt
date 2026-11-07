@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import me.him188.ani.app.data.models.subject.SubjectCollectionCounts
 import me.him188.ani.app.data.repository.episode.EpisodeCollectionRepository
 import me.him188.ani.app.data.repository.player.EpisodePlayHistoryRepository
 import me.him188.ani.app.data.repository.subject.BangumiSyncCommandRepository
@@ -170,6 +171,16 @@ open class MainScreenSharedViewModel : AbstractViewModel(), KoinComponent {
             }
             .distinctUntilChanged()
             .stateIn(backgroundScope, SharingStarted.WhileSubscribed(5000), 0)
+    }
+
+    /**
+     * 各类收藏的数量 (帐号窗格的在看 / 想看 / 看过). 请求失败时为 `null`.
+     *
+     * 只有 macOS 设定窗口订阅.
+     */
+    val subjectCollectionCounts: StateFlow<SubjectCollectionCounts?> by lazy {
+        subjectCollectionRepository.subjectCollectionCountsFlow()
+            .stateIn(backgroundScope, SharingStarted.WhileSubscribed(5000), null)
     }
 
     init {

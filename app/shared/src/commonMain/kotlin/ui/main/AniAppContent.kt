@@ -262,40 +262,57 @@ private fun AniAppContentImpl(
             // 侧边栏与主分页共用一个实例: 侧边栏在 NavDisplay 外层, 读不到 Main 条目里的 ViewModel.
             val sharedViewModel = viewModel { MainScreenSharedViewModel() }
             val searchField = remember { MacSearchFieldState() }
-            val onOpenSettings: (SettingsTab?) -> Unit = { aniNavigator.navigateSettings(it) }
-            MacNavigationShell(
-                backStack,
-                aniNavigator,
-                appleMainPages!!,
-                status = rememberMacSidebarStatus(sharedViewModel),
-                searchField = searchField,
-                onOpenAccount = {
-                    val selfInfo = sharedViewModel.selfInfo.value
-                    if (selfInfo.isSessionValid == true) {
-                        onOpenSettings(SettingsTab.PROFILE)
-                    } else {
-                        aniNavigator.navigateEmailLoginStart()
+            // 设定为独立窗口 (05 B4): 有宿主时, 主窗口里所有打开设定的入口都打开设定窗口
+            val settingsWindowHost = LocalMacSettingsWindowHost.current
+            val settingsWindow = remember { MacSettingsWindowState() }
+            val navigator = remember(aniNavigator, settingsWindowHost, settingsWindow) {
+                if (settingsWindowHost != null) MacSettingsWindowNavigator(aniNavigator, settingsWindow) else aniNavigator
+            }
+            val onOpenSettings: (SettingsTab?) -> Unit = { navigator.navigateSettings(it) }
+            CompositionLocalProvider(LocalNavigator provides navigator) {
+                MacNavigationShell(
+                    backStack,
+                    navigator,
+                    appleMainPages!!,
+                    status = rememberMacSidebarStatus(sharedViewModel),
+                    searchField = searchField,
+                    onOpenAccount = {
+                        val selfInfo = sharedViewModel.selfInfo.value
+                        if (selfInfo.isSessionValid == true) {
+                            onOpenSettings(SettingsTab.PROFILE)
+                        } else {
+                            navigator.navigateEmailLoginStart()
+                        }
+                    },
+                    onOpenSettings = { onOpenSettings(null) },
+                    modifier = modifier,
+                ) {
+                    CompositionLocalProvider(LocalMacSearchField provides searchField) {
+                        AniNavDisplay(
+                            navigator,
+                            backStack,
+                            mainSceneInitialPage,
+                            Modifier.fillMaxSize(),
+                            navMotionScheme,
+                            emailLoginViewModel,
+                            appleShell,
+                            appleMainPages,
+                            sharedViewModel = sharedViewModel,
+                            extraEntryDecorators = emptyList(),
+                            onOpenSettings = onOpenSettings,
+                            onOpenPlayFlowDebugWindow,
+                        )
                     }
-                },
-                onOpenSettings = { onOpenSettings(null) },
-                modifier = modifier,
-            ) {
-                CompositionLocalProvider(LocalMacSearchField provides searchField) {
-                    AniNavDisplay(
-                        aniNavigator,
-                        backStack,
-                        mainSceneInitialPage,
-                        Modifier.fillMaxSize(),
-                        navMotionScheme,
-                        emailLoginViewModel,
-                        appleShell,
-                        appleMainPages,
-                        sharedViewModel = sharedViewModel,
-                        extraEntryDecorators = emptyList(),
-                        onOpenSettings = onOpenSettings,
-                        onOpenPlayFlowDebugWindow,
-                    )
                 }
+            }
+            settingsWindowHost?.SettingsWindow(settingsWindow) {
+                MacSettingsWindowScreen(
+                    settingsWindow,
+                    sharedViewModel,
+                    navigator,
+                    onShowMainWindow = settingsWindowHost::showMainWindow,
+                    onOpenPlayFlowDebugWindow = onOpenPlayFlowDebugWindow,
+                )
             }
         }
 
