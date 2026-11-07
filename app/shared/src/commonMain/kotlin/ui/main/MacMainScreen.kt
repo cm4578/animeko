@@ -30,7 +30,7 @@ import me.him188.ani.app.navigation.LocalNavigator
 import me.him188.ani.app.navigation.MainScreenPage
 import me.him188.ani.app.navigation.SettingsTab
 import me.him188.ani.app.ui.bangumi.merge.BangumiConflictNotifier
-import me.him188.ani.app.ui.download.DownloadManagementScreen
+import me.him188.ani.app.ui.download.MacDownloadManagementPage
 import me.him188.ani.app.ui.download.createDownloadManagementViewModel
 import me.him188.ani.app.ui.exploration.ExplorationPageViewModel
 import me.him188.ani.app.ui.exploration.MacExplorationPage
@@ -127,12 +127,10 @@ internal fun MacMainScreen(
                     }
 
                     MainScreenPage.CacheManagement -> {
-                        DownloadManagementScreen(
+                        MacDownloadManagementPage(
                             downloadManagementViewModel,
-                            selfInfo = selfInfo,
-                            onPlay = { navigator.navigateEpisodeDetails(it.subjectId, it.episodeId) },
-                            onNavigateCacheDetail = { navigator.navigateCacheDetails(it) },
-                            onClickLogin = { navigator.navigateEmailLoginStart() },
+                            onOpenSubjectDownloads = { navigator.navigateSubjectCaches(it) },
+                            onOpenSubjectDetails = { navigator.navigateSubjectDetails(it, placeholder = null) },
                             modifier = Modifier.fillMaxSize(),
                         )
                     }
