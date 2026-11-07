@@ -40,6 +40,7 @@ import androidx.compose.ui.window.application
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import com.sun.jna.platform.win32.Advapi32Util
 import com.sun.jna.platform.win32.WinReg
 import kotlinx.coroutines.Dispatchers
@@ -523,11 +524,9 @@ object AniDesktop {
                 onExit = exitApplicationSavingWindowState,
             )
 
-            // 没有任何启用的 BackHandler 时, 返回等价于退出当前页面
-            val backPressedDispatcher = remember(navigator) {
-                OnBackPressedDispatcher(fallback = { navigator.popBackStack() })
-            }
             val backKeyEventHandler = remember { BackKeyEventHandler() }
+            // 要用到窗口的 NavigationEventDispatcher, 所以在 Window 内容里创建
+            val backPressedDispatcherState = remember { mutableStateOf<OnBackPressedDispatcher?>(null) }
             Window(
                 visible = !trayState.isWindowHiddenToTray,
                 onCloseRequest = {
@@ -540,14 +539,31 @@ object AniDesktop {
                 title = "Ani",
                 icon = appIcon,
                 alwaysOnTop = alwaysOnTopState.value,
-                // 只在没有任何节点消费按键时才会走到这里 (通常是没有焦点, 例如侧边栏关闭后清除了焦点).
-                // 不接管的话, Compose Desktop 会把这个 Escape 直接交给 Navigation 3 出栈,
-                // 绕过播放页全屏等 BackHandler, 表现为「全屏按 ESC 返回了上一页」.
-                onKeyEvent = { event -> backKeyEventHandler.onKeyEvent(event, backPressedDispatcher::onBackPressed) },
+                // 没有任何节点消费的按键才会走到这里: 没有焦点 (例如侧边栏关闭后清除了焦点),
+                // 或者焦点在不处理 Escape 的可聚焦 Popup / Dialog 里.
+                // 不接管的话, Compose Desktop 会把 Escape 交给窗口的 NavigationEventDispatcher, 由 Navigation 3 直接出栈,
+                // 绕过播放页全屏等 BackHandler. backPressedDispatcher 先关闭最上层的 Popup / Dialog, 其次才是 BackHandler 和出栈.
+                onKeyEvent = { event ->
+                    val backPressedDispatcher = backPressedDispatcherState.value
+                    backPressedDispatcher != null &&
+                        backKeyEventHandler.onKeyEvent(event, backPressedDispatcher::onBackPressed)
+                },
             ) {
                 // In dev mode this enables hot reload,
                 // In release mode this just executes the content
                 val lifecycleOwner = LocalLifecycleOwner.current
+                val navigationEventDispatcher = LocalNavigationEventDispatcherOwner.current?.navigationEventDispatcher
+                // 没有任何启用的 BackHandler 时, 返回等价于退出当前页面.
+                // 可聚焦的 Popup / Dialog 把关闭注册在窗口的 NavigationEventDispatcher 里, 见 OnBackPressedDispatcher.
+                val backPressedDispatcher = remember(navigator, navigationEventDispatcher) {
+                    OnBackPressedDispatcher(
+                        fallback = { navigator.popBackStack() },
+                        navigationEventDispatcher = navigationEventDispatcher,
+                    )
+                }
+                SideEffect {
+                    backPressedDispatcherState.value = backPressedDispatcher
+                }
                 val backPressedDispatcherOwner = remember(backPressedDispatcher, lifecycleOwner) {
                     SkikoOnBackPressedDispatcherOwner(backPressedDispatcher, lifecycleOwner)
                 }

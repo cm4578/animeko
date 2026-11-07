@@ -83,6 +83,7 @@ import androidx.compose.ui.window.Popup
 import me.him188.ani.app.data.models.preference.DanmakuSettings
 import me.him188.ani.app.data.models.preference.DarkMode
 import me.him188.ani.app.ui.foundation.dialogs.PlatformPopupProperties
+import me.him188.ani.app.ui.foundation.navigation.BackHandler
 import me.him188.ani.app.ui.foundation.theme.AniTheme
 import me.him188.ani.app.ui.lang.Lang
 import me.him188.ani.app.ui.lang.danmaku_send_style
@@ -181,6 +182,8 @@ fun DanmakuStylePicker(
         DanmakuStyleButton(style, onClick = { setExpanded(!expanded) })
 
         if (expanded) {
+            // 非 focusable 的弹层自己不处理返回, 返回键 (桌面端 Esc) 由这里先关闭弹层, 不会直接退出播放页.
+            BackHandler { setExpanded(false) }
             // 只选预设时不抢焦点, 弹幕输入框保持聚焦, 视频不会因为失焦而恢复播放;
             // 展开自定义颜色后需要键入十六进制, 非 focusable 的弹层内文本框拿不到焦点, 此时改为可聚焦.
             // 桌面端 Popup 不支持运行时切换 focusable, 用 key 重建.

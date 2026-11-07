@@ -12,8 +12,11 @@ package me.him188.ani.app.ui.danmaku
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,8 +26,14 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import me.him188.ani.app.data.models.preference.DarkMode
 import me.him188.ani.app.ui.foundation.ProvideCompositionLocalsForPreview
+import me.him188.ani.app.ui.foundation.navigation.LocalOnBackPressedDispatcherOwner
+import me.him188.ani.app.ui.foundation.navigation.OnBackPressedDispatcher
+import me.him188.ani.app.ui.foundation.navigation.SkikoOnBackPressedDispatcherOwner
+import me.him188.ani.app.ui.framework.AniComposeUiTest
 import me.him188.ani.app.ui.framework.doesNotExist
 import me.him188.ani.app.ui.framework.exists
 import me.him188.ani.app.ui.framework.runAniComposeUiTest
@@ -77,6 +86,79 @@ class DanmakuStylePickerTest {
 
         // 选择后弹层保持打开, 方便继续调整
         onNodeWithTag(TAG_DANMAKU_STYLE_PANEL).assertExists()
+    }
+
+    @Test
+    fun `picker - back press closes the preset panel before leaving the page`() = runAniComposeUiTest {
+        val window = setPickerInWindow()
+        onNodeWithTag(TAG_DANMAKU_STYLE_BUTTON).performClick()
+        runOnIdle {
+            waitUntil { onNodeWithTag(TAG_DANMAKU_STYLE_PANEL).exists() }
+        }
+
+        runOnIdle { window.dispatcher.onBackPressed() }
+        runOnIdle {
+            waitUntil { onNodeWithTag(TAG_DANMAKU_STYLE_PANEL).doesNotExist() }
+            assertEquals(0, window.pageBackCount)
+        }
+
+        runOnIdle { window.dispatcher.onBackPressed() }
+        runOnIdle { assertEquals(1, window.pageBackCount) }
+    }
+
+    @Test
+    fun `picker - back press closes the focusable custom color panel before leaving the page`() =
+        runAniComposeUiTest {
+            val window = setPickerInWindow()
+            onNodeWithTag(TAG_DANMAKU_STYLE_BUTTON).performClick()
+            runOnIdle {
+                waitUntil { onNodeWithTag(TAG_DANMAKU_STYLE_PANEL).exists() }
+            }
+            // 进入自定义模式后弹层重建为可聚焦的 Popup
+            onNodeWithTag(TAG_DANMAKU_CUSTOM_COLOR_SWATCH).performClick()
+            onNodeWithTag(TAG_DANMAKU_CUSTOM_COLOR_HEX).assertExists()
+
+            runOnIdle { window.dispatcher.onBackPressed() }
+            runOnIdle {
+                waitUntil { onNodeWithTag(TAG_DANMAKU_STYLE_PANEL).doesNotExist() }
+                assertEquals(0, window.pageBackCount)
+            }
+        }
+
+    private class PickerWindow {
+        lateinit var dispatcher: OnBackPressedDispatcher
+        var pageBackCount = 0
+    }
+
+    /**
+     * 按桌面主窗口的方式接上返回: dispatcher 带窗口的 NavigationEventDispatcher, 没有可关闭的东西时才算离开页面.
+     */
+    private fun AniComposeUiTest.setPickerInWindow(): PickerWindow {
+        val window = PickerWindow()
+        setContent {
+            ProvideCompositionLocalsForPreview(darkMode = DarkMode.DARK) {
+                val navigationEventDispatcher =
+                    checkNotNull(LocalNavigationEventDispatcherOwner.current).navigationEventDispatcher
+                val dispatcher = remember(navigationEventDispatcher) {
+                    OnBackPressedDispatcher(
+                        fallback = { window.pageBackCount++ },
+                        navigationEventDispatcher = navigationEventDispatcher,
+                    )
+                }
+                SideEffect { window.dispatcher = dispatcher }
+                val lifecycleOwner = LocalLifecycleOwner.current
+                val owner = remember(dispatcher, lifecycleOwner) {
+                    SkikoOnBackPressedDispatcherOwner(dispatcher, lifecycleOwner)
+                }
+                CompositionLocalProvider(LocalOnBackPressedDispatcherOwner provides owner) {
+                    // 弹层在按钮上方, 所以把按钮放在底部留出空间
+                    Box(Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.BottomStart) {
+                        DanmakuStylePicker(DanmakuSendStyle.Default, onStyleChange = {})
+                    }
+                }
+            }
+        }
+        return window
     }
 
     @Test
