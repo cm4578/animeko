@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
+import me.him188.ani.app.ui.foundation.navigation.BackHandler
 
 /**
  * C14 macOS sheet: 从工具栏下缘降下, 水平居中; 宽 560–760、圆角 12、底色 bg; 背景盖 38% 黑色遮罩.
@@ -67,6 +68,8 @@ fun MacSheet(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val shape = RoundedCornerShape(12.dp)
+    // 桌面的 Esc 由窗口交给 App 的返回分派, 不会经过 Popup 自己的返回处理. sheet 打开时返回只关闭 sheet.
+    BackHandler(onBack = onDismissRequest)
     Popup(
         popupPositionProvider = WindowOriginPositionProvider,
         onDismissRequest = onDismissRequest,

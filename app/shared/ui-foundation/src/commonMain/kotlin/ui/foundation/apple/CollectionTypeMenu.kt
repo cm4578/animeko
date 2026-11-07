@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import me.him188.ani.app.ui.foundation.navigation.BackHandler
 import me.him188.ani.app.ui.lang.Lang
 import me.him188.ani.app.ui.lang.subject_collection_cancel
 import me.him188.ani.app.ui.lang.subject_collection_delete_action
@@ -94,6 +95,8 @@ fun UnfollowConfirmDialog(
     onDismissRequest: () -> Unit,
     confirmButtonModifier: Modifier = Modifier,
 ) {
+    // 桌面的 Esc 由窗口交给 App 的返回分派, 不会经过 Dialog 自己的返回处理. 对话框打开时返回只关闭对话框.
+    BackHandler(onBack = onDismissRequest)
     AlertDialog(
         onDismissRequest = onDismissRequest,
         title = { Text(stringResource(Lang.subject_collection_delete_confirm_title)) },

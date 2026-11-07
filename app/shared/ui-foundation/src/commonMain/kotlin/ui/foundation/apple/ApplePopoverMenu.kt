@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
+import me.him188.ani.app.ui.foundation.navigation.BackHandler
 import me.him188.ani.app.ui.foundation.theme.AniColors
 import me.him188.ani.app.ui.foundation.theme.AniTextStyles
 
@@ -99,6 +100,9 @@ internal fun PopoverMenuPopup(
 ) {
     val mac = isMacStyle
     val shape = RoundedCornerShape(if (mac) 10.dp else 14.dp)
+    // 桌面的 Esc 由窗口交给 App 的返回分派, 不会经过 Popup 自己的返回处理.
+    // 菜单打开时返回只关闭菜单, 不离开所在页面.
+    BackHandler(onBack = onDismissRequest)
     Popup(
         popupPositionProvider = positionProvider,
         onDismissRequest = onDismissRequest,
