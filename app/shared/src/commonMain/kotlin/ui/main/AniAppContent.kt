@@ -76,6 +76,7 @@ import me.him188.ani.app.ui.download.details.MediaDetailsLazyGrid
 import me.him188.ani.app.ui.download.subject.SubjectDownloadsScreen
 import me.him188.ani.app.ui.exploration.schedule.AiringScheduleItemPresentation
 import me.him188.ani.app.ui.exploration.schedule.AppleSchedulePage
+import me.him188.ani.app.ui.exploration.schedule.MacSchedulePage
 import me.him188.ani.app.ui.exploration.schedule.ScheduleScreen
 import me.him188.ani.app.ui.exploration.schedule.ScheduleViewModel
 import me.him188.ani.app.ui.exploration.trends.TrendingRankingScreen
@@ -964,7 +965,17 @@ private fun AniNavDisplay(
                         ),
                     )
                 }
-                if (isIosShell) {
+                if (appleShell == AppleShell.Mac) {
+                    val selfInfo by remember { SelfInfoStateProducer() }.flow.collectAsState(null)
+                    MacSchedulePage(
+                        presentation,
+                        state = vm.pageState,
+                        quickFollowState = vm.quickFollowState.takeIf { selfInfo?.isSessionValid == true },
+                        onRetry = { vm.refresh() },
+                        onClickItem = onClickItem,
+                        Modifier.fillMaxSize(),
+                    )
+                } else if (isIosShell) {
                     val selfInfo by remember { SelfInfoStateProducer() }.flow.collectAsState(null)
                     AppleSchedulePage(
                         presentation,

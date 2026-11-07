@@ -666,6 +666,7 @@
     <string name="exploration_continue_watching">Continue Watching</string>
     <string name="exploration_recommendations">Recommendations</string>
     <string name="exploration_schedule_full">Full Schedule</string>
+    <string name="schedule_today">Today</string>
     <string name="exploration_schedule_today">See today’s episodes</string>
     <string name="exploration_schedule_today_count">See %1$d anime airing today</string>
     <string name="exploration_refresh">Refresh</string>

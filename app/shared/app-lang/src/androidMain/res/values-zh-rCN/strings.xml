@@ -706,6 +706,7 @@
     <string name="exploration_continue_watching">继续观看</string>
     <string name="exploration_recommendations">推荐</string>
     <string name="exploration_schedule_full">完整时间表</string>
+    <string name="schedule_today">今天</string>
     <string name="exploration_schedule_today">查看今天更新的番剧</string>
     <string name="exploration_schedule_today_count">查看今天更新的 %1$d 部番剧</string>
     <string name="exploration_refresh">刷新</string>
