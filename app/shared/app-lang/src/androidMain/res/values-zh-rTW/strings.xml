@@ -645,6 +645,14 @@
     <string name="exploration_trending_ranking">熱度排行</string>
     <string name="exploration_trending_ranking_heat">近 30 天 %1$s 人在看</string>
     <string name="exploration_trending_ranking_empty">暫無排行</string>
+    <string name="exploration_trending_ranking_description">依近 30 天在看人數排序</string>
+    <string name="exploration_trending_ranking_col_rank">名次</string>
+    <string name="exploration_trending_ranking_col_subject">作品</string>
+    <string name="exploration_trending_ranking_col_heat">近 30 天在看</string>
+    <string name="exploration_trending_ranking_col_status">狀態</string>
+    <string name="exploration_trending_ranking_heat_unit">人</string>
+    <string name="exploration_trending_ranking_followed">已追番</string>
+    <string name="exploration_trending_ranking_table_hint">按兩下開啟條目詳情 · 按右鍵可加入追番或分享</string>
     <string name="exploration_schedule">新番時間表</string>
     <string name="exploration_schedule_view_details">查看詳情</string>
     <string name="exploration_schedule_episode">第 %1$s 話</string>

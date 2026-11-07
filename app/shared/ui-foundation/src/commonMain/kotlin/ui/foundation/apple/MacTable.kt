@@ -176,6 +176,7 @@ fun MacTableHeaderCell(
  *   用于需要完整换行的文字, 例如 BT 资源的标题.
  * @param showDivider 在行顶画分隔线 (不透明度 0.6), 用于第二行起.
  * @param dividerStartIndent 分隔线起点, 为第一个内容列的起点 (例如封面右侧的文字).
+ * @param dividerEndIndent 分隔线终点与行右缘的距离.
  * @param onDoubleClick 双击, 例如播放.
  * @param onLongClick 长按.
  */
@@ -191,6 +192,7 @@ fun MacTableRow(
     onDoubleClick: (() -> Unit)? = null,
     wrapContentHeight: Boolean = false,
     onLongClick: (() -> Unit)? = null,
+    dividerEndIndent: Dp = 0.dp,
     content: @Composable () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -241,7 +243,7 @@ fun MacTableRow(
     ) {
         MacTableCells(columns, heightModifier, wrapContentHeight, content)
         if (showDivider) {
-            AppleDivider(Modifier.align(Alignment.TopStart), startIndent = dividerStartIndent)
+            AppleDivider(Modifier.align(Alignment.TopStart).padding(end = dividerEndIndent), startIndent = dividerStartIndent)
         }
     }
 }

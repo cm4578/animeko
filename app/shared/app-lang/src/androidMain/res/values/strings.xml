@@ -650,6 +650,14 @@
     <string name="exploration_trending_ranking">Trending Ranking</string>
     <string name="exploration_trending_ranking_heat">%1$s watching in the last 30 days</string>
     <string name="exploration_trending_ranking_empty">No ranking yet</string>
+    <string name="exploration_trending_ranking_description">Sorted by people watching in the last 30 days</string>
+    <string name="exploration_trending_ranking_col_rank">Rank</string>
+    <string name="exploration_trending_ranking_col_subject">Title</string>
+    <string name="exploration_trending_ranking_col_heat">Watching (30 days)</string>
+    <string name="exploration_trending_ranking_col_status">Status</string>
+    <string name="exploration_trending_ranking_heat_unit">watching</string>
+    <string name="exploration_trending_ranking_followed">Following</string>
+    <string name="exploration_trending_ranking_table_hint">Double-click to open details · Right-click to follow or share</string>
     <string name="exploration_schedule">Anime Schedule</string>
     <string name="exploration_schedule_view_details">View details</string>
     <string name="exploration_schedule_episode">Ep. %1$s</string>

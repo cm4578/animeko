@@ -21,8 +21,11 @@ import kotlinx.coroutines.flow.map
 import me.him188.ani.app.data.models.preference.NsfwMode
 import me.him188.ani.app.data.models.trending.TrendingRankingItemInfo
 import me.him188.ani.app.data.network.TrendsRepository
+import me.him188.ani.app.data.repository.subject.SetSubjectCollectionTypeOrDeleteUseCase
+import me.him188.ani.app.data.repository.subject.SubjectCollectionRepository
 import me.him188.ani.app.data.repository.user.SettingsRepository
 import me.him188.ani.app.domain.usecase.GlobalKoin
+import me.him188.ani.app.ui.exploration.follow.QuickFollowState
 import me.him188.ani.app.ui.exploration.search.SubjectPreviewItemInfo
 import me.him188.ani.app.ui.foundation.AbstractViewModel
 import org.koin.core.Koin
@@ -35,6 +38,15 @@ class TrendingRankingViewModel(private val koin: Koin = GlobalKoin) : AbstractVi
 
     private val trendsRepository: TrendsRepository by inject()
     private val settingsRepository: SettingsRepository by inject()
+    private val subjectCollectionRepository: SubjectCollectionRepository by inject()
+    private val setSubjectCollectionTypeOrDeleteUseCase: SetSubjectCollectionTypeOrDeleteUseCase by inject()
+
+    /**
+     * Apple 版排行的快速追番 (05 G2).
+     */
+    val quickFollowState: QuickFollowState by lazy {
+        QuickFollowState(subjectCollectionRepository, setSubjectCollectionTypeOrDeleteUseCase)
+    }
 
     private val nsfwModeFlow = settingsRepository.uiSettings.flow
         .map { it.searchSettings.nsfwMode }

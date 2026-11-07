@@ -48,8 +48,8 @@ import me.him188.ani.app.data.models.subject.SubjectInfo
 import me.him188.ani.app.data.models.subject.Tag
 import me.him188.ani.app.domain.mediasource.jsonapi.JsonApiMediaSource
 import me.him188.ani.app.domain.mediasource.rss.RssMediaSource
-import me.him188.ani.app.domain.notification.NotificationBadgeManager
 import me.him188.ani.app.domain.mediasource.web.SelectorMediaSource
+import me.him188.ani.app.domain.notification.NotificationBadgeManager
 import me.him188.ani.app.domain.search.SubjectSearchQuery
 import me.him188.ani.app.domain.session.auth.OAuthPlatform
 import me.him188.ani.app.navigation.AniNavigator
@@ -79,6 +79,9 @@ import me.him188.ani.app.ui.exploration.schedule.AppleSchedulePage
 import me.him188.ani.app.ui.exploration.schedule.MacSchedulePage
 import me.him188.ani.app.ui.exploration.schedule.ScheduleScreen
 import me.him188.ani.app.ui.exploration.schedule.ScheduleViewModel
+import me.him188.ani.app.ui.exploration.trends.AppleTrendingRankingPage
+import me.him188.ani.app.ui.exploration.trends.MacTrendingRankingPage
+import me.him188.ani.app.ui.exploration.trends.TrendingRankingItemPresentation
 import me.him188.ani.app.ui.exploration.trends.TrendingRankingScreen
 import me.him188.ani.app.ui.exploration.trends.TrendingRankingViewModel
 import me.him188.ani.app.ui.foundation.LocalPlatform
@@ -120,10 +123,10 @@ import me.him188.ani.app.ui.search.SearchScreen
 import me.him188.ani.app.ui.settings.SettingsScreen
 import me.him188.ani.app.ui.settings.SettingsViewModel
 import me.him188.ani.app.ui.settings.account.AppleBangumiSyncScreen
-import me.him188.ani.app.ui.settings.mediasource.rss.EditRssMediaSourceScreen
-import me.him188.ani.app.ui.settings.mediasource.rss.EditRssMediaSourceViewModel
 import me.him188.ani.app.ui.settings.mediasource.jsonapi.EditJsonApiMediaSourceScreen
 import me.him188.ani.app.ui.settings.mediasource.jsonapi.EditJsonApiMediaSourceViewModel
+import me.him188.ani.app.ui.settings.mediasource.rss.EditRssMediaSourceScreen
+import me.him188.ani.app.ui.settings.mediasource.rss.EditRssMediaSourceViewModel
 import me.him188.ani.app.ui.settings.mediasource.selector.EditSelectorMediaSourceScreen
 import me.him188.ani.app.ui.settings.mediasource.selector.EditSelectorMediaSourceViewModel
 import me.him188.ani.app.ui.settings.notification.NotificationSettingsScreen
@@ -135,8 +138,8 @@ import me.him188.ani.app.ui.subject.details.MacSubjectDetailsScreen
 import me.him188.ani.app.ui.subject.details.SubjectDetailsScreen
 import me.him188.ani.app.ui.subject.details.SubjectDetailsViewModel
 import me.him188.ani.app.ui.subject.episode.EpisodeScreen
-import me.him188.ani.app.ui.subject.episode.analytics.PlayFlowDebugFloatingWindow
 import me.him188.ani.app.ui.subject.episode.EpisodeViewModel
+import me.him188.ani.app.ui.subject.episode.analytics.PlayFlowDebugFloatingWindow
 import me.him188.ani.app.ui.subject.person.CharacterDetailsScreen
 import me.him188.ani.app.ui.subject.person.CharacterDetailsViewModel
 import me.him188.ani.app.ui.subject.person.PersonDetailsScreen
@@ -1050,33 +1053,55 @@ private fun AniNavDisplay(
             }
             entry<NavRoutes.TrendingRanking> { route ->
                 val vm = viewModel { TrendingRankingViewModel() }
-                TrendingRankingScreen(
-                    vm.items.collectAsLazyPagingItemsWithLifecycle(),
-                    onClickItem = {
-                        Analytics.recordEvent(SubjectEnter) {
-                            put("source", "trending_ranking")
-                            put("subject_id", it.subject.subjectId)
-                        }
-                        aniNavigator.navigateSubjectDetails(
-                            it.subject.subjectId,
-                            placeholder = SubjectDetailPlaceholder(
-                                id = it.subject.subjectId,
-                                name = it.subject.originalTitle,
-                                nameCN = it.subject.title,
-                                coverUrl = it.subject.imageUrl,
-                            ),
-                        )
-                    },
-                    Modifier.fillMaxSize(),
-                    windowInsets = windowInsets,
-                    navigationIcon = {
-                        BackNavigationIconButton(
-                            {
-                                aniNavigator.popBackStack(route, inclusive = true)
-                            },
-                        )
-                    },
-                )
+                val items = vm.items.collectAsLazyPagingItemsWithLifecycle()
+                val onClickItem: (TrendingRankingItemPresentation) -> Unit = {
+                    Analytics.recordEvent(SubjectEnter) {
+                        put("source", "trending_ranking")
+                        put("subject_id", it.subject.subjectId)
+                    }
+                    aniNavigator.navigateSubjectDetails(
+                        it.subject.subjectId,
+                        placeholder = SubjectDetailPlaceholder(
+                            id = it.subject.subjectId,
+                            name = it.subject.originalTitle,
+                            nameCN = it.subject.title,
+                            coverUrl = it.subject.imageUrl,
+                        ),
+                    )
+                }
+                if (appleShell == AppleShell.Mac) {
+                    val selfInfo by remember { SelfInfoStateProducer() }.flow.collectAsState(null)
+                    MacTrendingRankingPage(
+                        items,
+                        quickFollowState = vm.quickFollowState.takeIf { selfInfo?.isSessionValid == true },
+                        onOpenItem = onClickItem,
+                        Modifier.fillMaxSize(),
+                    )
+                } else if (isIosShell) {
+                    val selfInfo by remember { SelfInfoStateProducer() }.flow.collectAsState(null)
+                    AppleTrendingRankingPage(
+                        items,
+                        quickFollowState = vm.quickFollowState.takeIf { selfInfo?.isSessionValid == true },
+                        onClickItem = onClickItem,
+                        onBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        Modifier.fillMaxSize(),
+                        contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else {
+                    TrendingRankingScreen(
+                        items,
+                        onClickItem = onClickItem,
+                        Modifier.fillMaxSize(),
+                        windowInsets = windowInsets,
+                        navigationIcon = {
+                            BackNavigationIconButton(
+                                {
+                                    aniNavigator.popBackStack(route, inclusive = true)
+                                },
+                            )
+                        },
+                    )
+                }
             }
         },
     )
