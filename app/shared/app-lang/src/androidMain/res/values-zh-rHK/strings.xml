@@ -1069,9 +1069,14 @@
     <string name="cache_table_speed">速度</string>
     <string name="cache_table_size">大小</string>
     <string name="cache_table_status">狀態</string>
+    <string name="cache_table_episode">集</string>
     <string name="cache_filter_and_sort">篩選與排序</string>
     <string name="cache_subject_pause_all">全部暫停</string>
     <string name="cache_subject_resume_all">全部繼續</string>
+    <string name="cache_subject_in_progress">進行中</string>
+    <string name="cache_subject_not_downloaded">尚未下載</string>
+    <string name="cache_subject_total_size">共 %1$s</string>
+    <string name="cache_subject_table_hint">按兩下播放；⌘I 顯示所選集數的下載詳情；按右鍵可暫停、刪除或在 Finder 中顯示</string>
     <string name="cache_management_selection_downloading_count">含 %1$d 個下載中</string>
     <string name="cache_management_select_all_action">全選</string>
     <string name="cache_management_deselect_all">取消全選</string>
@@ -1129,6 +1134,8 @@
     <string name="cache_details_segments">已下載 %1$d / %2$d 個片段</string>
     <string name="cache_details_error">錯誤</string>
     <string name="cache_details_external_subtitle">外掛字幕 %1$d</string>
+    <string name="cache_details_resource_info">資源資訊</string>
+    <string name="cache_details_links_and_files">連結與檔案</string>
     <string name="settings_account_not_logged_in">未登入</string>
     <string name="settings_account_edit_profile">編輯個人資料</string>
     <string name="settings_account_login_register">登入 / 註冊</string>

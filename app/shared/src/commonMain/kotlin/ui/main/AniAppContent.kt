@@ -67,12 +67,16 @@ import me.him188.ani.app.ui.adaptive.navigation.AniNavigationSuiteDefaults
 import me.him188.ani.app.ui.bangumi.merge.BangumiMergeScreen
 import me.him188.ani.app.ui.bangumi.merge.BangumiMergeViewModel
 import me.him188.ani.app.ui.download.DownloadManagementScreen
+import me.him188.ani.app.ui.download.components.DownloadItem
 import me.him188.ani.app.ui.download.createDownloadManagementViewModel
 import me.him188.ani.app.ui.download.createSubjectDownloadsViewModel
+import me.him188.ani.app.ui.download.details.AppleMediaCacheDetailsScreen
 import me.him188.ani.app.ui.download.details.MediaCacheDetailsPageViewModel
 import me.him188.ani.app.ui.download.details.MediaCacheDetailsScreen
 import me.him188.ani.app.ui.download.details.MediaDetails
 import me.him188.ani.app.ui.download.details.MediaDetailsLazyGrid
+import me.him188.ani.app.ui.download.subject.AppleSubjectDownloadsScreen
+import me.him188.ani.app.ui.download.subject.MacSubjectDownloadsScreen
 import me.him188.ani.app.ui.download.subject.SubjectDownloadsScreen
 import me.him188.ani.app.ui.exploration.schedule.AiringScheduleItemPresentation
 import me.him188.ani.app.ui.exploration.schedule.AppleSchedulePage
@@ -869,18 +873,31 @@ private fun AniNavDisplay(
                 )
             }
             entry<NavRoutes.CacheDetail> { route ->
-                MediaCacheDetailsScreen(
-                    viewModel(key = route.toString()) { MediaCacheDetailsPageViewModel(route.cacheId) },
-                    navigationIcon = {
-                        BackNavigationIconButton(
-                            {
-                                aniNavigator.popBackStack(route, inclusive = true)
-                            },
-                        )
-                    },
-                    Modifier.fillMaxSize(),
-                    windowInsets = windowInsets,
-                )
+                val detailsVm = viewModel(key = route.toString()) { MediaCacheDetailsPageViewModel(route.cacheId) }
+                if (isIosShell) {
+                    AppleMediaCacheDetailsScreen(
+                        detailsVm,
+                        downloads = viewModel { createDownloadManagementViewModel() },
+                        cacheId = route.cacheId,
+                        onPlay = { aniNavigator.navigateEpisodeDetails(it.subjectId, it.episodeId) },
+                        onBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        Modifier.fillMaxSize(),
+                        contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else {
+                    MediaCacheDetailsScreen(
+                        detailsVm,
+                        navigationIcon = {
+                            BackNavigationIconButton(
+                                {
+                                    aniNavigator.popBackStack(route, inclusive = true)
+                                },
+                            )
+                        },
+                        Modifier.fillMaxSize(),
+                        windowInsets = windowInsets,
+                    )
+                }
             }
             entry<NavRoutes.SubjectRelationGraph> { route ->
                 val vm = viewModel<SubjectRelationGraphViewModel>(key = "subject-relation-graph-${route.subjectId}") {
@@ -928,20 +945,40 @@ private fun AniNavDisplay(
                 )
             }
             entry<NavRoutes.SubjectCaches> { route ->
-                SubjectDownloadsScreen(
-                    vm = viewModel(key = route.toString()) { createSubjectDownloadsViewModel(route.subjectId) },
-                    onPlay = { aniNavigator.navigateEpisodeDetails(it.subjectId, it.episodeId) },
-                    onNavigateDownloadDetail = { aniNavigator.navigateCacheDetails(it) },
-                    modifier = Modifier.fillMaxSize(),
-                    windowInsets = windowInsets,
-                    navigationIcon = {
-                        BackNavigationIconButton(
-                            {
-                                aniNavigator.popBackStack(route, inclusive = true)
-                            },
-                        )
-                    },
-                )
+                val vm = viewModel(key = route.toString()) { createSubjectDownloadsViewModel(route.subjectId) }
+                val onPlay: (DownloadItem) -> Unit = { aniNavigator.navigateEpisodeDetails(it.subjectId, it.episodeId) }
+                if (appleShell == AppleShell.Mac) {
+                    MacSubjectDownloadsScreen(
+                        vm,
+                        onPlay = onPlay,
+                        onOpenSubjectDetails = { aniNavigator.navigateSubjectDetails(it, placeholder = null) },
+                        Modifier.fillMaxSize(),
+                    )
+                } else if (isIosShell) {
+                    AppleSubjectDownloadsScreen(
+                        vm,
+                        onPlay = onPlay,
+                        onOpenDetail = { aniNavigator.navigateCacheDetails(it.id) },
+                        onBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        Modifier.fillMaxSize(),
+                        contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else {
+                    SubjectDownloadsScreen(
+                        vm = vm,
+                        onPlay = onPlay,
+                        onNavigateDownloadDetail = { aniNavigator.navigateCacheDetails(it) },
+                        modifier = Modifier.fillMaxSize(),
+                        windowInsets = windowInsets,
+                        navigationIcon = {
+                            BackNavigationIconButton(
+                                {
+                                    aniNavigator.popBackStack(route, inclusive = true)
+                                },
+                            )
+                        },
+                    )
+                }
             }
             entry<NavRoutes.EditMediaSource> { route ->
                 val factoryId = FactoryId(route.factoryId)

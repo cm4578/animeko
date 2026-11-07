@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
@@ -29,6 +30,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
 import me.him188.ani.app.data.models.subject.SubjectCollectionInfo
+import me.him188.ani.app.data.models.subject.listCoverUrl
 import me.him188.ani.app.data.models.subject.nameCnOrName
 import me.him188.ani.app.data.repository.media.ManualBrowseMemoryRepository
 import me.him188.ani.app.data.repository.player.EpisodePlayHistoryRepository
@@ -47,11 +49,14 @@ import me.him188.ani.app.domain.media.selector.MediaSelector
 import me.him188.ani.app.domain.mediasource.GetPreferredWebMediaSourceUseCase
 import me.him188.ani.app.domain.mediasource.web.captcha.WebSessionManager
 import me.him188.ani.app.ui.download.DownloadOperationRunner
+import me.him188.ani.app.ui.download.components.DownloadItem
 import me.him188.ani.app.ui.download.components.toDownloadItem
 import me.him188.ani.app.ui.mediafetch.MediaSourceInfoProvider
 import me.him188.ani.app.ui.mediaselect.manual.ManualBrowseState
 import me.him188.ani.app.ui.mediaselect.manual.ManualBrowseTarget
 import me.him188.ani.datasources.api.Media
+import me.him188.ani.datasources.api.PackedDate
+import me.him188.ani.datasources.api.topic.ResourceLocation
 import me.him188.ani.utils.coroutines.childScope
 
 /**
@@ -68,7 +73,7 @@ class SubjectDownloadsPresenter(
     histories: EpisodePlayHistoryRepository,
     settings: SettingsRepository,
     private val sources: MediaSourceManager,
-    downloadManager: MediaDownloadManager,
+    private val downloadManager: MediaDownloadManager,
     private val sessionFactory: DownloadRequestSessionFactory,
     operations: DownloadOperations,
     private val webSessions: WebSessionManager,
@@ -112,6 +117,10 @@ class SubjectDownloadsPresenter(
                 episodesFailed = subject.failed,
                 downloadsFailed = downloads.failed,
                 request = request.toRequestUiState(),
+                coverUrl = info?.subjectInfo?.listCoverUrl?.ifEmpty { null },
+                airDate = info?.subjectInfo?.airDate ?: PackedDate.Invalid,
+                airingInfo = info?.airingInfo,
+                episodeCollectionTypes = info?.episodes?.associate { it.episodeId to it.collectionType }.orEmpty(),
             )
         }.stateIn(scope, SharingStarted.WhileSubscribed(5000), SubjectDownloadsUiState(title = initialTitle))
 
@@ -198,6 +207,20 @@ class SubjectDownloadsPresenter(
     fun deleteDownloads(ids: Set<String>) = operationRunner.run(ids, DownloadOperation.Delete)
     fun pauseAll() = pauseDownloads(uiState.value.downloads.mapTo(hashSetOf()) { it.id })
     fun resumeAll() = resumeDownloads(uiState.value.downloads.mapTo(hashSetOf()) { it.id })
+
+    /**
+     * 下载的本地文件, 用于 macOS 单番快取页的「在 Finder 中显示」(05 G9). 下载已不存在或不是本地文件时为 `null`.
+     */
+    suspend fun localFilePath(item: DownloadItem): String? {
+        val download = downloadManager.downloads.value.firstOrNull { it.id == item.id } ?: return null
+        return (download.cache.getCachedMedia().download as? ResourceLocation.LocalFile)?.filePath
+    }
+
+    /**
+     * BT 快取位置的设置值, `null` 为默认位置. 取不到单集文件时「在 Finder 中显示」定位这里, 同 macOS 快取页 (04 §3.5).
+     * 冷流, 只有 macOS 单番快取页订阅.
+     */
+    val cacheDirectory: Flow<String?> = flow { emitAll(settings.mediaCacheSettings.flow.map { it.saveDir }) }
 
     val isClosed: Boolean get() = !scope.isActive
 

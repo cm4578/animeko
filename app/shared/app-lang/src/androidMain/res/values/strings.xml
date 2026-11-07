@@ -1066,9 +1066,14 @@
     <string name="cache_table_speed">Speed</string>
     <string name="cache_table_size">Size</string>
     <string name="cache_table_status">Status</string>
+    <string name="cache_table_episode">Ep.</string>
     <string name="cache_filter_and_sort">Filter and Sort</string>
     <string name="cache_subject_pause_all">Pause all</string>
     <string name="cache_subject_resume_all">Resume all</string>
+    <string name="cache_subject_in_progress">In Progress</string>
+    <string name="cache_subject_not_downloaded">Not downloaded</string>
+    <string name="cache_subject_total_size">%1$s total</string>
+    <string name="cache_subject_table_hint">Double-click to play; ⌘I shows the download details of the selected episode; right-click to pause, delete, or show in Finder</string>
     <string name="cache_management_selection_downloading_count">incl. %1$d downloading</string>
     <string name="cache_management_select_all_action">Select all</string>
     <string name="cache_management_deselect_all">Deselect all</string>
@@ -1126,6 +1131,8 @@
     <string name="cache_details_segments">%1$d / %2$d segments downloaded</string>
     <string name="cache_details_error">Error</string>
     <string name="cache_details_external_subtitle">External Subtitle %1$d</string>
+    <string name="cache_details_resource_info">Resource Info</string>
+    <string name="cache_details_links_and_files">Links &amp; Files</string>
     <string name="settings_account_not_logged_in">Not Signed In</string>
     <string name="settings_account_edit_profile">Edit Profile</string>
     <string name="settings_account_login_register">Sign In / Sign Up</string>
