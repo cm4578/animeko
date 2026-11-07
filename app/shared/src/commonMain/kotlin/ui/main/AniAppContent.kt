@@ -672,7 +672,13 @@ private fun AniNavDisplay(
                         context,
                     )
                 }
-                EpisodeScreen(vm, Modifier.fillMaxSize(), windowInsets, appleStyle = isIosShell)
+                EpisodeScreen(
+                    vm,
+                    Modifier.fillMaxSize(),
+                    windowInsets,
+                    appleStyle = isIosShell,
+                    macStyle = appleShell == AppleShell.Mac,
+                )
             }
             entry<NavRoutes.Settings> { route ->
                 SettingsScreen(

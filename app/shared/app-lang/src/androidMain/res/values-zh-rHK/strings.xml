@@ -1317,6 +1317,8 @@
     <string name="subject_details_share_open_in_browser">在瀏覽器中開啟</string>
     <string name="subject_details_open_in_bangumi">在 Bangumi 開啟</string>
     <string name="subject_details_watched_episodes">已看 %1$d / %2$d 話</string>
+    <string name="episode_mac_shortcut_hint">播放／暫停：空白鍵 · 快轉：← →</string>
+    <string name="episode_danmaku_count">%1$d 條</string>
     <string name="foundation_load_error_network">網絡錯誤</string>
     <string name="foundation_load_error_rate_limited">操作過快，請重試</string>
     <string name="foundation_load_error_service_unavailable">服務暫不可用</string>

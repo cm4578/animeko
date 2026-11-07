@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
@@ -52,6 +53,11 @@ import org.jetbrains.compose.resources.stringResource
 import org.openani.mediamp.MediampPlayer
 
 
+/**
+ * @param colors 输入框配色, macOS 视窗模式的控制列用白色半透明底.
+ * @param shape 输入框形状.
+ * @param textStyle 输入与提示文字的字级.
+ */
 @Composable
 fun PlayerDanmakuEditor(
     danmakuEditorState: DanmakuEditorState,
@@ -61,6 +67,9 @@ fun PlayerDanmakuEditor(
     playerControllerState: PlayerControllerState,
     modifier: Modifier = Modifier,
     onEscape: (() -> Unit)? = null,
+    colors: TextFieldColors = PlayerControllerDefaults.inVideoDanmakuTextFieldColors(),
+    shape: Shape = MaterialTheme.shapes.medium,
+    textStyle: TextStyle = MaterialTheme.typography.bodyMedium,
 ) {
     val sending by danmakuEditorState.isSending.collectAsStateWithLifecycle()
     PlayerDanmakuEditor(
@@ -73,6 +82,9 @@ fun PlayerDanmakuEditor(
         danmakuTextPlaceholder, playerState, videoScaffoldConfig, playerControllerState, modifier, onEscape,
         style = danmakuEditorState.style,
         onStyleChange = { danmakuEditorState.updateStyle(it) },
+        colors = colors,
+        shape = shape,
+        textStyle = textStyle,
     )
 }
 
@@ -91,6 +103,9 @@ fun PlayerDanmakuEditor(
     onEscape: (() -> Unit)? = null,
     style: DanmakuSendStyle = DanmakuSendStyle.Default,
     onStyleChange: (DanmakuSendStyle) -> Unit = {},
+    colors: TextFieldColors = PlayerControllerDefaults.inVideoDanmakuTextFieldColors(),
+    shape: Shape = MaterialTheme.shapes.medium,
+    textStyle: TextStyle = MaterialTheme.typography.bodyMedium,
 ) {
     val danmakuEditorRequester = rememberAlwaysOnRequester(playerControllerState, "danmakuEditor")
     val stylePickerRequester = rememberAlwaysOnRequester(playerControllerState, "danmakuStylePicker")
@@ -135,6 +150,9 @@ fun PlayerDanmakuEditor(
                 }
             }.weight(1f),
             onEscape = onEscape,
+            colors = colors,
+            style = textStyle,
+            shape = shape,
             // 样式按钮放在输入框内部的最前面, 表示"这条弹幕的样式"
             leadingIcon = {
                 DanmakuStylePicker(
@@ -162,6 +180,7 @@ fun PlayerDanmakuEditor(
     colors: TextFieldColors = PlayerControllerDefaults.inVideoDanmakuTextFieldColors(),
     style: TextStyle = MaterialTheme.typography.bodyMedium,
     leadingIcon: (@Composable () -> Unit)? = null,
+    shape: Shape = MaterialTheme.shapes.medium,
 ) {
     val focusManager = LocalFocusManager.current
     PlayerControllerDefaults.DanmakuTextField(
@@ -186,6 +205,7 @@ fun PlayerDanmakuEditor(
         },
         colors = colors,
         style = style,
+        shape = shape,
     )
 }
 

@@ -576,6 +576,7 @@ object PlayerControllerDefaults {
     fun SpeedSwitcher(
         state: PlaybackSpeedControllerState,
         modifier: Modifier = Modifier,
+        alwaysShowValue: Boolean = false,
         onExpandedChanged: (expanded: Boolean) -> Unit = {},
     ) {
         SpeedSwitcher(
@@ -585,6 +586,7 @@ object PlayerControllerDefaults {
             onCommitSpeed = state::commitSpeed,
             modifier = modifier,
             onExpandedChanged = onExpandedChanged,
+            alwaysShowValue = alwaysShowValue,
         )
     }
 
@@ -595,6 +597,7 @@ object PlayerControllerDefaults {
         onPreviewSpeed: (Float) -> Unit,
         onCommitSpeed: (Float) -> Unit,
         modifier: Modifier = Modifier,
+        alwaysShowValue: Boolean = false,
         onExpandedChanged: (expanded: Boolean) -> Unit = {},
     ) {
         var expanded by rememberSaveable { mutableStateOf(false) }
@@ -607,6 +610,7 @@ object PlayerControllerDefaults {
             SpeedSwitcherButton(
                 speed = currentSpeed,
                 onClick = { setExpanded(true) },
+                alwaysShowValue = alwaysShowValue,
             )
 
             if (expanded) {
@@ -625,6 +629,7 @@ object PlayerControllerDefaults {
     private fun SpeedSwitcherButton(
         speed: Float,
         onClick: () -> Unit,
+        alwaysShowValue: Boolean,
     ) {
         val speedText = stringResource(Lang.video_player_speed)
         TextButton(
@@ -632,7 +637,16 @@ object PlayerControllerDefaults {
             colors = ButtonDefaults.textButtonColors(contentColor = LocalContentColor.current),
             modifier = Modifier.testTag(TAG_SPEED_SWITCHER_TEXT_BUTTON),
         ) {
-            Text(remember(speed, speedText) { if (speed == 1.0f) speedText else """${speed.formatSpeedValue()}x""" })
+            Text(
+                remember(speed, speedText, alwaysShowValue) {
+                    when {
+                        // macOS 视窗模式的控制列: 一直显示数值, 末位的 0 省略, 例如「1.0×」「1.25×」(04 §3.8)
+                        alwaysShowValue -> """${speed.formatSpeedValue().removeSuffix("0")}×"""
+                        speed == 1.0f -> speedText
+                        else -> """${speed.formatSpeedValue()}x"""
+                    }
+                },
+            )
         }
     }
 

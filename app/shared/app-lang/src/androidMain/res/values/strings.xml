@@ -1314,6 +1314,8 @@
     <string name="subject_details_share_open_in_browser">Open in Browser</string>
     <string name="subject_details_open_in_bangumi">Open in Bangumi</string>
     <string name="subject_details_watched_episodes">Watched %1$d / %2$d</string>
+    <string name="episode_mac_shortcut_hint">Play/Pause: Space · Seek: ← →</string>
+    <string name="episode_danmaku_count">%1$d</string>
     <string name="foundation_load_error_network">Network error</string>
     <string name="foundation_load_error_rate_limited">You’re doing that too fast. Please try again</string>
     <string name="foundation_load_error_service_unavailable">Service unavailable</string>
