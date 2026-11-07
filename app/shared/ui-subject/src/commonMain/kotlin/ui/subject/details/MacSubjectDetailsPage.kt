@@ -105,6 +105,7 @@ import me.him188.ani.app.ui.foundation.apple.EpisodeTileState
 import me.him188.ani.app.ui.foundation.apple.MacPageToolbar
 import me.him188.ani.app.ui.foundation.apple.MacToolbarIconButton
 import me.him188.ani.app.ui.foundation.apple.PillTab
+import me.him188.ani.app.ui.foundation.apple.bangumiSubjectUrl
 import me.him188.ani.app.ui.foundation.apple.episodeTileLabel
 import me.him188.ani.app.ui.foundation.avatar.AvatarImage
 import me.him188.ani.app.ui.foundation.layout.NestedScrollableColumn

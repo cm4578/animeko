@@ -59,7 +59,6 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
@@ -95,14 +94,15 @@ import me.him188.ani.app.ui.foundation.apple.CollectionTypeMenuItems
 import me.him188.ani.app.ui.foundation.apple.OverlayTopBar
 import me.him188.ani.app.ui.foundation.apple.PillTab
 import me.him188.ani.app.ui.foundation.apple.PopoverMenuItem
+import me.him188.ani.app.ui.foundation.apple.ShareLinkMenuItems
 import me.him188.ani.app.ui.foundation.apple.UnfollowConfirmDialog
+import me.him188.ani.app.ui.foundation.apple.bangumiSubjectUrl
 import me.him188.ani.app.ui.foundation.input.touchHorizontalScrollOnly
 import me.him188.ani.app.ui.foundation.layout.AniWindowInsets
 import me.him188.ani.app.ui.foundation.layout.NestedScrollableColumn
 import me.him188.ani.app.ui.foundation.layout.NestedScrollableScope
 import me.him188.ani.app.ui.foundation.layout.rememberNestedScrollableColumnState
 import me.him188.ani.app.ui.foundation.rememberImageViewerHandler
-import me.him188.ani.app.ui.foundation.setClipEntryText
 import me.him188.ani.app.ui.foundation.theme.AniTextStyles
 import me.him188.ani.app.ui.foundation.theme.LocalThemeSettings
 import me.him188.ani.app.ui.foundation.theme.MaterialThemeFromPaletteAndImage
@@ -119,8 +119,6 @@ import me.him188.ani.app.ui.lang.subject_details_manage_cache
 import me.him188.ani.app.ui.lang.subject_details_rank
 import me.him188.ani.app.ui.lang.subject_details_rating
 import me.him188.ani.app.ui.lang.subject_details_share
-import me.him188.ani.app.ui.lang.subject_details_share_copy_link
-import me.him188.ani.app.ui.lang.subject_details_share_open_in_browser
 import me.him188.ani.app.ui.lang.subject_details_stat_collected
 import me.him188.ani.app.ui.lang.subject_details_write_review
 import me.him188.ani.app.ui.rating.EditableRatingDialogsHost
@@ -769,32 +767,11 @@ private fun ShareButton(subjectId: Int, style: AppleCircleButtonStyle) {
  */
 @Composable
 internal fun SubjectShareMenu(subjectId: Int, expanded: Boolean, onDismissRequest: () -> Unit) {
-    val clipboard = LocalClipboard.current
-    val uriHandler = LocalUriHandler.current
     val scope = rememberCoroutineScope()
-    val url = bangumiSubjectUrl(subjectId)
     ApplePopoverMenu(expanded, onDismissRequest = onDismissRequest, Modifier.testTag(AppleSubjectDetailsTestTags.ShareMenu)) {
-        PopoverMenuItem(
-            stringResource(Lang.subject_details_share_copy_link),
-            onClick = {
-                onDismissRequest()
-                scope.launch { clipboard.setClipEntryText(url) }
-            },
-            icon = AppleIcons.copy(),
-        )
-        PopoverMenuItem(
-            stringResource(Lang.subject_details_share_open_in_browser),
-            onClick = {
-                onDismissRequest()
-                uriHandler.openUri(url)
-            },
-            icon = AppleIcons.externalLink(),
-            showDivider = true,
-        )
+        ShareLinkMenuItems(bangumiSubjectUrl(subjectId), scope, onDismissRequest)
     }
 }
-
-internal fun bangumiSubjectUrl(subjectId: Int) = "https://bgm.tv/subject/$subjectId"
 
 /**
  * 分页胶囊 (C4): 详情、评价、讨论.
