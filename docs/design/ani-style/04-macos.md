@@ -227,7 +227,7 @@
 
 - 设置子页的列**不放图标小方块**;只有分类栏可以有图标。
 - 窗口由 app-desktop 提供:`AniDesktop.kt` 以 `LocalMacSettingsWindowHost` 提供宿主(`window/MacSettingsWindowHost.kt`),照图片查看器取用 `LocalSecondaryWindowFrame`。窗口内容在主窗口的组合里声明，两个窗口共用主题与 `SettingsRepository`,在设定窗口改主题时主窗口同时生效。窗口初始 920×680,可缩放(最小 760×520),内容超出时窗格内纵向滚动。
-- 打开方式:App 菜单的「設定…」(⌘,,用 `Desktop.setPreferencesHandler` 接上，哪个窗口在前都能用;不另加 `MenuBar`,App 没有设 `apple.laf.useScreenMenuBar`,`MenuBar` 会画在窗口里)、侧边栏设置钮、侧边栏帐号行(已登录时打开帐号窗格，未登录时直接进入登录)。窗口已开着时再打开只把它带到前面;⌘W 或红色按钮关闭窗口，不影响主窗口。再次打开时回到上次的分类。
+- 打开方式:App 菜单的「設定…」(⌘,,用 `Desktop.setPreferencesHandler` 接上，哪个窗口在前都能用;不另加 `MenuBar`,App 没有设 `apple.laf.useScreenMenuBar`,`MenuBar` 会画在窗口里)、侧边栏设置钮、侧边栏帐号行(已登录时打开帐号窗格，未登录时直接进入登录)。窗口已开着时再打开只把它带到前面;红色按钮关闭窗口，不影响主窗口。不加 ⌘W(05 C2 以外的快捷键没有批准)。再次打开时回到上次的分类。
 - macOS 主窗口里其他打开设定的入口(通知的帐号设定与检查更新、登录页的设置钮等)都打开设定窗口的对应分类，主窗口不推入设置页。设定窗口里打开的页面(登录、通知中心、编辑资料源、播放流程悬浮窗)显示在主窗口，并把主窗口带到前面。
 - 窗口内的 ViewModel 跟随窗口，关闭窗口时清除;帐号窗格与分类栏的帐号资料和侧边栏共用 `MainScreenSharedViewModel`,在看 / 想看 / 看过数量为新增的冷流 `subjectCollectionCounts`。打开窗口时照主页的更新提示自动检查一次新版本(遵循「自动检查更新」设定),「軟體更新」分类据此显示 alert 点。
 - 分类栏:「通知」接在「主題與色彩」之后，嵌入现有通知设定(`NotificationSettingsGroups`)。帐号以外的分类窗格沿用现有设置页各 Tab 的内容，样式在第三层(§5.2)改版。
