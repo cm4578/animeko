@@ -32,17 +32,19 @@ import me.him188.ani.app.ui.foundation.theme.AniColors
  * C9 一般进度条: 轨道高 4、圆角 2、fill; 进度 accent.
  *
  * @param muted 暂停、已看完、已完成时为 `true`, 进度改为 label2.
+ * @param height 轨道高度, 圆角为高度的一半. 单集下载详情的状态卡用 6.
  */
 @Composable
 fun AppleProgressBar(
     progress: () -> Float,
     modifier: Modifier = Modifier,
     muted: Boolean = false,
+    height: Dp = 4.dp,
 ) {
     val colorScheme = MaterialTheme.colorScheme
     ProgressTrack(
         progress = progress,
-        height = 4.dp,
+        height = height,
         trackColor = colorScheme.surfaceContainerHighest,
         progressColor = if (muted) colorScheme.secondary else colorScheme.primary,
         modifier = modifier,
