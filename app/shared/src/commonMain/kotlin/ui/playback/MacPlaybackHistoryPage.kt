@@ -82,12 +82,12 @@ import me.him188.ani.app.ui.lang.cache_management_done
 import me.him188.ani.app.ui.lang.cache_management_select
 import me.him188.ani.app.ui.lang.playback_history_empty
 import me.him188.ani.app.ui.lang.playback_history_pending_sync
+import me.him188.ani.app.ui.lang.playback_history_progress_sync
 import me.him188.ani.app.ui.lang.playback_history_select_all
 import me.him188.ani.app.ui.lang.playback_history_selected_count
 import me.him188.ani.app.ui.lang.playback_history_sync_hint
 import me.him188.ani.app.ui.lang.playback_history_sync_now
 import me.him188.ani.app.ui.lang.playback_history_sync_pending_episode
-import me.him188.ani.app.ui.lang.playback_history_sync_source
 import me.him188.ani.app.ui.lang.playback_history_sync_status_pending
 import me.him188.ani.app.ui.lang.playback_history_sync_status_synced
 import me.him188.ani.app.ui.lang.playback_history_sync_status_title
@@ -488,7 +488,7 @@ private fun HistoryRow(
 }
 
 /**
- * 同步卡: card 圆角 14、内距 16. 「Bangumi 播放進度」12 label2 + 「有 N 項待同步」17/700; 待同步队列每项为番名 13/600
+ * 同步卡: card 圆角 14、内距 16. 「播放進度同步」12 label2 + 「有 N 項待同步」17/700; 待同步队列每项为番名 13/600
  * 与操作 12 label2 (操作名后接集名, 同同步状态页); 底部「立即同步」(tint 底、高 28) 与 accent「同步狀態」.
  * 没有待同步操作时标题为「播放記錄已同步」, 不显示队列.
  */
@@ -510,7 +510,7 @@ private fun SyncCard(
             .padding(16.dp),
     ) {
         Text(
-            stringResource(Lang.playback_history_sync_source),
+            stringResource(Lang.playback_history_progress_sync),
             style = AniTextStyles.macCaption,
             color = colorScheme.secondary,
             maxLines = 1,

@@ -90,10 +90,10 @@ import me.him188.ani.app.ui.lang.cache_management_done
 import me.him188.ani.app.ui.lang.playback_history_empty
 import me.him188.ani.app.ui.lang.playback_history_enter_selection_mode
 import me.him188.ani.app.ui.lang.playback_history_pending_sync
+import me.him188.ani.app.ui.lang.playback_history_progress_sync
 import me.him188.ani.app.ui.lang.playback_history_pull_to_sync
 import me.him188.ani.app.ui.lang.playback_history_select_all
 import me.him188.ani.app.ui.lang.playback_history_selected_count
-import me.him188.ani.app.ui.lang.playback_history_sync_source
 import me.him188.ani.app.ui.lang.playback_history_sync_status_pending
 import me.him188.ani.app.ui.lang.playback_history_sync_status_synced
 import me.him188.ani.app.ui.lang.playback_history_title
@@ -386,7 +386,7 @@ private fun Header(
 }
 
 /**
- * 同步状态列: card 高 60、圆角 16; 30 图标方块 + 「有 N 項待同步」`body` W600 + 「Bangumi 播放進度 · 下拉可重新同步」
+ * 同步状态列: card 高 60、圆角 16; 30 图标方块 + 「有 N 項待同步」`body` W600 + 「播放進度同步 · 下拉可重新同步」
  * `caption` label2 + `›`. 没有待同步操作时标题为「播放記錄已同步」.
  */
 @Composable
@@ -431,7 +431,7 @@ private fun SyncStatusRow(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                stringResource(Lang.playback_history_sync_source) + " · " + stringResource(Lang.playback_history_pull_to_sync),
+                stringResource(Lang.playback_history_progress_sync) + " · " + stringResource(Lang.playback_history_pull_to_sync),
                 style = AniTextStyles.caption,
                 color = MaterialTheme.colorScheme.secondary,
                 maxLines = 1,

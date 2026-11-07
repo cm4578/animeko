@@ -43,7 +43,7 @@
     <string name="playback_history_group_date">%1$d 月 %2$d 日（周%3$s）</string>
     <string name="playback_history_group_date_with_year">%1$d 年 %2$d 月 %3$d 日（周%4$s）</string>
     <string name="playback_history_pending_sync">待同步</string>
-    <string name="playback_history_sync_source">Bangumi 播放进度</string>
+    <string name="playback_history_progress_sync">播放进度同步</string>
     <string name="playback_history_pull_to_sync">下拉可重新同步</string>
     <string name="playback_history_sync_now">立即同步</string>
     <string name="playback_history_sync_hint">更改会自动同步到你的账号。</string>
