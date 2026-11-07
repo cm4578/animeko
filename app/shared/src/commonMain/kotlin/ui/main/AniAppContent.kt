@@ -109,8 +109,11 @@ import me.him188.ani.app.ui.notification.NotificationForegroundObserver
 import me.him188.ani.app.ui.notification.rememberNotificationActions
 import me.him188.ani.app.ui.oauth.OAuthAuthorizeScreen
 import me.him188.ani.app.ui.oauth.OAuthAuthorizeViewModel
+import me.him188.ani.app.ui.playback.ApplePlaybackHistoryPage
+import me.him188.ani.app.ui.playback.MacPlaybackHistoryPage
 import me.him188.ani.app.ui.playback.PlaybackHistoryScreen
 import me.him188.ani.app.ui.playback.PlaybackHistorySyncStatusScreen
+import me.him188.ani.app.ui.playback.PlaybackHistoryUiItem
 import me.him188.ani.app.ui.playback.PlaybackHistoryViewModel
 import me.him188.ani.app.ui.profile.auth.AniContactList
 import me.him188.ani.app.ui.qrlogin.QrLoginConfirmScreen
@@ -707,28 +710,48 @@ private fun AniNavDisplay(
                 )
             }
             entry<NavRoutes.PlaybackHistory> { route ->
-                PlaybackHistoryScreen(
-                    vm = viewModel { PlaybackHistoryViewModel() },
-                    onNavigateBack = { aniNavigator.popBackStack(route, inclusive = true) },
-                    onOpenHistory = { history ->
-                        val subjectId = history.subjectId
-                        if (subjectId != null) {
-                            aniNavigator.navigateEpisodeDetails(subjectId, history.episodeId)
-                        }
-                    },
-                    onOpenSyncStatus = {
-                        aniNavigator.navigatePlaybackHistorySyncStatus()
-                    },
-                    modifier = Modifier.fillMaxSize(),
-                    navigationIcon = {
-                        BackNavigationIconButton(
-                            {
-                                aniNavigator.popBackStack(route, inclusive = true)
-                            },
-                        )
-                    },
-                    windowInsets = windowInsetsWithoutTitleBar,
-                )
+                val vm = viewModel { PlaybackHistoryViewModel() }
+                val onOpenHistory: (PlaybackHistoryUiItem) -> Unit = { history ->
+                    val subjectId = history.subjectId
+                    if (subjectId != null) {
+                        aniNavigator.navigateEpisodeDetails(subjectId, history.episodeId)
+                    }
+                }
+                if (appleShell == AppleShell.Mac) {
+                    MacPlaybackHistoryPage(
+                        vm,
+                        onOpenHistory = onOpenHistory,
+                        onOpenSyncStatus = { aniNavigator.navigatePlaybackHistorySyncStatus() },
+                        Modifier.fillMaxSize(),
+                    )
+                } else if (isIosShell) {
+                    ApplePlaybackHistoryPage(
+                        vm,
+                        onOpenHistory = onOpenHistory,
+                        onOpenSyncStatus = { aniNavigator.navigatePlaybackHistorySyncStatus() },
+                        onBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        Modifier.fillMaxSize(),
+                        contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else {
+                    PlaybackHistoryScreen(
+                        vm = vm,
+                        onNavigateBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        onOpenHistory = onOpenHistory,
+                        onOpenSyncStatus = {
+                            aniNavigator.navigatePlaybackHistorySyncStatus()
+                        },
+                        modifier = Modifier.fillMaxSize(),
+                        navigationIcon = {
+                            BackNavigationIconButton(
+                                {
+                                    aniNavigator.popBackStack(route, inclusive = true)
+                                },
+                            )
+                        },
+                        windowInsets = windowInsetsWithoutTitleBar,
+                    )
+                }
             }
             entry<NavRoutes.PlaybackHistorySyncStatus> { route ->
                 PlaybackHistorySyncStatusScreen(

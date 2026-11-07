@@ -39,6 +39,14 @@
     <string name="playback_history_sync_pending_episode">剧集 ID %1$d</string>
     <string name="playback_history_sync_delete_pending">删除待同步项目</string>
     <string name="playback_history_sync_delete_all">删除全部待同步项目</string>
+    <string name="playback_history_yesterday">昨天</string>
+    <string name="playback_history_group_date">%1$d 月 %2$d 日（周%3$s）</string>
+    <string name="playback_history_group_date_with_year">%1$d 年 %2$d 月 %3$d 日（周%4$s）</string>
+    <string name="playback_history_pending_sync">待同步</string>
+    <string name="playback_history_sync_source">Bangumi 播放进度</string>
+    <string name="playback_history_pull_to_sync">下拉可重新同步</string>
+    <string name="playback_history_sync_now">立即同步</string>
+    <string name="playback_history_sync_hint">更改会自动同步到你的账号。</string>
     <string name="settings_category_app_ui">应用与界面</string>
     <string name="settings_category_data_playback">数据源与播放</string>
     <string name="settings_category_network_storage">网络与存储</string>

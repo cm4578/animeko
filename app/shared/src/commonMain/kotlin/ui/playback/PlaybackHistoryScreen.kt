@@ -132,6 +132,9 @@ import me.him188.ani.datasources.api.topic.UnifiedCollectionType
 import org.koin.core.component.inject
 import kotlin.math.floor
 
+/**
+ * @param isFinished 是否已看完, 见 [EpisodeHistory.isFinished].
+ */
 @Immutable
 data class PlaybackHistoryUiItem(
     val episodeId: Int,
@@ -143,6 +146,7 @@ data class PlaybackHistoryUiItem(
     val positionMillis: Long,
     val durationMillis: Long?,
     val updatedAtMillis: Long,
+    val isFinished: Boolean = false,
 )
 
 /**
@@ -793,7 +797,7 @@ private fun EmptyPlaybackHistory(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun PlaybackHistoryDeleteDialog(
+internal fun PlaybackHistoryDeleteDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
@@ -831,7 +835,7 @@ private fun progressText(item: PlaybackHistoryUiItem): String {
     return "$position / $duration"
 }
 
-private fun List<EpisodeHistory>.toUiItems(): List<PlaybackHistoryUiItem> {
+internal fun List<EpisodeHistory>.toUiItems(): List<PlaybackHistoryUiItem> {
     return asSequence()
         .filterNot(EpisodeHistory::isDeleted)
         .sortedByDescending { it.updatedAtMillis }
@@ -846,13 +850,14 @@ private fun List<EpisodeHistory>.toUiItems(): List<PlaybackHistoryUiItem> {
                 positionMillis = it.positionMillis,
                 durationMillis = it.durationMillis,
                 updatedAtMillis = it.updatedAtMillis,
+                isFinished = it.isFinished,
             )
         }
         .toList()
 }
 
 @Composable
-private fun List<PendingSyncEpisode>.toSyncStatusUiItems(): List<PlaybackHistorySyncStatusUiItem> {
+internal fun List<PendingSyncEpisode>.toSyncStatusUiItems(): List<PlaybackHistorySyncStatusUiItem> {
     return toSyncStatusUiItems(
         upsertName = stringResource(Lang.playback_history_sync_op_upsert),
         deleteName = stringResource(Lang.playback_history_sync_op_delete),
@@ -892,11 +897,11 @@ internal fun List<PendingSyncEpisode>.toSyncStatusUiItems(
     }
 }
 
-private fun Set<Int>.toggle(id: Int): Set<Int> {
+internal fun Set<Int>.toggle(id: Int): Set<Int> {
     return if (id in this) this - id else this + id
 }
 
-private fun Float.formatEpisodeSort(): String {
+internal fun Float.formatEpisodeSort(): String {
     return if (this == floor(this)) this.toInt().toString() else toString()
 }
 

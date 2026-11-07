@@ -232,6 +232,11 @@ object AppleIcons {
         stroke("M5.5 20.5v-4h4")
     }
 
+    /** 云, 用于播放记录的「待同步」标示. */
+    fun cloud(strokeWidth: Float = 1.9f): ImageVector = cached("cloud", strokeWidth) {
+        stroke("M6.9 17.75h9.5a4 4 0 0 0 .4-7.98a5.5 5.5 0 0 0-10.6 1.3A3.4 3.4 0 0 0 6.9 17.75z")
+    }
+
     /** 圆圈内的勾, 用于「标为看过」. */
     fun checkCircle(strokeWidth: Float = 1.9f): ImageVector = cached("checkCircle", strokeWidth) {
         stroke(circle(12f, 12f, 8.5f))

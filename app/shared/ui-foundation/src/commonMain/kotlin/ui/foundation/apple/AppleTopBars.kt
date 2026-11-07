@@ -125,6 +125,26 @@ fun PushedPageHeader(
     windowInsets: WindowInsets = AniWindowInsets.forTopAppBar(),
     actions: @Composable RowScope.() -> Unit = {},
 ) {
+    PushedPageHeader(
+        title,
+        navigation = { AppleCircleButton(onBack, AppleIcons.back(), backContentDescription) },
+        modifier,
+        windowInsets,
+        actions,
+    )
+}
+
+/**
+ * C3 推入页顶部, 左上角为 [navigation] 而不是返回钮, 例如选择模式的「全選」. 其余同上.
+ */
+@Composable
+fun PushedPageHeader(
+    title: String,
+    navigation: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    windowInsets: WindowInsets = AniWindowInsets.forTopAppBar(),
+    actions: @Composable RowScope.() -> Unit = {},
+) {
     Column(
         modifier
             .fillMaxWidth()
@@ -137,7 +157,7 @@ fun PushedPageHeader(
                 .padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            AppleCircleButton(onBack, AppleIcons.back(), backContentDescription)
+            navigation()
             Spacer(Modifier.weight(1f))
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                 actions()
