@@ -1754,6 +1754,7 @@
     <string name="person_details_character_subjects">出演作品</string>
     <string name="person_details_comments">評論</string>
     <string name="person_details_comments_count">%1$s 條</string>
+    <string name="person_details_view_all_count">查看全部 %1$d 個</string>
     <string name="person_details_meta">%1$s · %2$s 人收藏</string>
     <string name="person_details_open_full_page">開啟完整頁面</string>
     <string name="person_details_no_comments">還沒有評論</string>

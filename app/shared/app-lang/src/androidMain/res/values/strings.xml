@@ -1761,6 +1761,7 @@
     <string name="person_details_character_subjects">Appears in</string>
     <string name="person_details_comments">Comments</string>
     <string name="person_details_comments_count">%1$s comments</string>
+    <string name="person_details_view_all_count">View all %1$d</string>
     <string name="person_details_meta">%1$s · collected by %2$s</string>
     <string name="person_details_open_full_page">Open full page</string>
     <string name="person_details_no_comments">No comments yet</string>

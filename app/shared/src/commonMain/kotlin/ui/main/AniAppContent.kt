@@ -147,8 +147,12 @@ import me.him188.ani.app.ui.subject.details.SubjectDetailsViewModel
 import me.him188.ani.app.ui.subject.episode.EpisodeScreen
 import me.him188.ani.app.ui.subject.episode.EpisodeViewModel
 import me.him188.ani.app.ui.subject.episode.analytics.PlayFlowDebugFloatingWindow
+import me.him188.ani.app.ui.subject.person.AppleCharacterDetailsScreen
+import me.him188.ani.app.ui.subject.person.ApplePersonDetailsScreen
 import me.him188.ani.app.ui.subject.person.CharacterDetailsScreen
 import me.him188.ani.app.ui.subject.person.CharacterDetailsViewModel
+import me.him188.ani.app.ui.subject.person.MacCharacterDetailsScreen
+import me.him188.ani.app.ui.subject.person.MacPersonDetailsScreen
 import me.him188.ani.app.ui.subject.person.PersonDetailsScreen
 import me.him188.ani.app.ui.subject.person.PersonDetailsViewModel
 import me.him188.ani.app.ui.subject.relations.SubjectRelationGraphScreen
@@ -922,27 +926,51 @@ private fun AniNavDisplay(
                 val vm = viewModel<PersonDetailsViewModel>(key = "person-${route.personId}") {
                     PersonDetailsViewModel(route.personId)
                 }
-                PersonDetailsScreen(
-                    vm,
-                    Modifier.fillMaxSize(),
-                    windowInsets = windowInsets,
-                    navigationIcon = {
-                        BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
-                    },
-                )
+                if (appleShell == AppleShell.Mac) {
+                    MacPersonDetailsScreen(vm, route.personId, Modifier.fillMaxSize())
+                } else if (isIosShell) {
+                    ApplePersonDetailsScreen(
+                        vm,
+                        route.personId,
+                        onBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        Modifier.fillMaxSize(),
+                        contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else {
+                    PersonDetailsScreen(
+                        vm,
+                        Modifier.fillMaxSize(),
+                        windowInsets = windowInsets,
+                        navigationIcon = {
+                            BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
+                        },
+                    )
+                }
             }
             entry<NavRoutes.CharacterDetail> { route ->
                 val vm = viewModel<CharacterDetailsViewModel>(key = "character-${route.characterId}") {
                     CharacterDetailsViewModel(route.characterId)
                 }
-                CharacterDetailsScreen(
-                    vm,
-                    Modifier.fillMaxSize(),
-                    windowInsets = windowInsets,
-                    navigationIcon = {
-                        BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
-                    },
-                )
+                if (appleShell == AppleShell.Mac) {
+                    MacCharacterDetailsScreen(vm, route.characterId, Modifier.fillMaxSize())
+                } else if (isIosShell) {
+                    AppleCharacterDetailsScreen(
+                        vm,
+                        route.characterId,
+                        onBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        Modifier.fillMaxSize(),
+                        contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else {
+                    CharacterDetailsScreen(
+                        vm,
+                        Modifier.fillMaxSize(),
+                        windowInsets = windowInsets,
+                        navigationIcon = {
+                            BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
+                        },
+                    )
+                }
             }
             entry<NavRoutes.SubjectCaches> { route ->
                 val vm = viewModel(key = route.toString()) { createSubjectDownloadsViewModel(route.subjectId) }
