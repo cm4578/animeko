@@ -1315,6 +1315,7 @@
     <string name="subject_relation_graph_ordinal">Part %1$d</string>
     <string name="subject_relation_graph_label_current">%1$s · Current</string>
     <string name="subject_relation_graph_show_more">%1$d more</string>
+    <string name="subject_relation_graph_related_count">Related %1$d</string>
     <string name="subject_relation_graph_show_less">Show less</string>
     <string name="subject_relation_graph_truncated">This series is too large. Only part of it is shown.</string>
     <string name="subject_relation_graph_episodes">%1$d eps</string>

@@ -1308,6 +1308,7 @@
     <string name="subject_relation_graph_ordinal">第 %1$d 部</string>
     <string name="subject_relation_graph_label_current">%1$s · 目前</string>
     <string name="subject_relation_graph_show_more">其餘 %1$d 部</string>
+    <string name="subject_relation_graph_related_count">相關條目 %1$d</string>
     <string name="subject_relation_graph_show_less">收起</string>
     <string name="subject_relation_graph_truncated">系列過大，僅顯示部分條目</string>
     <string name="subject_relation_graph_episodes">%1$d 話</string>

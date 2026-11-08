@@ -45,6 +45,7 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import androidx.paging.compose.collectAsLazyPagingItemsWithLifecycle
 import me.him188.ani.app.data.models.subject.SubjectInfo
+import me.him188.ani.app.data.models.subject.SubjectRelationGraphSubject
 import me.him188.ani.app.data.models.subject.Tag
 import me.him188.ani.app.domain.mediasource.jsonapi.JsonApiMediaSource
 import me.him188.ani.app.domain.mediasource.rss.RssMediaSource
@@ -155,6 +156,8 @@ import me.him188.ani.app.ui.subject.person.MacCharacterDetailsScreen
 import me.him188.ani.app.ui.subject.person.MacPersonDetailsScreen
 import me.him188.ani.app.ui.subject.person.PersonDetailsScreen
 import me.him188.ani.app.ui.subject.person.PersonDetailsViewModel
+import me.him188.ani.app.ui.subject.relations.AppleSubjectRelationGraphScreen
+import me.him188.ani.app.ui.subject.relations.MacSubjectRelationGraphScreen
 import me.him188.ani.app.ui.subject.relations.SubjectRelationGraphScreen
 import me.him188.ani.app.ui.subject.relations.SubjectRelationGraphViewModel
 import me.him188.ani.app.ui.user.SelfInfoStateProducer
@@ -907,20 +910,33 @@ private fun AniNavDisplay(
                 val vm = viewModel<SubjectRelationGraphViewModel>(key = "subject-relation-graph-${route.subjectId}") {
                     SubjectRelationGraphViewModel(route.subjectId)
                 }
-                SubjectRelationGraphScreen(
-                    vm,
-                    onClickSubject = {
-                        aniNavigator.navigateSubjectDetails(
-                            it.subjectId,
-                            SubjectDetailPlaceholder(it.subjectId, it.name, it.nameCn, it.image),
-                        )
-                    },
-                    Modifier.fillMaxSize(),
-                    windowInsets = windowInsets,
-                    navigationIcon = {
-                        BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
-                    },
-                )
+                val onClickSubject: (SubjectRelationGraphSubject) -> Unit = {
+                    aniNavigator.navigateSubjectDetails(
+                        it.subjectId,
+                        SubjectDetailPlaceholder(it.subjectId, it.name, it.nameCn, it.image),
+                    )
+                }
+                if (appleShell == AppleShell.Mac) {
+                    MacSubjectRelationGraphScreen(vm, onClickSubject, Modifier.fillMaxSize())
+                } else if (isIosShell) {
+                    AppleSubjectRelationGraphScreen(
+                        vm,
+                        onClickSubject,
+                        onBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        Modifier.fillMaxSize(),
+                        contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else {
+                    SubjectRelationGraphScreen(
+                        vm,
+                        onClickSubject = onClickSubject,
+                        Modifier.fillMaxSize(),
+                        windowInsets = windowInsets,
+                        navigationIcon = {
+                            BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
+                        },
+                    )
+                }
             }
             entry<NavRoutes.PersonDetail> { route ->
                 val vm = viewModel<PersonDetailsViewModel>(key = "person-${route.personId}") {

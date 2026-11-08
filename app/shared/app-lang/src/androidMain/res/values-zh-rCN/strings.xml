@@ -1355,6 +1355,7 @@
     <string name="subject_relation_graph_ordinal">第 %1$d 部</string>
     <string name="subject_relation_graph_label_current">%1$s · 当前</string>
     <string name="subject_relation_graph_show_more">其余 %1$d 部</string>
+    <string name="subject_relation_graph_related_count">相关条目 %1$d</string>
     <string name="subject_relation_graph_show_less">收起</string>
     <string name="subject_relation_graph_truncated">系列过大，仅显示部分条目</string>
     <string name="subject_relation_graph_episodes">%1$d 话</string>
