@@ -606,7 +606,7 @@ private fun StatsCard(
 }
 
 @Composable
-private fun StatCell(value: String, label: String, modifier: Modifier = Modifier) {
+internal fun StatCell(value: String, label: String, modifier: Modifier = Modifier) {
     Column(
         modifier.padding(vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -623,7 +623,7 @@ private fun StatCell(value: String, label: String, modifier: Modifier = Modifier
 }
 
 @Composable
-private fun StatDivider() {
+internal fun StatDivider() {
     Box(
         Modifier
             .padding(vertical = 12.dp)

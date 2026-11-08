@@ -216,10 +216,10 @@ internal fun AppleSectionTitle(
 }
 
 /**
- * 简介: `15/23` labelSoft, 默认 5 行, 溢出时下方显示「显示更多 / 显示更少」.
+ * 简介: `15/23` labelSoft, 收起时 [collapsedLines] 行 (条目详情 5 行, 人物与角色 3 行), 溢出时下方显示「显示更多 / 显示更少」.
  */
 @Composable
-private fun AppleSummary(summary: String, modifier: Modifier = Modifier) {
+internal fun AppleSummary(summary: String, modifier: Modifier = Modifier, collapsedLines: Int = 5) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     var hasOverflow by remember { mutableStateOf(false) }
     Column(modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
@@ -227,7 +227,7 @@ private fun AppleSummary(summary: String, modifier: Modifier = Modifier) {
             summary,
             style = AniTextStyles.callout.copy(lineHeight = 23.sp),
             color = AniColors.labelSoft,
-            maxLines = if (expanded) Int.MAX_VALUE else 5,
+            maxLines = if (expanded) Int.MAX_VALUE else collapsedLines,
             overflow = TextOverflow.Ellipsis,
             onTextLayout = { if (!expanded) hasOverflow = it.hasVisualOverflow },
         )

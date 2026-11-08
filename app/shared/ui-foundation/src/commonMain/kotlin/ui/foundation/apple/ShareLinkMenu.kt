@@ -27,6 +27,16 @@ import org.jetbrains.compose.resources.stringResource
 fun bangumiSubjectUrl(subjectId: Int): String = "https://bgm.tv/subject/$subjectId"
 
 /**
+ * Bangumi 人物页的链接.
+ */
+fun bangumiPersonUrl(personId: Int): String = "https://bgm.tv/person/$personId"
+
+/**
+ * Bangumi 角色页的链接.
+ */
+fun bangumiCharacterUrl(characterId: Int): String = "https://bgm.tv/character/$characterId"
+
+/**
  * 分享链接的两项菜单 (05 G6): 「复制链接」「在浏览器中打开」. 放在 [ApplePopoverMenu] 或 [AppleContextMenu] 里.
  *
  * 选中后先调用 [onDismissRequest] 关闭菜单. 复制在 [scope] 中进行, [scope] 要比菜单活得久, 例如菜单所在页面的作用域.
