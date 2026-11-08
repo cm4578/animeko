@@ -145,6 +145,7 @@ import me.him188.ani.app.ui.settings.mediasource.rss.EditRssMediaSourceScreen
 import me.him188.ani.app.ui.settings.mediasource.rss.EditRssMediaSourceViewModel
 import me.him188.ani.app.ui.settings.mediasource.selector.EditSelectorMediaSourceScreen
 import me.him188.ani.app.ui.settings.mediasource.selector.EditSelectorMediaSourceViewModel
+import me.him188.ani.app.ui.settings.notification.AppleNotificationSettingsScreen
 import me.him188.ani.app.ui.settings.notification.NotificationSettingsScreen
 import me.him188.ani.app.ui.settings.notification.NotificationSettingsViewModel
 import me.him188.ani.app.ui.settings.tabs.media.torrent.peer.PeerFilterSettingsScreen
@@ -930,14 +931,24 @@ private fun AniNavDisplay(
             }
             entry<NavRoutes.NotificationSettings> { route ->
                 val vm = viewModel { NotificationSettingsViewModel() }
-                NotificationSettingsScreen(
-                    vm.notificationSettings,
-                    modifier = Modifier.fillMaxSize(),
-                    navigationIcon = {
-                        BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
-                    },
-                    windowInsets = windowInsetsWithoutTitleBar,
-                )
+                // macOS 有设定窗口时不推入这一页, 通知设定在设定窗口的「通知」分类 (MacSettingsWindowNavigator)
+                if (isIosShell) {
+                    AppleNotificationSettingsScreen(
+                        vm.notificationSettings,
+                        onBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        Modifier.fillMaxSize(),
+                        contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else {
+                    NotificationSettingsScreen(
+                        vm.notificationSettings,
+                        modifier = Modifier.fillMaxSize(),
+                        navigationIcon = {
+                            BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
+                        },
+                        windowInsets = windowInsetsWithoutTitleBar,
+                    )
+                }
             }
             entry<NavRoutes.Caches> { route ->
                 val selfInfo by remember { SelfInfoStateProducer() }.flow.collectAsState(null)

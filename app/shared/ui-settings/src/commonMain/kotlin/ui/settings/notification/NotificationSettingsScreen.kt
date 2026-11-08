@@ -69,6 +69,12 @@ object NotificationSettingsTestTags {
     const val ACCOUNT_SECURITY = "notification-settings-account-security"
     const val ANNOUNCEMENT = "notification-settings-announcement"
     const val GROUP_DIVIDER = "notification-settings-group-divider"
+
+    /** macOS 设定窗口「通知」窗格顶部的「通知中心」一行. */
+    const val NOTIFICATION_CENTER = "notification-settings-notification-center"
+
+    /** iOS 通知设定滚动后的精简栏. */
+    const val COLLAPSED_BAR = "notification-settings-collapsed-bar"
 }
 
 /**
