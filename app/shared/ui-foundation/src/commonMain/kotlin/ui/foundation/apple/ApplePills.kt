@@ -51,6 +51,8 @@ import me.him188.ani.app.ui.foundation.theme.AniTextStyles
  *
  * 选中为 tint 底 + onTint W600; 未选中透明 + label2 W500. [count] 跟在文字后, W500.
  * 手机高 32、左右 14、`subhead`, 上下补到 44 的点击区; macOS 高 28、左右 12、`macCallout`.
+ *
+ * @param alert 在文字 (与 [count]) 后显示 6 号 [AlertDot], 例如未选中的分页有未读. 圆点本身不带语义, 调用处在胶囊上说明.
  */
 @Composable
 fun PillTab(
@@ -59,6 +61,7 @@ fun PillTab(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     count: String? = null,
+    alert: Boolean = false,
 ) {
     val contentColor = if (selected) {
         MaterialTheme.colorScheme.onSecondaryContainer
@@ -89,6 +92,9 @@ fun PillTab(
         )
         if (count != null) {
             Text(count, style = pillTextStyle, fontWeight = FontWeight.Medium, color = contentColor, maxLines = 1)
+        }
+        if (alert) {
+            AlertDot(style = AlertDotStyle.Small)
         }
     }
 }
