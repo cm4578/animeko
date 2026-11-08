@@ -342,7 +342,7 @@ internal fun SubjectRelationGraphRow(
 /**
  * 页面的主轴是横向的, 而鼠标通常只有纵向滚轮: 当页面在滚轮方向上无法纵向滚动时, 用纵向滚轮横向滚动时间线.
  */
-private fun Modifier.verticalWheelScrollsHorizontally(
+internal fun Modifier.verticalWheelScrollsHorizontally(
     horizontalScrollState: ScrollState,
     verticalScrollState: ScrollState,
 ): Modifier = pointerInput(horizontalScrollState, verticalScrollState) {
@@ -362,13 +362,13 @@ private fun Modifier.verticalWheelScrollsHorizontally(
     }
 }
 
-private fun timelineDot(presentation: SubjectRelationGraphPresentation, index: Int): TimelineDot = when {
+internal fun timelineDot(presentation: SubjectRelationGraphPresentation, index: Int): TimelineDot = when {
     index == presentation.currentMainIndex -> TimelineDot.CURRENT
     presentation.isReached(index) -> TimelineDot.REACHED
     else -> TimelineDot.UPCOMING
 }
 
-private fun timelineLine(
+internal fun timelineLine(
     presentation: SubjectRelationGraphPresentation,
     index: Int,
     before: Boolean,
@@ -394,16 +394,22 @@ private fun SubjectRelationGraphHeader(
             overflow = TextOverflow.Ellipsis,
         )
         Text(
-            if (graph.branchCount > 0) {
-                stringResource(Lang.subject_relation_graph_summary, graph.mainCount, graph.branchCount)
-            } else {
-                stringResource(Lang.subject_relation_graph_summary_main_only, graph.mainCount)
-            },
+            renderRelationGraphSummary(graph),
             Modifier.padding(top = 4.dp),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+/**
+ * 「主线 N 部 · 其他 M 部」, 没有相关条目时为「主线 N 部」.
+ */
+@Composable
+internal fun renderRelationGraphSummary(graph: SubjectRelationGraph): String = if (graph.branchCount > 0) {
+    stringResource(Lang.subject_relation_graph_summary, graph.mainCount, graph.branchCount)
+} else {
+    stringResource(Lang.subject_relation_graph_summary_main_only, graph.mainCount)
 }
 
 @Composable
@@ -418,6 +424,6 @@ private fun TruncatedHint(modifier: Modifier = Modifier) {
 
 /** 手机上时间线到主线卡片的距离 */
 private val TIMELINE_GUTTER = 32.dp
-private val WIDE_LAYOUT_MIN_WIDTH = 600.dp
+internal val WIDE_LAYOUT_MIN_WIDTH = 600.dp
 private val WIDE_COLUMN_WIDTH = 204.dp
 private val WHEEL_SCROLL_STEP = 64.dp
