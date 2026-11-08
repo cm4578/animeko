@@ -46,6 +46,7 @@
     <string name="notification_report_result_upheld">Report upheld</string>
     <string name="notification_report_result_description_removed">After review, this comment was found to break the community rules and has been removed. Thanks for your report.</string>
     <string name="notification_report_result_description_handled">After review, this comment was found to break the community rules and action has been taken. Thanks for your report.</string>
+    <string name="notification_report_info_title">Report details</string>
     <string name="notification_report_reason">Reason</string>
     <string name="notification_report_target">Reported content</string>
     <string name="notification_report_reported_at">Reported at</string>
@@ -65,6 +66,7 @@
     <string name="notification_go_to_subject">Go to anime</string>
     <string name="notification_go_to_person">Go to person</string>
     <string name="notification_go_to_character">Go to character</string>
+    <string name="notification_go_to_comments">Go to comments</string>
 
     <string name="notification_account_third_party_unbound">%1$s account unlinked</string>
     <string name="notification_account_third_party_unbound_generic">Third-party account unlinked</string>

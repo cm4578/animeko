@@ -63,4 +63,22 @@ class MacSettingsWindowTest {
         navigator.navigatePlaybackHistory()
         assertEquals(NavRoutes.PlaybackHistory, backStack.last())
     }
+
+    @Test
+    fun `notification settings open the notifications category of the settings window`() {
+        val backStack = mutableStateListOf<NavRoutes>(NavRoutes.Notifications)
+        val state = MacSettingsWindowState()
+        val navigator = MacSettingsWindowNavigator(AniNavigator().apply { setBackStack(backStack) }, state)
+
+        // 通知中心工具栏的设置钮 (04 §4.6)
+        navigator.navigateNotificationSettings()
+        assertTrue(state.isOpen)
+        assertEquals(MacSettingsCategory.Notifications, state.category)
+        assertEquals(listOf<NavRoutes>(NavRoutes.Notifications), backStack.toList())
+
+        state.open(SettingsTab.ABOUT)
+        navigator.navigate(NavRoutes.NotificationSettings)
+        assertEquals(MacSettingsCategory.Notifications, state.category)
+        assertEquals(listOf<NavRoutes>(NavRoutes.Notifications), backStack.toList())
+    }
 }

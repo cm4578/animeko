@@ -46,6 +46,7 @@
     <string name="notification_report_result_upheld">舉報成立</string>
     <string name="notification_report_result_description_removed">經審核，該評論違反社區規則，已被刪除。感謝你的舉報。</string>
     <string name="notification_report_result_description_handled">經審核，該評論違反社區規則，已處理。感謝你的舉報。</string>
+    <string name="notification_report_info_title">處理資訊</string>
     <string name="notification_report_reason">舉報原因</string>
     <string name="notification_report_target">舉報對象</string>
     <string name="notification_report_reported_at">舉報時間</string>
@@ -65,6 +66,7 @@
     <string name="notification_go_to_subject">前往該條目</string>
     <string name="notification_go_to_person">前往人物</string>
     <string name="notification_go_to_character">前往角色</string>
+    <string name="notification_go_to_comments">前往評論區</string>
 
     <string name="notification_account_third_party_unbound">%1$s 賬戶已解除綁定</string>
     <string name="notification_account_third_party_unbound_generic">第三方賬戶已解除綁定</string>

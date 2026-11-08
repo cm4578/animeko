@@ -106,6 +106,14 @@ import me.him188.ani.app.ui.notification.AnnouncementDetailScreen
 import me.him188.ani.app.ui.notification.AnnouncementDetailViewModel
 import me.him188.ani.app.ui.notification.AnnouncementsScreen
 import me.him188.ani.app.ui.notification.AnnouncementsViewModel
+import me.him188.ani.app.ui.notification.AppleAnnouncementDetailScreen
+import me.him188.ani.app.ui.notification.AppleAnnouncementsScreen
+import me.him188.ani.app.ui.notification.AppleNotificationCenterScreen
+import me.him188.ani.app.ui.notification.AppleNotificationDetailScreen
+import me.him188.ani.app.ui.notification.MacAnnouncementDetailScreen
+import me.him188.ani.app.ui.notification.MacAnnouncementsScreen
+import me.him188.ani.app.ui.notification.MacNotificationCenterScreen
+import me.him188.ani.app.ui.notification.MacNotificationDetailScreen
 import me.him188.ani.app.ui.notification.NotificationCenterScreen
 import me.him188.ani.app.ui.notification.NotificationCenterViewModel
 import me.him188.ani.app.ui.notification.NotificationDetailScreen
@@ -801,52 +809,124 @@ private fun AniNavDisplay(
                 )
             }
             entry<NavRoutes.Notifications> { route ->
-                NotificationCenterScreen(
-                    vm = viewModel { NotificationCenterViewModel() },
-                    onNavigateToDetail = { aniNavigator.navigateNotificationDetail(it) },
-                    onNavigateToAnnouncements = { aniNavigator.navigateAnnouncements() },
-                    onNavigateToSettings = { aniNavigator.navigateNotificationSettings() },
-                    onLogin = { aniNavigator.navigateEmailLoginStart() },
-                    actions = rememberNotificationActions(aniNavigator),
-                    modifier = Modifier.fillMaxSize(),
-                    navigationIcon = {
-                        BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
-                    },
-                    windowInsets = windowInsets,
-                )
+                val vm = viewModel { NotificationCenterViewModel() }
+                val actions = rememberNotificationActions(aniNavigator)
+                if (appleShell == AppleShell.Mac) {
+                    MacNotificationCenterScreen(
+                        vm,
+                        onNavigateToDetail = { aniNavigator.navigateNotificationDetail(it) },
+                        onNavigateToAnnouncements = { aniNavigator.navigateAnnouncements() },
+                        // 有设定窗口时打开它的「通知」分类 (MacSettingsWindowNavigator)
+                        onNavigateToSettings = { aniNavigator.navigateNotificationSettings() },
+                        onLogin = { aniNavigator.navigateEmailLoginStart() },
+                        actions = actions,
+                        Modifier.fillMaxSize(),
+                    )
+                } else if (isIosShell) {
+                    AppleNotificationCenterScreen(
+                        vm,
+                        onNavigateToDetail = { aniNavigator.navigateNotificationDetail(it) },
+                        onNavigateToAnnouncements = { aniNavigator.navigateAnnouncements() },
+                        onNavigateToSettings = { aniNavigator.navigateNotificationSettings() },
+                        onLogin = { aniNavigator.navigateEmailLoginStart() },
+                        actions = actions,
+                        onBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        Modifier.fillMaxSize(),
+                        contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else {
+                    NotificationCenterScreen(
+                        vm = vm,
+                        onNavigateToDetail = { aniNavigator.navigateNotificationDetail(it) },
+                        onNavigateToAnnouncements = { aniNavigator.navigateAnnouncements() },
+                        onNavigateToSettings = { aniNavigator.navigateNotificationSettings() },
+                        onLogin = { aniNavigator.navigateEmailLoginStart() },
+                        actions = actions,
+                        modifier = Modifier.fillMaxSize(),
+                        navigationIcon = {
+                            BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
+                        },
+                        windowInsets = windowInsets,
+                    )
+                }
             }
             entry<NavRoutes.NotificationDetail> { route ->
-                NotificationDetailScreen(
-                    vm = viewModel(key = route.toString()) { NotificationDetailViewModel(route.notificationId) },
-                    actions = rememberNotificationActions(aniNavigator),
-                    modifier = Modifier.fillMaxSize(),
-                    navigationIcon = {
-                        BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
-                    },
-                    windowInsets = windowInsetsWithoutTitleBar,
-                )
+                val vm = viewModel(key = route.toString()) { NotificationDetailViewModel(route.notificationId) }
+                val actions = rememberNotificationActions(aniNavigator)
+                if (appleShell == AppleShell.Mac) {
+                    MacNotificationDetailScreen(vm, actions, Modifier.fillMaxSize())
+                } else if (isIosShell) {
+                    AppleNotificationDetailScreen(
+                        vm,
+                        actions,
+                        onBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        Modifier.fillMaxSize(),
+                        contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else {
+                    NotificationDetailScreen(
+                        vm = vm,
+                        actions = actions,
+                        modifier = Modifier.fillMaxSize(),
+                        navigationIcon = {
+                            BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
+                        },
+                        windowInsets = windowInsetsWithoutTitleBar,
+                    )
+                }
             }
             entry<NavRoutes.Announcements> { route ->
-                AnnouncementsScreen(
-                    vm = viewModel { AnnouncementsViewModel() },
-                    onNavigateToDetail = { aniNavigator.navigateAnnouncementDetail(it) },
-                    onLogin = { aniNavigator.navigateEmailLoginStart() },
-                    modifier = Modifier.fillMaxSize(),
-                    navigationIcon = {
-                        BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
-                    },
-                    windowInsets = windowInsets,
-                )
+                val vm = viewModel { AnnouncementsViewModel() }
+                if (appleShell == AppleShell.Mac) {
+                    MacAnnouncementsScreen(
+                        vm,
+                        onNavigateToDetail = { aniNavigator.navigateAnnouncementDetail(it) },
+                        onLogin = { aniNavigator.navigateEmailLoginStart() },
+                        Modifier.fillMaxSize(),
+                    )
+                } else if (isIosShell) {
+                    AppleAnnouncementsScreen(
+                        vm,
+                        onNavigateToDetail = { aniNavigator.navigateAnnouncementDetail(it) },
+                        onLogin = { aniNavigator.navigateEmailLoginStart() },
+                        onBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        Modifier.fillMaxSize(),
+                        contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else {
+                    AnnouncementsScreen(
+                        vm = vm,
+                        onNavigateToDetail = { aniNavigator.navigateAnnouncementDetail(it) },
+                        onLogin = { aniNavigator.navigateEmailLoginStart() },
+                        modifier = Modifier.fillMaxSize(),
+                        navigationIcon = {
+                            BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
+                        },
+                        windowInsets = windowInsets,
+                    )
+                }
             }
             entry<NavRoutes.AnnouncementDetail> { route ->
-                AnnouncementDetailScreen(
-                    vm = viewModel(key = route.toString()) { AnnouncementDetailViewModel(route.announcementId) },
-                    modifier = Modifier.fillMaxSize(),
-                    navigationIcon = {
-                        BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
-                    },
-                    windowInsets = windowInsetsWithoutTitleBar,
-                )
+                val vm = viewModel(key = route.toString()) { AnnouncementDetailViewModel(route.announcementId) }
+                if (appleShell == AppleShell.Mac) {
+                    MacAnnouncementDetailScreen(vm, Modifier.fillMaxSize())
+                } else if (isIosShell) {
+                    AppleAnnouncementDetailScreen(
+                        vm,
+                        onBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        Modifier.fillMaxSize(),
+                        contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else {
+                    AnnouncementDetailScreen(
+                        vm = vm,
+                        modifier = Modifier.fillMaxSize(),
+                        navigationIcon = {
+                            BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
+                        },
+                        windowInsets = windowInsetsWithoutTitleBar,
+                    )
+                }
             }
             entry<NavRoutes.NotificationSettings> { route ->
                 val vm = viewModel { NotificationSettingsViewModel() }
