@@ -704,6 +704,9 @@
     <string name="exploration_trending_ranking_col_heat">近 30 天在看</string>
     <string name="exploration_trending_ranking_col_status">状态</string>
     <string name="exploration_trending_ranking_heat_unit">人</string>
+    <string name="exploration_trending_ranking_heat_compact">近 30 天 %1$s 万人在看</string>
+    <string name="exploration_trending_ranking_heat_compact_value">%1$s 万</string>
+    <string name="exploration_trending_ranking_heat_compact_divisor">10000</string>
     <string name="exploration_trending_ranking_followed">已追番</string>
     <string name="exploration_trending_ranking_table_hint">双击打开条目详情 · 右键可加入追番或分享</string>
     <string name="exploration_schedule">新番时间表</string>

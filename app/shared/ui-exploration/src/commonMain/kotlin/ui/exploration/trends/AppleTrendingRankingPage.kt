@@ -68,7 +68,6 @@ import me.him188.ani.app.ui.lang.exploration_quick_follow_followed
 import me.him188.ani.app.ui.lang.exploration_trending_ranking
 import me.him188.ani.app.ui.lang.exploration_trending_ranking_description
 import me.him188.ani.app.ui.lang.exploration_trending_ranking_empty
-import me.him188.ani.app.ui.lang.exploration_trending_ranking_heat
 import me.him188.ani.app.ui.search.LoadErrorCard
 import me.him188.ani.app.ui.search.isFinishedAndEmpty
 import me.him188.ani.app.ui.search.isLoadingFirstPageOrRefreshing
@@ -231,7 +230,7 @@ private fun TrendingRow(
                     tint = AniColors.labelSoft,
                 )
                 Text(
-                    stringResource(Lang.exploration_trending_ranking_heat, item.heat.toString()),
+                    renderTrendingHeatLine(item.heat),
                     style = AniTextStyles.footnote,
                     color = AniColors.labelSoft,
                     maxLines = 1,

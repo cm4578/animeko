@@ -397,7 +397,7 @@ private fun TrendingTableRow(
         }
         Row(Modifier.testTag(MacTrendingTestTags.heat(subject.subjectId)), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(
-                item.heat.toString(),
+                renderTrendingHeatValue(item.heat),
                 Modifier.alignByBaseline(),
                 style = AniTextStyles.macWindowTitle.copy(fontFeatureSettings = "tnum"),
                 color = MaterialTheme.colorScheme.onSurface,

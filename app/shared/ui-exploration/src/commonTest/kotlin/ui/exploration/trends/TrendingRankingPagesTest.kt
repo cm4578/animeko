@@ -10,6 +10,7 @@
 package me.him188.ani.app.ui.exploration.trends
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -20,6 +21,9 @@ import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.getBoundsInRoot
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -43,6 +47,8 @@ import me.him188.ani.app.ui.lang.exploration_trending_ranking_col_rank
 import me.him188.ani.app.ui.lang.exploration_trending_ranking_col_status
 import me.him188.ani.app.ui.lang.exploration_trending_ranking_empty
 import me.him188.ani.app.ui.lang.exploration_trending_ranking_heat
+import me.him188.ani.app.ui.lang.exploration_trending_ranking_heat_compact
+import me.him188.ani.app.ui.lang.exploration_trending_ranking_heat_compact_value
 import me.him188.ani.app.ui.search.createTestPager
 import me.him188.ani.datasources.api.topic.UnifiedCollectionType
 import me.him188.ani.utils.platform.Arch
@@ -261,5 +267,44 @@ class TrendingRankingPagesTest {
         waitForIdle()
         assertEquals(listOf(2), recorder.followed)
         onNodeWithTag(MacTrendingTestTags.follow(2)).assertIsSelected()
+    }
+
+    @Test
+    fun `heat of ten thousand or more is abbreviated to one decimal`() {
+        assertEquals(null, compactTrendingHeat(9_999, 10_000))
+        assertEquals("1", compactTrendingHeat(10_000, 10_000))
+        assertEquals("3.2", compactTrendingHeat(32_145, 10_000))
+        assertEquals("4", compactTrendingHeat(39_999, 10_000))
+        assertEquals("32.1", compactTrendingHeat(32_145, 1_000))
+        assertEquals(null, compactTrendingHeat(32_145, 0))
+    }
+
+    @Test
+    fun `apple and mac pages abbreviate large heat`() = runAniComposeUiTest {
+        var line = ""
+        var value = ""
+        val pager = createTestPager(listOf(item(1, 32_145, "Popular"), item(2, 7559, "Subject Two")))
+        setContent {
+            line = stringResource(Lang.exploration_trending_ranking_heat_compact, "3.2")
+            value = stringResource(Lang.exploration_trending_ranking_heat_compact_value, "3.2")
+            ProvideCompositionLocalsForPreview {
+                val items = pager.collectAsLazyPagingItems()
+                Column {
+                    Box(Modifier.size(390.dp, 400.dp)) {
+                        AppleTrendingRankingPage(items, null, onClickItem = {}, onBack = {})
+                    }
+                    CompositionLocalProvider(LocalPlatform provides Platform.MacOS(Arch.AARCH64)) {
+                        Box(Modifier.size(1040.dp, 400.dp)) {
+                            MacTrendingRankingPage(items, quickFollowState = null, onOpenItem = {})
+                        }
+                    }
+                }
+            }
+        }
+        onNodeWithText(line).assertExists()
+        onNode(
+            hasText(value) and hasAnyAncestor(hasTestTag(MacTrendingTestTags.heat(1))),
+            useUnmergedTree = true,
+        ).assertExists()
     }
 }
