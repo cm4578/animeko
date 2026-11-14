@@ -12,6 +12,8 @@ package me.him188.ani.app.ui.foundation.apple
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
@@ -52,10 +55,12 @@ import me.him188.ani.app.ui.foundation.theme.AniColors
 import me.him188.ani.app.ui.foundation.theme.AniTextStyles
 
 /**
- * C15 手机弹出菜单: tabBg、圆角 14、floatingShadow (深色加 separator 描边)、宽 232.
+ * C15 弹出菜单: tabBg、floatingShadow (深色加 separator 描边).
+ *
+ * 手机圆角 14、宽 232. macOS 圆角 10、内距 5、宽 232 (可用 [modifier] 改为 220–232).
  *
  * 放在锚点元素所在的 `Box` 内. 菜单的右缘与锚点对齐, 显示在锚点下方 8; 下方空间不足时显示在上方.
- * 点菜单外或按返回键时调用 [onDismissRequest].
+ * 点菜单外或按返回键 (macOS 为 Esc) 时调用 [onDismissRequest].
  */
 @Composable
 fun ApplePopoverMenu(
@@ -72,7 +77,8 @@ fun ApplePopoverMenu(
             shadowPadding = with(density) { ApplePopoverMenuDefaults.ShadowPadding.roundToPx() },
         )
     }
-    val shape = RoundedCornerShape(14.dp)
+    val mac = isMacStyle
+    val shape = RoundedCornerShape(if (mac) 10.dp else 14.dp)
     Popup(
         popupPositionProvider = positionProvider,
         onDismissRequest = onDismissRequest,
@@ -89,7 +95,8 @@ fun ApplePopoverMenu(
                     )
                     .clip(shape)
                     .background(MaterialTheme.colorScheme.surfaceContainer)
-                    .border(1.dp, AniColors.floatingBorder, shape),
+                    .border(1.dp, AniColors.floatingBorder, shape)
+                    .padding(if (mac) 5.dp else 0.dp),
                 content = content,
             )
         }
@@ -97,10 +104,15 @@ fun ApplePopoverMenu(
 }
 
 /**
- * C15 菜单行: 高 48; 20 号图标 + `body` 文字.
+ * C15 菜单行.
+ *
+ * 手机: 高 48; 20 号图标 + `body` 文字; 分隔线从 48 开始.
+ * macOS: 高 26、圆角 5 (有图标时高 30、圆角 6、16 号图标); `macCallout` 文字, 右侧 [shortcut] label2;
+ * 悬停的行为 accentFill 底 + onAccentFill 文字. 分隔线左右各缩进 10.
  *
  * @param value 当前值, 行尾显示 accent W600 文字 + `›` (例如「追番状态 在看 ›」).
- * @param showDivider 在行顶画分隔线, 从 48 开始. 用于第二行起.
+ * @param shortcut macOS 的快捷键提示, 例如「⌘I」. 只写 05 C2 批准的快捷键. 手机不显示.
+ * @param showDivider 在行上方画分隔线. 用于分组的第一行.
  */
 @Composable
 fun PopoverMenuItem(
@@ -109,9 +121,14 @@ fun PopoverMenuItem(
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
     value: String? = null,
+    shortcut: String? = null,
     showDivider: Boolean = false,
     enabled: Boolean = true,
 ) {
+    if (isMacStyle) {
+        MacPopoverMenuItem(text, onClick, modifier, icon, value, shortcut, showDivider, enabled)
+        return
+    }
     Box(modifier.fillMaxWidth()) {
         Row(
             Modifier
@@ -135,7 +152,10 @@ fun PopoverMenuItem(
                 overflow = TextOverflow.Ellipsis,
             )
             if (value != null) {
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Text(
                         value,
                         style = AniTextStyles.callout,
@@ -154,6 +174,85 @@ fun PopoverMenuItem(
         }
         if (showDivider) {
             AppleDivider(Modifier.align(Alignment.TopStart), startIndent = 48.dp)
+        }
+    }
+}
+
+@Composable
+private fun MacPopoverMenuItem(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier,
+    icon: ImageVector?,
+    value: String?,
+    shortcut: String?,
+    showDivider: Boolean,
+    enabled: Boolean,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val highlighted = enabled && interactionSource.collectIsHoveredAsState().value
+    val labelColor = if (highlighted) AniColors.onAccentFill else MaterialTheme.colorScheme.onSurface
+    val secondaryColor = if (highlighted) AniColors.onAccentFill else MaterialTheme.colorScheme.secondary
+    val shape = RoundedCornerShape(if (icon != null) 6.dp else 5.dp)
+    Column(modifier.fillMaxWidth()) {
+        if (showDivider) {
+            Box(
+                Modifier
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = AppleComponentDefaults.DividerAlpha),
+                    ),
+            )
+        }
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .height(if (icon != null) 30.dp else 26.dp)
+                .alpha(if (enabled) 1f else AppleComponentDefaults.DisabledAlpha)
+                .clip(shape)
+                .background(if (highlighted) AniColors.accentFill else Color.Transparent)
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    enabled = enabled,
+                    role = Role.Button,
+                    onClick = onClick,
+                )
+                .padding(start = 10.dp, end = if (icon != null) 8.dp else 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (icon != null) {
+                Icon(icon, contentDescription = null, Modifier.size(16.dp), tint = labelColor)
+            }
+            Text(
+                text,
+                Modifier.weight(1f),
+                style = AniTextStyles.macCallout,
+                color = labelColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (value != null) {
+                Text(
+                    value,
+                    style = AniTextStyles.macCallout,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (highlighted) AniColors.onAccentFill else MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                )
+                Icon(
+                    AppleIcons.chevronRight(2.8f),
+                    contentDescription = null,
+                    Modifier.size(10.dp),
+                    tint = secondaryColor,
+                )
+            }
+            if (shortcut != null) {
+                Text(shortcut, style = AniTextStyles.macCallout, color = secondaryColor, maxLines = 1)
+            }
         }
     }
 }

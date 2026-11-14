@@ -30,8 +30,8 @@ import me.him188.ani.app.ui.foundation.theme.AniTextStyles
  *
  * 分组之间相隔 [GroupedListDefaults.SectionSpacing], 由调用处排列.
  *
- * @param title 分组标题, `footnote` label2, 左内距 16, 与卡片间距 8.
- * @param footer 分组下方说明, `caption` label2, 内距 8 16.
+ * @param title 分组标题, `footnote` label2, 左右内距 16 (macOS 12), 与卡片间距 8.
+ * @param footer 分组下方说明, label2, 手机 `footnote`、内距 8 16 0; macOS `macCaption`、内距 8 12 0.
  */
 @Composable
 fun GroupedListSection(
@@ -40,12 +40,14 @@ fun GroupedListSection(
     footer: String? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val mac = isMacStyle
+    val textPadding = if (mac) GroupedListDefaults.MacTextPadding else GroupedListDefaults.TextPadding
     Column(modifier) {
         if (title != null) {
             Text(
                 title,
                 Modifier
-                    .padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
+                    .padding(start = textPadding, end = textPadding, bottom = 8.dp)
                     .semantics { heading() },
                 style = AniTextStyles.footnote,
                 color = MaterialTheme.colorScheme.secondary,
@@ -55,8 +57,8 @@ fun GroupedListSection(
         if (footer != null) {
             Text(
                 footer,
-                Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                style = AniTextStyles.caption,
+                Modifier.padding(start = textPadding, top = 8.dp, end = textPadding),
+                style = if (mac) AniTextStyles.macCaption else AniTextStyles.footnote,
                 color = MaterialTheme.colorScheme.secondary,
             )
         }
@@ -64,17 +66,18 @@ fun GroupedListSection(
 }
 
 /**
- * C5 列表卡: card 底, 圆角 16, 裁切内容. 行间分隔线用 [AppleDivider], 从文字起点开始.
+ * C5 列表卡: card 底, 圆角 16 (macOS 14), 裁切内容. 行间分隔线用 [AppleDivider], 从文字起点开始.
  */
 @Composable
 fun GroupedListCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val cornerRadius = if (isMacStyle) GroupedListDefaults.MacCornerRadius else GroupedListDefaults.CornerRadius
     Column(
         modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(GroupedListDefaults.CornerRadius))
+            .clip(RoundedCornerShape(cornerRadius))
             .background(MaterialTheme.colorScheme.surfaceContainerLow),
         content = content,
     )
@@ -82,6 +85,11 @@ fun GroupedListCard(
 
 object GroupedListDefaults {
     val CornerRadius = 16.dp
+    val MacCornerRadius = 14.dp
+
+    /** 分组标题与分组说明的左右内距. */
+    val TextPadding = 16.dp
+    val MacTextPadding = 12.dp
 
     /** 分组之间的间距. */
     val SectionSpacing = 24.dp
