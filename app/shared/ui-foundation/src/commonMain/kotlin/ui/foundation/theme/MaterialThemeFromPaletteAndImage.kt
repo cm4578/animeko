@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024-2025 OpenAni and contributors.
+ * Copyright (C) 2024-2026 OpenAni and contributors.
  *
  * 此源代码的使用受 GNU AFFERO GENERAL PUBLIC LICENSE version 3 许可证的约束, 可以在以下链接找到该许可证.
  * Use of this source code is governed by the GNU AGPLv3 license, which can be found at the following link.
@@ -26,11 +26,15 @@ import com.materialkolor.dynamicColorScheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import me.him188.ani.app.data.models.preference.DarkMode
+import me.him188.ani.app.ui.foundation.LocalPlatform
 import me.him188.ani.app.ui.foundation.resize
 import me.him188.ani.app.ui.foundation.themeColor
+import me.him188.ani.utils.platform.isApple
 
 /**
  * Generate a [MaterialTheme] from a [Palette].
+ *
+ * iOS 与 macOS 使用 [aniColorScheme]: 强调色取自封面, 背景维持中性色.
  *
  * @receiver The [Palette] to generate from.
  * @return Generated [MaterialTheme]
@@ -48,6 +52,7 @@ fun MaterialThemeFromPaletteAndImage(
         DarkMode.AUTO -> isSystemInDarkThemeDetected()
     }
     val useBlackBackground = themeSettings.useBlackBackground
+    val useAniColorScheme = LocalPlatform.current.isApple()
 
     var colorScheme by remember { mutableStateOf<ColorScheme?>(null) }
 
@@ -56,19 +61,23 @@ fun MaterialThemeFromPaletteAndImage(
             ?: image?.let { withContext(Dispatchers.Default) { it.resize(64, 64).themeColor() } }
             ?: return@LaunchedEffect
 
-        colorScheme = dynamicColorScheme(
-            primary = primaryColor,
-            isDark = isDark,
-            isAmoled = useBlackBackground,
-            style = PaletteStyle.TonalSpot,
-            modifyColorScheme = { colorScheme ->
-                modifyColorSchemeForBlackBackground(
-                    colorScheme,
-                    isDark,
-                    useBlackBackground,
-                )
-            },
-        )
+        colorScheme = if (useAniColorScheme) {
+            modifyColorSchemeForBlackBackground(aniColorScheme(primaryColor, isDark), isDark, useBlackBackground)
+        } else {
+            dynamicColorScheme(
+                primary = primaryColor,
+                isDark = isDark,
+                isAmoled = useBlackBackground,
+                style = PaletteStyle.TonalSpot,
+                modifyColorScheme = { colorScheme ->
+                    modifyColorSchemeForBlackBackground(
+                        colorScheme,
+                        isDark,
+                        useBlackBackground,
+                    )
+                },
+            )
+        }
     }
 
     MaterialTheme(
