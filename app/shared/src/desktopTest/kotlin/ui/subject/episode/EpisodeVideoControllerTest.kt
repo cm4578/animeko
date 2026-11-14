@@ -62,6 +62,7 @@ import me.him188.ani.app.domain.media.cache.engine.MediaCacheEngineKey
 import me.him188.ani.app.domain.media.player.ChunkState
 import me.him188.ani.app.domain.media.player.staticMediaCacheProgressState
 import me.him188.ani.app.domain.player.VideoLoadingState
+import me.him188.ani.app.pip.NoOpPictureInPictureController
 import me.him188.ani.app.pip.PictureInPictureController
 import me.him188.ani.app.ui.danmaku.PlayerDanmakuEditor
 import me.him188.ani.app.ui.episode.share.MediaShareData
@@ -78,6 +79,7 @@ import me.him188.ani.app.ui.mediafetch.TestMediaSourceResultListPresentation
 import me.him188.ani.app.ui.mediafetch.rememberTestMediaSelectorState
 import me.him188.ani.app.ui.mediaselect.MediaSelectorMode
 import me.him188.ani.app.ui.settings.danmaku.createTestDanmakuRegexFilterState
+import me.him188.ani.app.ui.subject.collection.components.createTestEditableSubjectCollectionTypeState
 import me.him188.ani.app.ui.subject.episode.video.components.DanmakuSettingsSheet
 import me.him188.ani.app.ui.subject.episode.video.components.EpisodeVideoSideSheetPage
 import me.him188.ani.app.ui.subject.episode.video.components.EpisodeVideoSideSheets
@@ -119,8 +121,10 @@ import me.him188.ani.app.videoplayer.ui.progress.TAG_SPEED_SWITCHER_SLIDER
 import me.him188.ani.app.videoplayer.ui.progress.TAG_SPEED_SWITCHER_TEXT_BUTTON
 import me.him188.ani.app.videoplayer.ui.top.PlayerTopBar
 import me.him188.ani.danmaku.ui.DanmakuConfig
+import me.him188.ani.datasources.api.topic.UnifiedCollectionType
 import me.him188.ani.utils.platform.Arch
 import me.him188.ani.utils.platform.Platform
+import me.him188.ani.utils.platform.annotations.TestOnly
 import org.junit.jupiter.api.Disabled
 import org.openani.mediamp.InternalForInheritanceMediampApi
 import org.openani.mediamp.MediaStatus
@@ -252,6 +256,8 @@ class EpisodeVideoControllerTest {
         danmakuHost: @Composable () -> Unit = {},
         sidebarVisible: Boolean = true,
         onToggleSidebar: (Boolean) -> Unit = {},
+        pictureInPictureController: PictureInPictureController = NoOpPictureInPictureController,
+        appleChrome: AppleEpisodeVideoChrome? = null,
     ) {
         ProvideCompositionLocalsForPreview(darkMode = DarkMode.DARK) {
             val actualWatchTogetherPlayerController = watchTogetherPlayerController
@@ -388,7 +394,9 @@ class EpisodeVideoControllerTest {
                     shareData = MediaShareData(null, null),
                     onClickCache = {},
                     modifier = Modifier.testTag("PLAYER"),
+                    pictureInPictureController = pictureInPictureController,
                     isInPictureInPicture = isInPictureInPicture,
+                    appleChrome = appleChrome,
                 )
             }
         }
@@ -415,6 +423,45 @@ class EpisodeVideoControllerTest {
 
         runOnIdle { isInPictureInPicture = false }
         onNodeWithTag("danmakuHost").assertIsDisplayed()
+    }
+
+    @OptIn(TestOnly::class)
+    @Test
+    fun `apple compact controls show picture in picture only when it can start`() = runAniComposeUiTest {
+        val pictureInPictureController = FakePictureInPictureController()
+        pictureInPictureController.isPictureInPicturePossible.value = false
+        setContent {
+            CompositionLocalProvider(LocalPlatform provides Platform.Ios) {
+                val scope = rememberCoroutineScope()
+                val appleChrome = remember {
+                    AppleEpisodeVideoChrome(
+                        episodeTitle = "09",
+                        collectionTypeState = createTestEditableSubjectCollectionTypeState(
+                            MutableStateFlow(UnifiedCollectionType.WISH),
+                            scope,
+                        ),
+                        isLoggedIn = true,
+                        onClickLogin = {},
+                    )
+                }
+                Player(
+                    gestureFamily = GestureFamily.TOUCH,
+                    expanded = false,
+                    pictureInPictureController = pictureInPictureController,
+                    appleChrome = appleChrome,
+                )
+            }
+        }
+        runOnIdle { controllerState.toggleFullVisible(true) }
+        waitForIdle()
+        // 控制列已显示, 但还不能进入小窗: 不显示子母画面钮
+        onNodeWithTag(AppleEpisodeVideoTestTags.Fullscreen).assertExists()
+        onNodeWithTag(AppleEpisodeVideoTestTags.PictureInPicture).assertDoesNotExist()
+
+        runOnIdle { pictureInPictureController.isPictureInPicturePossible.value = true }
+        waitForIdle()
+        onNodeWithTag(AppleEpisodeVideoTestTags.PictureInPicture).performClick()
+        runOnIdle { assertEquals(1, pictureInPictureController.enterCount) }
     }
 
     @Test
@@ -2686,6 +2733,9 @@ private class FakePictureInPictureController : PictureInPictureController {
     override fun updatePolicy(autoEnterEnabled: Boolean, aspectWidth: Int?, aspectHeight: Int?) {
     }
 
+    var enterCount = 0
+
     override fun enterPictureInPicture() {
+        enterCount++
     }
 }

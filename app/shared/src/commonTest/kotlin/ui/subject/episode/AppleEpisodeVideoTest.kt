@@ -12,6 +12,9 @@ package me.him188.ani.app.ui.subject.episode
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.assertIsDisplayed
@@ -33,6 +36,7 @@ import me.him188.ani.datasources.api.topic.UnifiedCollectionType
 import me.him188.ani.utils.platform.Platform
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class AppleEpisodeVideoTest {
     private class Recorder {
@@ -195,6 +199,39 @@ class AppleEpisodeVideoTest {
         onNodeWithTag(AppleEpisodeVideoTestTags.DanmakuToggle).assertIsOn().performClick()
         onNodeWithTag(AppleEpisodeVideoTestTags.Fullscreen).performClick()
         assertEquals(listOf("danmaku", "fullscreen"), events)
+    }
+
+    @Test
+    fun `picture in picture button sits between danmaku and fullscreen when shown`() = runAniComposeUiTest {
+        var showPictureInPicture by mutableStateOf(false)
+        var entered = 0
+        setContent {
+            ProvideCompositionLocalsForPreview {
+                AppleEpisodeVideoControls(
+                    progressSlider = {},
+                    progressText = {},
+                    danmakuEnabled = true,
+                    onToggleDanmaku = {},
+                    isFullscreen = false,
+                    onToggleFullscreen = {},
+                    Modifier.width(390.dp),
+                    showPictureInPicture = showPictureInPicture,
+                    onEnterPictureInPicture = { entered++ },
+                )
+            }
+        }
+        // 不能进入小窗时不显示, 没有灰色的不可用状态
+        onNodeWithTag(AppleEpisodeVideoTestTags.PictureInPicture).assertDoesNotExist()
+
+        showPictureInPicture = true
+        waitForIdle()
+        val danmaku = onNodeWithTag(AppleEpisodeVideoTestTags.DanmakuToggle).fetchSemanticsNode().boundsInRoot
+        val pip = onNodeWithTag(AppleEpisodeVideoTestTags.PictureInPicture).fetchSemanticsNode().boundsInRoot
+        val fullscreen = onNodeWithTag(AppleEpisodeVideoTestTags.Fullscreen).fetchSemanticsNode().boundsInRoot
+        assertTrue(danmaku.right <= pip.left && pip.right <= fullscreen.left)
+
+        onNodeWithTag(AppleEpisodeVideoTestTags.PictureInPicture).performClick()
+        assertEquals(1, entered)
     }
 
     @Test

@@ -31,6 +31,7 @@ import androidx.compose.material.icons.rounded.Fullscreen
 import androidx.compose.material.icons.rounded.FullscreenExit
 import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.MoreHoriz
+import androidx.compose.material.icons.rounded.PictureInPicture
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Text
@@ -110,6 +111,7 @@ import me.him188.ani.app.ui.lang.video_player_danmaku_toggle_label
 import me.him188.ani.app.ui.lang.video_player_disable_danmaku
 import me.him188.ani.app.ui.lang.video_player_enable_danmaku
 import me.him188.ani.app.ui.lang.video_player_enter_fullscreen
+import me.him188.ani.app.ui.lang.video_player_enter_picture_in_picture
 import me.him188.ani.app.ui.lang.video_player_exit_fullscreen
 import me.him188.ani.app.ui.lang.video_player_off
 import me.him188.ani.app.ui.lang.video_player_pause
@@ -522,10 +524,12 @@ internal fun AppleVideoPlayButton(
 }
 
 /**
- * 直式播放器的控制列: 上方为进度条, 下方为时间 (`12/16` 等宽数字) 与右侧 36 按钮「彈」、全屏.
+ * 直式播放器的控制列: 上方为进度条, 下方为时间 (`12/16` 等宽数字) 与右侧 36 按钮「彈」、子母画面、全屏.
  *
- * 画中画在 iOS 由系统手势进入, 不放按钮 (Android 不使用 Apple 版控制列).
+ * 子母画面钮只在可以进入小窗时显示, 不显示灰色的不可用状态 (05 G57): 判断依据 `isPictureInPicturePossible`
+ * 在部分机型上翻转较慢. 系统手势 (上滑回主画面) 仍可进入小窗.
  *
+ * @param showPictureInPicture 是否显示子母画面钮.
  * @param controlsVisible 为 `false` 时只显示进度条, 时间与按钮保留位置但不显示, 用于拖动进度时.
  */
 @Composable
@@ -537,6 +541,8 @@ internal fun AppleEpisodeVideoControls(
     isFullscreen: Boolean,
     onToggleFullscreen: () -> Unit,
     modifier: Modifier = Modifier,
+    showPictureInPicture: Boolean = false,
+    onEnterPictureInPicture: () -> Unit = {},
     controlsVisible: Boolean = true,
 ) {
     Column(modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
@@ -555,6 +561,15 @@ internal fun AppleEpisodeVideoControls(
             }
             Spacer(Modifier.weight(1f))
             AppleDanmakuToggle(danmakuEnabled, onToggleDanmaku)
+            if (showPictureInPicture) {
+                VideoIconButton(
+                    onEnterPictureInPicture,
+                    Icons.Rounded.PictureInPicture,
+                    stringResource(Lang.video_player_enter_picture_in_picture),
+                    Modifier.testTag(AppleEpisodeVideoTestTags.PictureInPicture),
+                    size = 36.dp,
+                )
+            }
             VideoIconButton(
                 onToggleFullscreen,
                 if (isFullscreen) Icons.Rounded.FullscreenExit else Icons.Rounded.Fullscreen,
@@ -775,5 +790,6 @@ internal object AppleEpisodeVideoTestTags {
     const val PlayButton = "apple-episode-video-play"
     const val DanmakuToggle = "apple-episode-video-danmaku-toggle"
     const val Fullscreen = "apple-episode-video-fullscreen"
+    const val PictureInPicture = "apple-episode-video-picture-in-picture"
     fun collectionType(type: UnifiedCollectionType) = "apple-episode-video-collection-${type.name}"
 }
