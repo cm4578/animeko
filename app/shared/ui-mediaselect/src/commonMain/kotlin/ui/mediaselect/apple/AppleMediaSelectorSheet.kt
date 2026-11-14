@@ -118,6 +118,7 @@ fun AppleMediaSelectorSheet(
                     manualBrowseState,
                     onPlayed = onDismissRequest,
                     pageModifier,
+                    watching = watching,
                 )
 
                 MediaSelectorMode.BT -> BtResourcesPage(
@@ -245,6 +246,7 @@ internal object AppleMediaSelectorTestTags {
     const val OpenedResult = "apple-media-selector-opened-result"
     const val ManualRetry = "apple-media-selector-manual-retry"
     const val RememberSwitch = "apple-media-selector-remember"
+    const val Play = "apple-media-selector-play"
     fun mode(mode: MediaSelectorMode) = "apple-media-selector-mode-${mode.name}"
     fun source(instanceId: String) = "apple-media-selector-source-$instanceId"
     fun failedSource(instanceId: String) = "apple-media-selector-failed-$instanceId"

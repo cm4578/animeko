@@ -12,7 +12,10 @@ package me.him188.ani.app.ui.mediaselect.apple
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.assertIsNotSelected
@@ -174,7 +177,7 @@ class AppleMediaSelectorTest {
     }
 
     @Test
-    fun `manual page opens a result and plays the episode`() = runAniComposeUiTest {
+    fun `manual page selects an episode and plays it with the button`() = runAniComposeUiTest {
         val target = ManualBrowseTarget(1, "Steins Gate", EpisodeSort(12), "12")
         var played = 0
         val plays = mutableListOf<ManualBrowseMemory?>()
@@ -204,10 +207,39 @@ class AppleMediaSelectorTest {
         onNodeWithTag(AppleMediaSelectorTestTags.channelPill(0)).assertIsSelected()
         onNodeWithTag(AppleMediaSelectorTestTags.episode(11)).assertIsSelected()
 
-        onNodeWithTag(AppleMediaSelectorTestTags.episode(11)).performClick()
+        // 点集数只选取, 不播放 (05 G55)
+        onNodeWithTag(AppleMediaSelectorTestTags.episode(10)).performClick()
+        onNodeWithTag(AppleMediaSelectorTestTags.episode(10)).assertIsSelected()
+        onNodeWithTag(AppleMediaSelectorTestTags.episode(11)).assertIsNotSelected()
+        runOnIdle { assertEquals(0, played) }
+
+        onNodeWithTag(AppleMediaSelectorTestTags.Play).performClick()
         waitUntil(timeoutMillis = 10_000) { played == 1 }
         runOnIdle {
-            assertEquals(11, assertNotNull(plays.single()).episodeIndex)
+            assertEquals(10, assertNotNull(plays.single()).episodeIndex)
         }
+    }
+
+    @Test
+    fun `manual page keeps the whole play button on narrow screens`() = runAniComposeUiTest {
+        var pageWidth by mutableStateOf(600.dp)
+        setContent {
+            ProvideCompositionLocalsForPreview {
+                val scope = rememberBackgroundScope()
+                val state = remember { createTestManualBrowseState(scope.backgroundScope) }
+                Box(Modifier.size(pageWidth, 700.dp)) {
+                    AppleManualBrowsePage(state, onPlayed = {}, watching = WatchingEpisode("14", "Episode", ep = "02"))
+                }
+            }
+        }
+        val wide = onNodeWithTag(AppleMediaSelectorTestTags.Play).fetchSemanticsNode().boundsInRoot
+
+        // 空间不够时「記住選擇」的文字先省略, 按钮保持完整宽度
+        pageWidth = 300.dp
+        waitForIdle()
+        val narrow = onNodeWithTag(AppleMediaSelectorTestTags.Play).fetchSemanticsNode().boundsInRoot
+        assertEquals(wide.width, narrow.width)
+        assertTrue(narrow.right <= with(density) { 300.dp.toPx() })
+        onNodeWithTag(AppleMediaSelectorTestTags.RememberSwitch).assertExists()
     }
 }
