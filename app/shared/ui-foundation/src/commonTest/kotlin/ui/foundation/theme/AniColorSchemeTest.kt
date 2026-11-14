@@ -43,6 +43,10 @@ class AniColorSchemeTest {
             "onSecondary" to 0xFFFFFFFF,
             "secondaryContainer" to 0xFFE6EEF4,
             "onSecondaryContainer" to 0xFF1B4A6E,
+            "tertiary" to 0xFF131D26,
+            "onTertiary" to 0xFFFFFFFF,
+            "tertiaryContainer" to 0xFFE6EEF4,
+            "onTertiaryContainer" to 0xFF1B4A6E,
             "background" to 0xFFF1F4F9,
             "onBackground" to 0xFF131D26,
             "surface" to 0xFFF1F4F9,
@@ -85,6 +89,10 @@ class AniColorSchemeTest {
             "onSecondary" to 0xFF0D141B,
             "secondaryContainer" to 0xFF293A49,
             "onSecondaryContainer" to 0xFFC1DDF5,
+            "tertiary" to 0xFFE6EAEF,
+            "onTertiary" to 0xFF0D141B,
+            "tertiaryContainer" to 0xFF293A49,
+            "onTertiaryContainer" to 0xFFC1DDF5,
             "background" to 0xFF0D141B,
             "onBackground" to 0xFFE6EAEF,
             "surface" to 0xFF0D141B,
@@ -131,6 +139,9 @@ class AniColorSchemeTest {
                     check("primary/surfaceContainerLow", s.primary, s.surfaceContainerLow, 4.5)
                     check("onPrimary/primary", s.onPrimary, s.primary, 4.5)
                     check("onSecondaryContainer/secondaryContainer", s.onSecondaryContainer, s.secondaryContainer, 4.5)
+                    check("tertiary/surfaceContainerLowest", s.tertiary, s.surfaceContainerLowest, 4.5)
+                    check("onTertiary/tertiary", s.onTertiary, s.tertiary, 4.5)
+                    check("onTertiaryContainer/tertiaryContainer", s.onTertiaryContainer, s.tertiaryContainer, 4.5)
                     check(
                         "onSurfaceVariant/surfaceContainerHighest",
                         s.onSurfaceVariant,
@@ -182,7 +193,7 @@ class AniColorSchemeTest {
     }
 
     /**
-     * 01-tokens.md §4.2 覆写的角色. tertiary 与 `*Fixed` 系列沿用 materialkolor 的生成结果, 不在此列.
+     * 01-tokens.md §4.2 覆写的角色. `*Fixed` 系列沿用 materialkolor 的生成结果, 不在此列.
      */
     private fun ColorScheme.overriddenRoles(): Map<String, Color> = mapOf(
         "primary" to primary,
@@ -194,6 +205,10 @@ class AniColorSchemeTest {
         "onSecondary" to onSecondary,
         "secondaryContainer" to secondaryContainer,
         "onSecondaryContainer" to onSecondaryContainer,
+        "tertiary" to tertiary,
+        "onTertiary" to onTertiary,
+        "tertiaryContainer" to tertiaryContainer,
+        "onTertiaryContainer" to onTertiaryContainer,
         "background" to background,
         "onBackground" to onBackground,
         "surface" to surface,
