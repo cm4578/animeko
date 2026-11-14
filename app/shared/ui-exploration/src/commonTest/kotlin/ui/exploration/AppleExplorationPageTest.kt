@@ -9,6 +9,7 @@
 
 package me.him188.ani.app.ui.exploration
 
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
@@ -43,6 +44,7 @@ import me.him188.ani.datasources.api.topic.UnifiedCollectionType
 import me.him188.ani.utils.platform.Platform
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class AppleExplorationPageTest {
     private val today = LocalDate(2026, 10, 30) // 星期五
@@ -86,6 +88,9 @@ class AppleExplorationPageTest {
         onClickTrending: (TrendingSubjectInfo) -> Unit = {},
         onClickSchedule: (LocalDate?) -> Unit = {},
         onClickRecommendation: (RecommendedSubjectInfo) -> Unit = {},
+        recommendationList: List<RecommendedSubjectInfo> = recommendations,
+        // 手机宽度, 推荐的第一行在测试窗口内
+        modifier: Modifier = Modifier.width(390.dp),
     ) {
         setContent {
             ProvideCompositionLocalsForPreview {
@@ -93,7 +98,7 @@ class AppleExplorationPageTest {
                     AppleExplorationPageLayout(
                         trending = remember { flowOf(PagingData.from(listOf(trending))) }.collectAsLazyPagingItems(),
                         recommendations = remember {
-                            flowOf(PagingData.from<RecommendedItemInfo>(recommendations))
+                            flowOf(PagingData.from<RecommendedItemInfo>(recommendationList))
                         }.collectAsLazyPagingItems(),
                         today = today,
                         quickFollowState = quickFollowState,
@@ -102,8 +107,7 @@ class AppleExplorationPageTest {
                         onClickTrendingMore = {},
                         onClickSchedule = onClickSchedule,
                         onClickRecommendation = onClickRecommendation,
-                        // 手机宽度, 推荐的第一行在测试窗口内
-                        modifier = Modifier.width(390.dp),
+                        modifier = modifier,
                     )
                 }
             }
@@ -115,6 +119,35 @@ class AppleExplorationPageTest {
      */
     private fun ComposeUiTest.menuRow(type: UnifiedCollectionType) =
         onNodeWithTag(QuickFollowTestTags.type(type)).onChildren().filterToOne(hasClickAction())
+
+    @Test
+    fun `recommendation grid has three columns on phones and more on wider screens`() {
+        assertEquals(3, recommendationColumns(375.dp))
+        assertEquals(3, recommendationColumns(390.dp))
+        assertEquals(3, recommendationColumns(440.dp))
+        // iPad 直向与横向: 卡片与 iPhone 上大致同宽
+        assertEquals(6, recommendationColumns(820.dp))
+        assertEquals(9, recommendationColumns(1180.dp))
+    }
+
+    @Test
+    fun `recommendation rows on an ipad hold six cards`() = runAniComposeUiTest {
+        setExplorationPage(
+            quickFollowState = null,
+            recommendationList = List(7) {
+                RecommendedSubjectInfo(bangumiId = it + 1, nameCn = "Recommended ${it + 1}", name = "", imageLarge = "")
+            },
+            // iPad 直向的宽度, 比测试窗口宽也照这个宽度排版
+            modifier = Modifier.requiredWidth(820.dp),
+        )
+
+        val firstRow = (1..6).map { onNodeWithText("Recommended $it").fetchSemanticsNode().boundsInRoot }
+        assertEquals(1, firstRow.map { it.top }.distinct().size)
+        assertEquals(firstRow.sortedBy { it.left }, firstRow)
+        val seventh = onNodeWithText("Recommended 7").fetchSemanticsNode().boundsInRoot
+        assertTrue(seventh.top > firstRow.first().top)
+        assertEquals(firstRow.first().left, seventh.left)
+    }
 
     @Test
     fun `current week runs from Monday to Sunday`() {

@@ -14,12 +14,15 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -44,6 +47,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -101,7 +105,7 @@ import kotlin.time.Clock
 /**
  * Apple 版探索页 (03 §3.2). 手机.
  *
- * 从上到下: C2 大标题「探索」与搜索钮; 最高热度 (横向卡片); 新番时间表 (本周星期条); 推荐 (3 栏网格).
+ * 从上到下: C2 大标题「探索」与搜索钮; 最高热度 (横向卡片); 新番时间表 (本周星期条); 推荐 (网格, iPhone 为 3 栏, 较宽的屏幕随宽度增加栏数).
  * 页头不放头像与设置入口 (05 G14、B1), 个人入口在「我的」分页. 热度与推荐资料没有类型, 卡片只显示番名.
  * 推荐卡片右上角是快速追番按钮 (05 G2), 未登录时不显示.
  *
@@ -173,8 +177,13 @@ internal fun AppleExplorationPageLayout(
     modifier: Modifier = Modifier,
     windowInsets: WindowInsets = AniWindowInsets.forTopAppBar(),
     contentPadding: PaddingValues = PaddingValues(),
-) {
-    LazyColumn(modifier.fillMaxSize(), contentPadding = contentPadding) {
+) = BoxWithConstraints(modifier.fillMaxSize()) {
+    val layoutDirection = LocalLayoutDirection.current
+    val recommendationColumns = recommendationColumns(
+        maxWidth - contentPadding.calculateStartPadding(layoutDirection) -
+                contentPadding.calculateEndPadding(layoutDirection),
+    )
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = contentPadding) {
         item(key = "header") {
             LargeTitleHeader(stringResource(Lang.exploration_title), windowInsets = windowInsets) {
                 AppleCircleButton(onSearch, AppleIcons.search(2.2f), stringResource(Lang.exploration_search))
@@ -217,7 +226,7 @@ internal fun AppleExplorationPageLayout(
                 }
             }
         }
-        recommendationRows(recommendations, quickFollowState, onClickRecommendation)
+        recommendationRows(recommendations, recommendationColumns, quickFollowState, onClickRecommendation)
     }
 }
 
@@ -371,14 +380,15 @@ private fun WeekScheduleCard(
 }
 
 /**
- * 推荐: 3 栏网格, 间距 8.
+ * 推荐: [columns] 栏网格, 间距 8. 栏数见 [recommendationColumns].
  */
 private fun LazyListScope.recommendationRows(
     items: LazyPagingItems<RecommendedItemInfo>,
+    columns: Int,
     quickFollowState: QuickFollowState?,
     onClick: (RecommendedSubjectInfo) -> Unit,
 ) {
-    val rows = (items.itemCount + RecommendationColumns - 1) / RecommendationColumns
+    val rows = (items.itemCount + columns - 1) / columns
     items(rows, key = { "recommendation-row-$it" }) { row ->
         Row(
             Modifier
@@ -387,8 +397,8 @@ private fun LazyListScope.recommendationRows(
                 .padding(bottom = if (row == rows - 1) 0.dp else 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            for (column in 0 until RecommendationColumns) {
-                val index = row * RecommendationColumns + column
+            for (column in 0 until columns) {
+                val index = row * columns + column
                 Box(Modifier.weight(1f)) {
                     val item = if (index < items.itemCount) items[index] else null
                     when (item) {
@@ -401,7 +411,20 @@ private fun LazyListScope.recommendationRows(
     }
 }
 
-private const val RecommendationColumns = 3
+/**
+ * 推荐网格的栏数 (05 G56): 卡片至少 [RecommendationMinCardWidth] 宽, 至少 3 栏. iPhone 为 3 栏;
+ * iPad 等较宽的屏幕随宽度增加栏数, 卡片与 iPhone 上大致同宽.
+ *
+ * @param contentWidth 列表的宽度 (不含列表的左右内距). 网格左右各留 16.
+ */
+internal fun recommendationColumns(contentWidth: Dp): Int {
+    val gridWidth = contentWidth - 32.dp
+    val columns = ((gridWidth + RecommendationSpacing) / (RecommendationMinCardWidth + RecommendationSpacing)).toInt()
+    return columns.coerceAtLeast(3)
+}
+
+private val RecommendationMinCardWidth = 110.dp
+private val RecommendationSpacing = 8.dp
 
 /**
  * 推荐卡片: 圆角 12、card 底; 封面 3:4; 文字区内距 `8 10 10`, 番名 `subhead` W600. 右上角为快速追番按钮.
