@@ -117,6 +117,7 @@ internal fun MacEpisodeSidebar(
     modifier: Modifier = Modifier,
 ) {
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    val scope = rememberCoroutineScope()
     val colorScheme = MaterialTheme.colorScheme
     Row(modifier.fillMaxSize().background(colorScheme.surfaceContainerLowest)) {
         Box(Modifier.width(1.dp).fillMaxHeight().background(colorScheme.outlineVariant))
@@ -147,10 +148,13 @@ internal fun MacEpisodeSidebar(
                         commentState = vm.episodeCommentState,
                         commentReportState = vm.commentReportState,
                         commentEditorState = vm.commentEditorState,
+                        threadHost = vm.commentThreadHost,
+                        onOpenThread = { scope.launch { vm.openCommentThread(it) } },
                         subjectId = vm.subjectId,
                         episodeId = page.episodePresentation.episodeId,
                         setShowEditCommentSheet = setShowEditCommentSheet,
                         pauseOnPlaying = pauseOnPlaying,
+                        backHandlerEnabled = !vm.isFullscreen,
                         gridState = vm.commentLazyGirdState,
                     )
                 }

@@ -180,10 +180,13 @@ internal fun AppleEpisodePhoneDetails(
                     commentState = vm.episodeCommentState,
                     commentReportState = vm.commentReportState,
                     commentEditorState = vm.commentEditorState,
+                    threadHost = vm.commentThreadHost,
+                    onOpenThread = { scope.launch { vm.openCommentThread(it) } },
                     subjectId = vm.subjectId,
                     episodeId = episode.episodeId,
                     setShowEditCommentSheet = setShowEditCommentSheet,
                     pauseOnPlaying = pauseOnPlaying,
+                    backHandlerEnabled = !vm.isFullscreen,
                     gridState = vm.commentLazyGirdState,
                 )
             }
