@@ -9,6 +9,8 @@
 
 package me.him188.ani.app.ui.download
 
+import kotlinx.coroutines.flow.map
+import me.him188.ani.app.data.repository.user.SettingsRepository
 import me.him188.ani.app.ui.download.subject.SubjectDownloadsPresenterFactory
 import me.him188.ani.app.ui.download.subject.SubjectDownloadsViewModel
 import org.koin.core.Koin
@@ -16,7 +18,10 @@ import org.koin.mp.KoinPlatform
 
 fun createDownloadManagementViewModel(): DownloadManagementViewModel {
     val koin = KoinPlatform.getKoin()
-    return DownloadManagementViewModel(koin.get(), koin.get(), koin.get(), koin.get(), subjectDownloadsPresenterFactory(koin))
+    return DownloadManagementViewModel(
+        koin.get(), koin.get(), koin.get(), koin.get(), subjectDownloadsPresenterFactory(koin),
+        cacheDirectory = koin.get<SettingsRepository>().mediaCacheSettings.flow.map { it.saveDir },
+    )
 }
 
 fun createSubjectDownloadsViewModel(subjectId: Int): SubjectDownloadsViewModel {

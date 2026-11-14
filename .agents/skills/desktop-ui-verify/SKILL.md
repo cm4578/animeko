@@ -56,6 +56,7 @@ $DESK inject click 300 200  # window-CONTENT points = window points minus title 
                             # screenshot PNG pixel / 2, then subtract (content.y - frame.y)
 $DESK inject type hello     # goes to focus owner, else last injected-click target
 $DESK inject key 10         # AWT keycodes: 10=Enter, 27=Esc, 9=Tab, 37-40=arrows
+$DESK inject key 75 meta    # with modifiers (meta shift ctrl alt): Cmd+K; 82=R, 84=T, 73=I, 44=comma
 $DESK inject wheel 500 300 3  # mouse wheel / trackpad scroll at (500,300): dy=3 (down); `wheel x y dy dx`,
                               # append `ctrl` for Ctrl+wheel
 $DESK inject resize 1440 900 # resize the target frame (window points) without Accessibility

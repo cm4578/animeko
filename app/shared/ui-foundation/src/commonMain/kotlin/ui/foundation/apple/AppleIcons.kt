@@ -218,6 +218,12 @@ object AppleIcons {
         stroke(rect(13.5f, 13.5f, 6.5f, 6.5f, 1.5f))
     }
 
+    /** macOS 工具栏「重新整理」(⌘R). */
+    fun refresh(strokeWidth: Float = 2f): ImageVector = cached("refresh", strokeWidth) {
+        stroke("M19.5 12a7.5 7.5 0 1 1-2.2-5.3")
+        stroke("M19.5 4.5v4h-4")
+    }
+
     /** 「我的」页「Bangumi 同步」. */
     fun sync(strokeWidth: Float = 2f): ImageVector = cached("sync", strokeWidth) {
         stroke("M20 12a8 8 0 0 1-14.3 4.9")
@@ -249,6 +255,12 @@ object AppleIcons {
     fun minusCircle(strokeWidth: Float = 1.9f): ImageVector = cached("minusCircle", strokeWidth) {
         stroke(circle(12f, 12f, 8.5f))
         stroke("M8.5 12h7")
+    }
+
+    /** 铅笔, 用于「写评价」. */
+    fun pencil(strokeWidth: Float = 1.9f): ImageVector = cached("pencil", strokeWidth) {
+        stroke("M5 19l1-4.5L15.5 5a2.1 2.1 0 0 1 3 3L9 17.5L5 19z")
+        stroke("M13.5 7l3 3")
     }
 
     // 以下为设定分类图标: 手机「我的」页的设定列与 macOS 设定窗口的分类栏共用.

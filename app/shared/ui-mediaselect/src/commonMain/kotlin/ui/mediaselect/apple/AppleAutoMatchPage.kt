@@ -43,6 +43,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -219,14 +220,16 @@ private fun AppleWebSourceRow(
 
 /**
  * 资料源列右侧的状态: 验证码、限流倒数、查询中、线路数量或没有资源.
+ *
+ * @param style 手机为 `footnote`, macOS 为 `macCaption`.
  */
 @Composable
-private fun AppleWebSourceStatus(
+internal fun AppleWebSourceStatus(
     source: WebSource,
     onResolveCaptcha: () -> Unit,
     modifier: Modifier = Modifier,
+    style: TextStyle = AniTextStyles.footnote,
 ) {
-    val style = AniTextStyles.footnote
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
         val rateLimitedUntil = source.rateLimitedUntilMillis
         when {

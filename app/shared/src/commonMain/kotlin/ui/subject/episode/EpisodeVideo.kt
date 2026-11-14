@@ -46,6 +46,7 @@ import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -93,6 +94,8 @@ import me.him188.ani.app.ui.foundation.icons.SubtitleGear
 import me.him188.ani.app.ui.foundation.ifThen
 import me.him188.ani.app.ui.foundation.input.LocalActiveInputSource
 import me.him188.ani.app.ui.foundation.interaction.WindowDragArea
+import me.him188.ani.app.ui.foundation.layout.LocalTitleBarInsets
+import me.him188.ani.app.ui.foundation.layout.ZeroInsets
 import me.him188.ani.app.ui.foundation.layout.currentWindowAdaptiveInfo1
 import me.him188.ani.app.ui.foundation.rememberDebugSettingsViewModel
 import me.him188.ani.app.ui.foundation.theme.AniTheme
@@ -212,6 +215,8 @@ internal const val TAG_EPISODE_SELECTOR_SHEET = "EpisodeSelectorSheet"
  * @param onClickScreenshot 点击截图按钮. 为 null 时不显示截图按钮, 即当前平台或播放器不支持截图
  * @param screenshotOverlay 截图反馈层, 见 [VideoScaffold] 的同名槽
  * @param appleChrome 不为 `null` 时, 非全屏的顶栏、中央播放钮与控制列使用 Apple 版 (03 §3.7); 全屏沿用现有控制列.
+ * @param macChrome 不为 `null` 时, macOS 视窗模式的顶端列、中央播放钮与控制列使用 macOS 版 (04 §3.8); 全屏沿用现有控制列.
+ * @param macDanmakuEditor macOS 视窗模式控制列中间的弹幕输入.
  */
 @Composable
 internal fun EpisodeVideoImpl(
@@ -263,9 +268,12 @@ internal fun EpisodeVideoImpl(
     pictureInPictureController: PictureInPictureController = NoOpPictureInPictureController,
     isInPictureInPicture: Boolean = false,
     appleChrome: AppleEpisodeVideoChrome? = null,
+    macChrome: MacEpisodeVideoChrome? = null,
+    macDanmakuEditor: @Composable (Modifier) -> Unit = {},
 ) {
     // 只切换槽内容, 不改变 VideoScaffold 的组合结构, 进出全屏时视频节点不会重建.
     val appleCompact = appleChrome != null && !expanded
+    val macWindowed = macChrome != null && !fullscreenState.isFullscreen
     // Don't rememberSavable. 页面重建后都回到默认状态
     // 锁定按钮只在 expanded 时显示, 离开 expanded 时必须解锁, 否则无法再解除
     var isLocked by remember(expanded) { mutableStateOf(false) }
@@ -330,353 +338,427 @@ internal fun EpisodeVideoImpl(
                 onToggleAlwaysOnTop = onToggleAlwaysOnTop,
             )
         }
-        VideoScaffold(
-            expanded = expanded,
-            layout = scaffoldLayout,
-            modifier = modifier
-                .ifThen(videoOnly) { fillMaxSize() }
-                .hoverable(videoInteractionSource)
-                .cursorVisibility(showCursor),
-            contentWindowInsets = contentWindowInsets,
-            maintainAspectRatio = maintainAspectRatio && !videoOnly,
-            videoOnly = videoOnly,
-            controllerState = playerControllerState,
-            gestureLocked = isLocked,
-            topBar = {
-                if (appleCompact) {
-                    AppleEpisodeVideoTopBarHost(
-                        appleChrome,
-                        playerState = playerState,
-                        playerControllerState = playerControllerState,
-                        sheetsController = sheetsController,
-                        shareData = shareData,
-                        onClickCache = onClickCache,
-                        onClickWatchTogether = watchTogetherPlayerController::toggle,
-                        opEdSkipDuration = opEdSkipDuration,
-                        onClickSkipOpEd = onClickSkipOpEd,
-                        playerStatsVisible = showPlayerStats,
-                        onTogglePlayerStats = { showPlayerStats = !showPlayerStats },
-                        aspectRatio = videoAspectRatioControllerState,
-                        videoEnhancement = videoEnhancement,
-                    )
+        // macOS 视窗模式: 顶端列从窗口顶边开始, 交通灯在顶端列里 (04 §3.8)
+        CompositionLocalProvider(LocalTitleBarInsets provides if (macWindowed) ZeroInsets else LocalTitleBarInsets.current) {
+            VideoScaffold(
+                expanded = expanded,
+                layout = scaffoldLayout,
+                modifier = modifier
+                    .ifThen(videoOnly) { fillMaxSize() }
+                    .hoverable(videoInteractionSource)
+                    .cursorVisibility(showCursor),
+                contentWindowInsets = if (macWindowed) ZeroInsets else contentWindowInsets,
+                maintainAspectRatio = maintainAspectRatio && !videoOnly,
+                videoOnly = videoOnly,
+                controllerState = playerControllerState,
+                gestureLocked = isLocked,
+                topBar = {
+                    if (macWindowed && macChrome != null) {
+                        MacEpisodeVideoTopBarHost(
+                            macChrome,
+                            playerControllerState = playerControllerState,
+                            shareData = shareData,
+                            onClickCache = onClickCache,
+                            sidebarVisible = sidebarVisible,
+                            onToggleSidebar = { onToggleSidebar(!sidebarVisible) },
+                        )
+                    } else if (appleCompact) {
+                        AppleEpisodeVideoTopBarHost(
+                            appleChrome,
+                            playerState = playerState,
+                            playerControllerState = playerControllerState,
+                            sheetsController = sheetsController,
+                            shareData = shareData,
+                            onClickCache = onClickCache,
+                            onClickWatchTogether = watchTogetherPlayerController::toggle,
+                            opEdSkipDuration = opEdSkipDuration,
+                            onClickSkipOpEd = onClickSkipOpEd,
+                            playerStatsVisible = showPlayerStats,
+                            onTogglePlayerStats = { showPlayerStats = !showPlayerStats },
+                            aspectRatio = videoAspectRatioControllerState,
+                            videoEnhancement = videoEnhancement,
+                        )
+                    } else {
+                        WindowDragArea {
+                            PlayerTopBar(
+                                Modifier.testTag(TAG_EPISODE_VIDEO_TOP_BAR),
+                                title = if (expanded) {
+                                    { title() }
+                                } else {
+                                    null
+                                },
+                                actions = {
+                                    if (!verticalSplit) {
+                                        topBarActions()
+                                    }
+                                },
+                                // VideoScaffold already applies top/horizontal insets around the top bar.
+                                // Passing the same insets into TopAppBar duplicates the status-bar padding on iOS portrait.
+                                windowInsets = WindowInsets(0.dp),
+                            )
+                        }
+                    }
+                },
+                centerOverlay = if (expanded && LocalPlatform.current.isMobile()) {
+                    { SystemTime() }
                 } else {
-                    WindowDragArea {
-                        PlayerTopBar(
-                            Modifier.testTag(TAG_EPISODE_VIDEO_TOP_BAR),
-                            title = if (expanded) {
-                                { title() }
+                    {}
+                },
+                video = {
+                    if (LocalIsPreviewing.current) {
+                        Text(previewModeText)
+                    } else {
+                        VideoPlayer(
+                            playerState,
+                            Modifier
+                                .onSizeChanged {
+                                    videoEnhancement?.setViewportSize(it.width, it.height)
+                                }
+                                .matchParentSize(),
+                        )
+                    }
+                },
+                danmakuHost = {
+                    AniAnimatedVisibility(
+                        danmakuEnabled,
+                    ) {
+                        Box(Modifier.matchParentSize()) {
+                            danmakuHost()
+                        }
+                    }
+                },
+                gestureHost = {
+                    val swipeSeekerState = rememberSwipeSeekerState(
+                        constraints.maxWidth,
+                        swipeSeekerConfig,
+                    ) {
+                        playerState.skip(it * 1000L)
+                    }
+                    val videoPropertiesState by playerState.mediaProperties.collectAsState(null)
+                    val enableSwipeToSeek by remember {
+                        derivedStateOf {
+                            videoPropertiesState?.let { it.durationMillis != 0L } == true
+                        }
+                    }
+
+                    val indicatorTasker = rememberUiMonoTasker()
+                    LockableVideoGestureHost(
+                        playerControllerState,
+                        swipeSeekerState,
+                        progressSliderState,
+                        playerState,
+                        locked = isLocked,
+                        enableSwipeToSeek = enableSwipeToSeek,
+                        audioController = audioController,
+                        brightnessController = brightnessController,
+                        playbackSpeedControllerState,
+                        fullscreenState,
+                        Modifier,
+                        onTogglePauseResume = {
+                            if (playerState.state.value.playWhenReady) {
+                                indicatorTasker.launch {
+                                    indicatorState.showPausedLong()
+                                }
                             } else {
-                                null
+                                indicatorTasker.launch {
+                                    indicatorState.showResumedLong()
+                                }
+                            }
+                            playerState.togglePlayWhenReady()
+                        },
+                        onToggleDanmaku = onToggleDanmaku,
+                        onTogglePlayerStats = {
+                            showPlayerStats = !showPlayerStats
+                        },
+                        family = gestureFamily,
+                        indicatorState,
+                        fastForwardSpeed = fastForwardSpeed,
+                    )
+                    if (appleCompact) {
+                        AppleVideoPlayButtonHost(playerState, playerControllerState, videoLoadingStateFlow)
+                    }
+                    if (macWindowed) {
+                        AppleVideoPlayButtonHost(
+                            playerState,
+                            playerControllerState,
+                            videoLoadingStateFlow,
+                            size = AppleEpisodeVideoDefaults.MacPlayButtonSize,
+                        )
+                    }
+                },
+                playerStatsOverlay = {
+                    if (showPlayerStats) {
+                        PlayerStatsOverlay(playerStats)
+                    }
+                },
+                floatingMessage = {
+                    Column {
+                        val videoLoadingState by videoLoadingStateFlow.collectAsStateWithLifecycle(VideoLoadingState.Initial)
+                        EpisodeVideoLoadingIndicator(
+                            playerState,
+                            videoLoadingState,
+                            optimizeForFullscreen = expanded, // TODO: 这对 PC 其实可能不太好
+                        )
+                        val debugViewModel = rememberDebugSettingsViewModel()
+                        @OptIn(TestOnly::class)
+                        if (debugViewModel.isAppInDebugMode && debugViewModel.showControllerAlwaysOnRequesters) {
+                            TextWithBorder(
+                                "Always on requesters: \n" +
+                                        playerControllerState.getAlwaysOnRequesters().joinToString("\n"),
+                                style = MaterialTheme.typography.labelLarge,
+                            )
+
+                            TextWithBorder(
+                                "ControllerVisibility: \n" + playerControllerState.visibility,
+                                style = MaterialTheme.typography.labelLarge,
+                            )
+
+                            TextWithBorder(
+                                "expanded: $expanded",
+                                style = MaterialTheme.typography.labelLarge,
+                            )
+                        }
+                    }
+                },
+                framePreviewOverlay = {
+                    if (!expanded) {
+                        ProgressSliderCenteredPreviewFrame(
+                            frame = framePreview?.frame,
+                            borderColor = progressSliderColors.previewTimeBackgroundColor,
+                        )
+                    }
+                },
+                rhsButtons = {
+                    // macOS 视窗模式的截图只在全屏提供 (05 G35)
+                    if (expanded && !macWindowed && onClickScreenshot != null) {
+                        ScreenshotButton(
+                            onClick = onClickScreenshot,
+                        )
+                    }
+                },
+                screenshotOverlay = screenshotOverlay,
+                gestureLock = {
+                    if (expanded && !macWindowed) {
+                        GestureLock(isLocked = isLocked, onClick = { isLocked = !isLocked })
+                    }
+                },
+                bottomBar = {
+                    if (macWindowed) {
+                        val playWhenReady by remember(playerState) { playerState.state.map { it.playWhenReady } }
+                            .collectAsStateWithLifecycle(false)
+                        val audioLevelController = audioController as? MediampAudioLevelController
+                        val volume = audioLevelController?.let { controller ->
+                            val level by controller.levelFlow.collectAsState()
+                            val isMute by controller.muteFlow.collectAsState()
+                            MacVolumeControl(
+                                level = level,
+                                maxLevel = controller.range.endInclusive,
+                                isMute = isMute,
+                                onSetLevel = { controller.setLevel(it) },
+                                onToggleMute = { controller.toggleMute() },
+                            )
+                        }
+                        val speedAlwaysOnRequester = rememberAlwaysOnRequester(playerControllerState, "macSpeedSwitcher")
+                        MacEpisodeVideoControls(
+                            progressSlider = {
+                                AppleVideoProgressSlider(
+                                    progressSliderState,
+                                    cacheProgressInfoFlow,
+                                    framePreview = framePreview,
+                                    touchSeekState = touchSeekState,
+                                    showPreviewTimeTextOnThumb = true,
+                                    showFramePreviewInPopup = true,
+                                )
                             },
-                            actions = {
-                                if (!verticalSplit) {
-                                    topBarActions()
+                            progressText = {
+                                MediaProgressIndicatorText(progressSliderState, playbackSpeedState = playbackSpeedControllerState)
+                            },
+                            isPlaying = playWhenReady,
+                            onTogglePlay = { playerState.togglePlayWhenReady() },
+                            hasNextEpisode = hasNextEpisode,
+                            onClickNextEpisode = onClickNextEpisode,
+                            volume = volume,
+                            danmakuEditor = macDanmakuEditor,
+                            speedSwitcher = {
+                                playbackSpeedControllerState?.let { controller ->
+                                    SpeedSwitcher(
+                                        controller,
+                                        onExpandedChanged = {
+                                            if (it) speedAlwaysOnRequester.request() else speedAlwaysOnRequester.cancelRequest()
+                                        },
+                                        alwaysShowValue = true,
+                                    )
                                 }
                             },
-                            // VideoScaffold already applies top/horizontal insets around the top bar.
-                            // Passing the same insets into TopAppBar duplicates the status-bar padding on iOS portrait.
-                            windowInsets = WindowInsets(0.dp),
+                            danmakuEnabled = danmakuEnabled,
+                            onToggleDanmaku = onToggleDanmaku,
+                            onEnterFullscreen = { fullscreenState.request(true) },
+                            Modifier.weight(1f),
+                            controlsVisible = playerControllerState.visibility != ControllerVisibility.InlineSliderOnly,
                         )
-                    }
-                }
-            },
-            centerOverlay = if (expanded && LocalPlatform.current.isMobile()) {
-                { SystemTime() }
-            } else {
-                {}
-            },
-            video = {
-                if (LocalIsPreviewing.current) {
-                    Text(previewModeText)
-                } else {
-                    VideoPlayer(
-                        playerState,
-                        Modifier
-                            .onSizeChanged {
-                                videoEnhancement?.setViewportSize(it.width, it.height)
-                            }
-                            .matchParentSize(),
-                    )
-                }
-            },
-            danmakuHost = {
-                AniAnimatedVisibility(
-                    danmakuEnabled,
-                ) {
-                    Box(Modifier.matchParentSize()) {
-                        danmakuHost()
-                    }
-                }
-            },
-            gestureHost = {
-                val swipeSeekerState = rememberSwipeSeekerState(
-                    constraints.maxWidth,
-                    swipeSeekerConfig,
-                ) {
-                    playerState.skip(it * 1000L)
-                }
-                val videoPropertiesState by playerState.mediaProperties.collectAsState(null)
-                val enableSwipeToSeek by remember {
-                    derivedStateOf {
-                        videoPropertiesState?.let { it.durationMillis != 0L } == true
-                    }
-                }
-
-                val indicatorTasker = rememberUiMonoTasker()
-                LockableVideoGestureHost(
-                    playerControllerState,
-                    swipeSeekerState,
-                    progressSliderState,
-                    playerState,
-                    locked = isLocked,
-                    enableSwipeToSeek = enableSwipeToSeek,
-                    audioController = audioController,
-                    brightnessController = brightnessController,
-                    playbackSpeedControllerState,
-                    fullscreenState,
-                    Modifier,
-                    onTogglePauseResume = {
-                        if (playerState.state.value.playWhenReady) {
-                            indicatorTasker.launch {
-                                indicatorState.showPausedLong()
-                            }
-                        } else {
-                            indicatorTasker.launch {
-                                indicatorState.showResumedLong()
-                            }
-                        }
-                        playerState.togglePlayWhenReady()
-                    },
-                    onToggleDanmaku = onToggleDanmaku,
-                    onTogglePlayerStats = {
-                        showPlayerStats = !showPlayerStats
-                    },
-                    family = gestureFamily,
-                    indicatorState,
-                    fastForwardSpeed = fastForwardSpeed,
-                )
-                if (appleCompact) {
-                    AppleVideoPlayButtonHost(playerState, playerControllerState, videoLoadingStateFlow)
-                }
-            },
-            playerStatsOverlay = {
-                if (showPlayerStats) {
-                    PlayerStatsOverlay(playerStats)
-                }
-            },
-            floatingMessage = {
-                Column {
-                    val videoLoadingState by videoLoadingStateFlow.collectAsStateWithLifecycle(VideoLoadingState.Initial)
-                    EpisodeVideoLoadingIndicator(
-                        playerState,
-                        videoLoadingState,
-                        optimizeForFullscreen = expanded, // TODO: 这对 PC 其实可能不太好
-                    )
-                    val debugViewModel = rememberDebugSettingsViewModel()
-                    @OptIn(TestOnly::class)
-                    if (debugViewModel.isAppInDebugMode && debugViewModel.showControllerAlwaysOnRequesters) {
-                        TextWithBorder(
-                            "Always on requesters: \n" +
-                                    playerControllerState.getAlwaysOnRequesters().joinToString("\n"),
-                            style = MaterialTheme.typography.labelLarge,
+                    } else if (appleCompact) {
+                        AppleEpisodeVideoControls(
+                            progressSlider = {
+                                AppleVideoProgressSlider(
+                                    progressSliderState,
+                                    cacheProgressInfoFlow,
+                                    framePreview = framePreview,
+                                    touchSeekState = touchSeekState,
+                                )
+                            },
+                            progressText = {
+                                MediaProgressIndicatorText(progressSliderState, playbackSpeedState = playbackSpeedControllerState)
+                            },
+                            danmakuEnabled = danmakuEnabled,
+                            onToggleDanmaku = onToggleDanmaku,
+                            isFullscreen = fullscreenState.isFullscreen,
+                            onToggleFullscreen = { fullscreenState.request(!fullscreenState.isFullscreen) },
+                            Modifier.weight(1f),
+                            controlsVisible = playerControllerState.visibility != ControllerVisibility.InlineSliderOnly,
                         )
-
-                        TextWithBorder(
-                            "ControllerVisibility: \n" + playerControllerState.visibility,
-                            style = MaterialTheme.typography.labelLarge,
-                        )
-
-                        TextWithBorder(
-                            "expanded: $expanded",
-                            style = MaterialTheme.typography.labelLarge,
-                        )
-                    }
-                }
-            },
-            framePreviewOverlay = {
-                if (!expanded) {
-                    ProgressSliderCenteredPreviewFrame(
-                        frame = framePreview?.frame,
-                        borderColor = progressSliderColors.previewTimeBackgroundColor,
-                    )
-                }
-            },
-            rhsButtons = {
-                if (expanded && onClickScreenshot != null) {
-                    ScreenshotButton(
-                        onClick = onClickScreenshot,
-                    )
-                }
-            },
-            screenshotOverlay = screenshotOverlay,
-            gestureLock = {
-                if (expanded) {
-                    GestureLock(isLocked = isLocked, onClick = { isLocked = !isLocked })
-                }
-            },
-            bottomBar = {
-                if (appleCompact) {
-                    AppleEpisodeVideoControls(
-                        progressSlider = {
-                            AppleVideoProgressSlider(
-                                progressSliderState,
-                                cacheProgressInfoFlow,
-                                framePreview = framePreview,
-                                touchSeekState = touchSeekState,
-                            )
-                        },
-                        progressText = {
-                            MediaProgressIndicatorText(progressSliderState, playbackSpeedState = playbackSpeedControllerState)
-                        },
-                        danmakuEnabled = danmakuEnabled,
-                        onToggleDanmaku = onToggleDanmaku,
-                        isFullscreen = fullscreenState.isFullscreen,
-                        onToggleFullscreen = { fullscreenState.request(!fullscreenState.isFullscreen) },
-                        Modifier.weight(1f),
-                        controlsVisible = playerControllerState.visibility != ControllerVisibility.InlineSliderOnly,
-                    )
-                } else {
-                    PlayerControllerBar(
-                        startActions = {
-                            val playWhenReady by remember(playerState) { playerState.state.map { it.playWhenReady } }
-                                .collectAsStateWithLifecycle(false)
-                            val primaryActionModifier = if (verticalSplit) {
-                                val nextActionOffset = if (hasNextEpisode && expanded) 36.dp else 0.dp
-                                Modifier.offset(x = nextActionOffset).size(56.dp)
-                            } else {
-                                Modifier
-                            }
-                            PlayerControllerDefaults.PlaybackIcon(
-                                isPlaying = { playWhenReady },
-                                onClick = { playerState.togglePlayWhenReady() },
-                                modifier = primaryActionModifier,
-                            )
-
-                            if (hasNextEpisode && expanded) {
-                                PlayerControllerDefaults.NextEpisodeIcon(
-                                    onClick = onClickNextEpisode,
+                    } else {
+                        PlayerControllerBar(
+                            startActions = {
+                                val playWhenReady by remember(playerState) { playerState.state.map { it.playWhenReady } }
+                                    .collectAsStateWithLifecycle(false)
+                                val primaryActionModifier = if (verticalSplit) {
+                                    val nextActionOffset = if (hasNextEpisode && expanded) 36.dp else 0.dp
+                                    Modifier.offset(x = nextActionOffset).size(56.dp)
+                                } else {
+                                    Modifier
+                                }
+                                PlayerControllerDefaults.PlaybackIcon(
+                                    isPlaying = { playWhenReady },
+                                    onClick = { playerState.togglePlayWhenReady() },
                                     modifier = primaryActionModifier,
                                 )
-                            }
-                            if (!verticalSplit) {
-                                PlayerControllerDefaults.DanmakuIcon(
-                                    danmakuEnabled,
-                                    onClick = { onToggleDanmaku() },
-                                )
-                            }
 
-                            val audioLevelController = audioController as? MediampAudioLevelController
-                            // 用「有没有鼠标」而不是「此刻在用鼠标」: 后者会让这个常驻控件随输入方式反复显隐.
-                            val hasMouse = hasPointerDevice(
-                                LocalPlatform.current,
-                                LocalActiveInputSource.current.hasSeenMouse,
-                            )
-                            if (!verticalSplit && expanded && audioLevelController != null && hasMouse) {
-                                val level by audioLevelController.levelFlow.collectAsState()
-                                val isMute by audioLevelController.muteFlow.collectAsState()
+                                if (hasNextEpisode && expanded) {
+                                    PlayerControllerDefaults.NextEpisodeIcon(
+                                        onClick = onClickNextEpisode,
+                                        modifier = primaryActionModifier,
+                                    )
+                                }
+                                if (!verticalSplit) {
+                                    PlayerControllerDefaults.DanmakuIcon(
+                                        danmakuEnabled,
+                                        onClick = { onToggleDanmaku() },
+                                    )
+                                }
 
-                                PlayerControllerDefaults.AudioIcon(
-                                    level,
-                                    isMute = isMute,
-                                    maxValue = audioLevelController.range.endInclusive,
-                                    onClick = {
-                                        audioLevelController.toggleMute()
-                                    },
-                                    onchange = {
-                                        audioLevelController.setLevel(it)
-                                    },
-                                    controllerState = playerControllerState,
+                                val audioLevelController = audioController as? MediampAudioLevelController
+                                // 用「有没有鼠标」而不是「此刻在用鼠标」: 后者会让这个常驻控件随输入方式反复显隐.
+                                val hasMouse = hasPointerDevice(
+                                    LocalPlatform.current,
+                                    LocalActiveInputSource.current.hasSeenMouse,
                                 )
-                            }
-                        },
-                        progressIndicator = {
-                            MediaProgressIndicatorText(
-                                progressSliderState,
-                                playbackSpeedState = playbackSpeedControllerState,
-                            )
-                        },
-                        progressSlider = {
-                            PlayerControllerDefaults.MediaProgressSlider(
-                                progressSliderState,
-                                cacheProgressInfoFlow = cacheProgressInfoFlow,
-                                showPreviewTimeTextOnThumb = expanded,
-                                framePreview = framePreview,
-                                showFramePreviewInPopup = expanded,
-                                touchSeekState = touchSeekState,
-                            )
-                        },
-                        danmakuEditor = {
-                            if (verticalSplit) {
-                                PlayerControllerDefaults.DanmakuIcon(
-                                    danmakuEnabled,
-                                    onClick = { onToggleDanmaku() },
-                                )
-                            }
-                            danmakuEditor()
-                        },
-                        endActions = {
-                            // 仅 Android 显示小窗按钮: Android 小窗是整机窗口采集, 按钮是除系统手势外的
-                            // 重要入口; iOS 小窗的主入口是系统手势 (上滑回桌面自动进入), 且按钮 enabled
-                            // 依赖 isPictureInPicturePossible, 其在部分机型上翻转不及时, 灰态观感差, 故不在 iOS 显示
-                            if (LocalPlatform.current.isAndroid() && pictureInPictureController.isSupported) {
-                                val pipPossible by pictureInPictureController.isPictureInPicturePossible
-                                    .collectAsStateWithLifecycle()
-                                val mediaLoaded by remember(playerState) {
-                                    playerState.state.map { it.isMediaLoaded }
-                                }.collectAsStateWithLifecycle(false)
-                                PlayerControllerDefaults.PictureInPictureIcon(
-                                    enabled = pipPossible && mediaLoaded,
-                                    onClick = { pictureInPictureController.enterPictureInPicture() },
-                                )
-                            }
+                                if (!verticalSplit && expanded && audioLevelController != null && hasMouse) {
+                                    val level by audioLevelController.levelFlow.collectAsState()
+                                    val isMute by audioLevelController.muteFlow.collectAsState()
 
-                            if (expanded) {
-                                PlayerControllerDefaults.SelectEpisodeIcon(
-                                    onClick = { sheetsController.navigateTo(EpisodeVideoSideSheetPage.EPISODE_SELECTOR) },
+                                    PlayerControllerDefaults.AudioIcon(
+                                        level,
+                                        isMute = isMute,
+                                        maxValue = audioLevelController.range.endInclusive,
+                                        onClick = {
+                                            audioLevelController.toggleMute()
+                                        },
+                                        onchange = {
+                                            audioLevelController.setLevel(it)
+                                        },
+                                        controllerState = playerControllerState,
+                                    )
+                                }
+                            },
+                            progressIndicator = {
+                                MediaProgressIndicatorText(
+                                    progressSliderState,
+                                    playbackSpeedState = playbackSpeedControllerState,
                                 )
+                            },
+                            progressSlider = {
+                                PlayerControllerDefaults.MediaProgressSlider(
+                                    progressSliderState,
+                                    cacheProgressInfoFlow = cacheProgressInfoFlow,
+                                    showPreviewTimeTextOnThumb = expanded,
+                                    framePreview = framePreview,
+                                    showFramePreviewInPopup = expanded,
+                                    touchSeekState = touchSeekState,
+                                )
+                            },
+                            danmakuEditor = {
+                                if (verticalSplit) {
+                                    PlayerControllerDefaults.DanmakuIcon(
+                                        danmakuEnabled,
+                                        onClick = { onToggleDanmaku() },
+                                    )
+                                }
+                                danmakuEditor()
+                            },
+                            endActions = {
+                                // 仅 Android 显示小窗按钮: Android 小窗是整机窗口采集, 按钮是除系统手势外的
+                                // 重要入口; iOS 小窗的主入口是系统手势 (上滑回桌面自动进入), 且按钮 enabled
+                                // 依赖 isPictureInPicturePossible, 其在部分机型上翻转不及时, 灰态观感差, 故不在 iOS 显示
+                                if (LocalPlatform.current.isAndroid() && pictureInPictureController.isSupported) {
+                                    val pipPossible by pictureInPictureController.isPictureInPicturePossible
+                                        .collectAsStateWithLifecycle()
+                                    val mediaLoaded by remember(playerState) {
+                                        playerState.state.map { it.isMediaLoaded }
+                                    }.collectAsStateWithLifecycle(false)
+                                    PlayerControllerDefaults.PictureInPictureIcon(
+                                        enabled = pipPossible && mediaLoaded,
+                                        onClick = { pictureInPictureController.enterPictureInPicture() },
+                                    )
+                                }
 
-                                if (LocalPlatform.current.isDesktop()) {
-                                    playerState.audioTracks?.let {
-                                        PlayerControllerDefaults.AudioSwitcher(it)
+                                if (expanded) {
+                                    PlayerControllerDefaults.SelectEpisodeIcon(
+                                        onClick = { sheetsController.navigateTo(EpisodeVideoSideSheetPage.EPISODE_SELECTOR) },
+                                    )
+
+                                    if (LocalPlatform.current.isDesktop()) {
+                                        playerState.audioTracks?.let {
+                                            PlayerControllerDefaults.AudioSwitcher(it)
+                                        }
                                     }
-                                }
 
-                                playerState.subtitleTracks?.let {
-                                    PlayerControllerDefaults.SubtitleSwitcher(it)
-                                }
+                                    playerState.subtitleTracks?.let {
+                                        PlayerControllerDefaults.SubtitleSwitcher(it)
+                                    }
 
-                                val playbackSpeedAlwaysOnRequester =
-                                    rememberAlwaysOnRequester(playerControllerState, "speedSwitcher")
-                                playbackSpeedControllerState?.also { controller ->
-                                    SpeedSwitcher(controller) {
-                                        if (it) {
-                                            playbackSpeedAlwaysOnRequester.request()
-                                        } else {
-                                            playbackSpeedAlwaysOnRequester.cancelRequest()
+                                    val playbackSpeedAlwaysOnRequester =
+                                        rememberAlwaysOnRequester(playerControllerState, "speedSwitcher")
+                                    playbackSpeedControllerState?.also { controller ->
+                                        SpeedSwitcher(controller) {
+                                            if (it) {
+                                                playbackSpeedAlwaysOnRequester.request()
+                                            } else {
+                                                playbackSpeedAlwaysOnRequester.cancelRequest()
+                                            }
                                         }
                                     }
                                 }
-                            }
-                            PlayerControllerDefaults.FullscreenIcon(fullscreenState)
-                        },
-                        expanded = expanded,
-                        topActions = topBarActions,
-                        layout = if (verticalSplit) {
-                            PlayerControllerBarLayout.VerticalSplit
-                        } else {
-                            PlayerControllerBarLayout.Standard
-                        },
-                        sliderOnly = playerControllerState.visibility == ControllerVisibility.InlineSliderOnly,
-                    )
-                }
-            },
-            detachedProgressSlider = detachedProgressSlider,
-            floatingBottomEnd = {
-                if (!appleCompact) fullscreenSwitchButton()
-            },
-            rhsSheet = { sideSheets(sheetsController) },
-            leftBottomTips = leftBottomTips,
-        )
+                                PlayerControllerDefaults.FullscreenIcon(fullscreenState)
+                            },
+                            expanded = expanded,
+                            topActions = topBarActions,
+                            layout = if (verticalSplit) {
+                                PlayerControllerBarLayout.VerticalSplit
+                            } else {
+                                PlayerControllerBarLayout.Standard
+                            },
+                            sliderOnly = playerControllerState.visibility == ControllerVisibility.InlineSliderOnly,
+                        )
+                    }
+                },
+                detachedProgressSlider = detachedProgressSlider,
+                floatingBottomEnd = {
+                    if (!appleCompact && !macWindowed) fullscreenSwitchButton()
+                },
+                rhsSheet = { sideSheets(sheetsController) },
+                leftBottomTips = leftBottomTips,
+            )
+        }
     }
 }
 

@@ -11,6 +11,7 @@ package me.him188.ani.app.ui.foundation.apple
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -68,14 +70,16 @@ class MacTableColumn(
 /**
  * C19 表格的列模板. **表头与每一行用同一个实例**, 所以各行的列宽、列间距与左右内距一致.
  *
- * @param horizontalPadding 左右内距, 16–24.
+ * @param horizontalPadding 左内距, 16–24; [endPadding] 默认与它相同.
  * @param spacing 列间距.
+ * @param endPadding 右内距, 例如 BT 资源表格的左 12、右 16.
  */
 @Immutable
 class MacTableColumns(
     val columns: List<MacTableColumn>,
     val horizontalPadding: Dp = 16.dp,
     val spacing: Dp = 16.dp,
+    val endPadding: Dp = horizontalPadding,
 ) {
     init {
         require(columns.isNotEmpty()) { "MacTableColumns needs at least one column" }
@@ -89,7 +93,7 @@ class MacTableColumns(
         val gap = spacing.roundToPx()
         val fixed = columns.sumOf { it.width?.roundToPx() ?: 0 }
         val totalWeight = columns.filter { it.width == null }.sumOf { it.weight.toDouble() }.toFloat()
-        val flexible = (totalWidth - padding * 2 - gap * (columns.size - 1) - fixed).coerceAtLeast(0)
+        val flexible = (totalWidth - padding - endPadding.roundToPx() - gap * (columns.size - 1) - fixed).coerceAtLeast(0)
         var x = padding
         columns.map { column ->
             val width = column.width?.roundToPx()
@@ -129,7 +133,7 @@ fun MacTableHeader(
     content: @Composable () -> Unit,
 ) {
     Column(modifier.fillMaxWidth()) {
-        MacTableCells(columns, Modifier.height(height - 1.dp), content)
+        MacTableCells(columns, Modifier.height(height - 1.dp), wrapContentHeight = false, content)
         Separator()
     }
 }
@@ -168,9 +172,12 @@ fun MacTableHeaderCell(
  *
  * 单击立即调用 [onClick] (选中), 不等待双击判定; 双击间隔内的第二次单击调用 [onDoubleClick].
  *
+ * @param wrapContentHeight 行高至少 [height], 单元格较高时随之长高 (上下各留 [MacTableDefaults.RowVerticalPadding]),
+ *   用于需要完整换行的文字, 例如 BT 资源的标题.
  * @param showDivider 在行顶画分隔线 (不透明度 0.6), 用于第二行起.
  * @param dividerStartIndent 分隔线起点, 为第一个内容列的起点 (例如封面右侧的文字).
  * @param onDoubleClick 双击, 例如播放.
+ * @param onLongClick 长按.
  */
 @Composable
 fun MacTableRow(
@@ -182,6 +189,8 @@ fun MacTableRow(
     dividerStartIndent: Dp = columns.horizontalPadding,
     onClick: (() -> Unit)? = null,
     onDoubleClick: (() -> Unit)? = null,
+    wrapContentHeight: Boolean = false,
+    onLongClick: (() -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -193,33 +202,44 @@ fun MacTableRow(
     }
     val doubleClickTimeout = LocalViewConfiguration.current.doubleTapTimeoutMillis.milliseconds
     var lastClick by remember { mutableStateOf<TimeSource.Monotonic.ValueTimeMark?>(null) }
-    val interaction = if (onClick != null || onDoubleClick != null) {
-        Modifier.clickable(
+    val handleClick: () -> Unit = {
+        val previous = lastClick
+        if (onDoubleClick != null && previous != null && previous.elapsedNow() < doubleClickTimeout) {
+            lastClick = null
+            onDoubleClick()
+        } else {
+            lastClick = TimeSource.Monotonic.markNow()
+            onClick?.invoke()
+        }
+    }
+    val interaction = when {
+        onLongClick != null -> Modifier.combinedClickable(
             interactionSource = interactionSource,
             indication = null,
             role = Role.Button,
-        ) {
-            val previous = lastClick
-            if (onDoubleClick != null && previous != null && previous.elapsedNow() < doubleClickTimeout) {
-                lastClick = null
-                onDoubleClick()
-            } else {
-                lastClick = TimeSource.Monotonic.markNow()
-                onClick?.invoke()
-            }
-        }
-    } else {
-        Modifier
+            onLongClick = onLongClick,
+            onClick = handleClick,
+        )
+
+        onClick != null || onDoubleClick != null -> Modifier.clickable(
+            interactionSource = interactionSource,
+            indication = null,
+            role = Role.Button,
+            onClick = handleClick,
+        )
+
+        else -> Modifier
     }
+    val heightModifier = if (wrapContentHeight) Modifier.heightIn(min = height) else Modifier.height(height)
     Box(
         modifier
             .fillMaxWidth()
-            .height(height)
+            .then(heightModifier)
             .background(background)
             .semantics { this.selected = selected }
             .then(interaction),
     ) {
-        MacTableCells(columns, Modifier.height(height), content)
+        MacTableCells(columns, heightModifier, wrapContentHeight, content)
         if (showDivider) {
             AppleDivider(Modifier.align(Alignment.TopStart), startIndent = dividerStartIndent)
         }
@@ -322,16 +342,22 @@ object MacTableDefaults {
     /** 一般行高; 可取 52–76. */
     val RowHeight = 52.dp
 
+    /** 随内容长高的行 ([MacTableRow] 的 wrapContentHeight) 上下各留的内距. */
+    val RowVerticalPadding = 8.dp
+
     val GroupRowHeight = 32.dp
 }
 
 /**
  * 按 [columns] 放置单元格: 第 i 个子元素放在第 i 列, 宽度不超过该列, 按列的对齐方式水平放置、垂直居中.
+ *
+ * @param wrapContentHeight 高度为最小高度与最高单元格加上下内距中的较大者; 否则为给定的固定高度.
  */
 @Composable
 private fun MacTableCells(
     columns: MacTableColumns,
     modifier: Modifier,
+    wrapContentHeight: Boolean,
     content: @Composable () -> Unit,
 ) {
     Layout(content, modifier.fillMaxWidth()) { measurables, constraints ->
@@ -339,10 +365,16 @@ private fun MacTableCells(
             "MacTable row has ${measurables.size} cells, but only ${columns.columns.size} columns"
         }
         val width = constraints.maxWidth
-        val height = constraints.maxHeight
         val bounds = columns.arrange(width, this)
         val placeables = measurables.mapIndexed { index, measurable ->
-            measurable.measure(Constraints(maxWidth = bounds[index].width, maxHeight = height))
+            val maxHeight = if (wrapContentHeight) Constraints.Infinity else constraints.maxHeight
+            measurable.measure(Constraints(maxWidth = bounds[index].width, maxHeight = maxHeight))
+        }
+        val height = if (wrapContentHeight) {
+            val padding = MacTableDefaults.RowVerticalPadding.roundToPx() * 2
+            maxOf(constraints.minHeight, (placeables.maxOfOrNull { it.height } ?: 0) + padding)
+        } else {
+            constraints.maxHeight
         }
         layout(width, height) {
             placeables.forEachIndexed { index, placeable ->

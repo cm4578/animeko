@@ -12,6 +12,7 @@ package me.him188.ani.app.ui.download
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,6 +22,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
+import me.him188.ani.app.data.models.preference.MediaCacheSettings
 import me.him188.ani.app.data.repository.player.EpisodePlayHistoryRepository
 import me.him188.ani.app.data.repository.subject.OfflineSubjectDisplayInfo
 import me.him188.ani.app.data.repository.subject.SubjectCollectionRepository
@@ -28,11 +30,13 @@ import me.him188.ani.app.domain.media.download.DownloadOperation
 import me.him188.ani.app.domain.media.download.DownloadOperations
 import me.him188.ani.app.domain.media.download.MediaDownloadManager
 import me.him188.ani.app.ui.download.components.DownloadItem
+import me.him188.ani.app.ui.download.components.DownloadStatus
 import me.him188.ani.app.ui.download.components.SubjectDownloadGroup
 import me.him188.ani.app.ui.download.components.toDownloadItem
 import me.him188.ani.app.ui.download.subject.SubjectDownloadsPresenter
 import me.him188.ani.app.ui.download.subject.SubjectDownloadsPresenterFactory
 import me.him188.ani.app.ui.foundation.AbstractViewModel
+import me.him188.ani.datasources.api.topic.ResourceLocation
 import me.him188.ani.datasources.api.topic.UnifiedCollectionType
 import me.him188.ani.utils.coroutines.sampleWithInitial
 
@@ -40,14 +44,16 @@ import me.him188.ani.utils.coroutines.sampleWithInitial
  * 全局下载管理页面: 所有存储中的下载按条目分组展示.
  *
  * @param coroutineContext [backgroundScope] 的额外 context, 测试时传入测试调度器.
+ * @param cacheDirectory BT 快取位置的设置值, `null` 为默认位置. 见 [MediaCacheSettings.saveDir].
  */
 class DownloadManagementViewModel(
-    downloadManager: MediaDownloadManager,
+    private val downloadManager: MediaDownloadManager,
     subjects: SubjectCollectionRepository,
     histories: EpisodePlayHistoryRepository,
     operations: DownloadOperations,
     private val presenters: SubjectDownloadsPresenterFactory,
     coroutineContext: CoroutineContext = EmptyCoroutineContext,
+    cacheDirectory: Flow<String?> = flowOf(null),
 ) : AbstractViewModel(coroutineContext) {
     private val operationRunner = DownloadOperationRunner(operations, backgroundScope)
 
@@ -119,6 +125,39 @@ class DownloadManagementViewModel(
     fun pauseDownload(item: DownloadItem) = operationRunner.run(setOf(item.id), DownloadOperation.Pause)
     fun resumeDownload(item: DownloadItem) = operationRunner.run(setOf(item.id), DownloadOperation.Resume)
     fun deleteDownload(item: DownloadItem) = operationRunner.run(setOf(item.id), DownloadOperation.Delete)
+
+    /**
+     * macOS 快取页的「全部暂停」(05 G25): 当前所有下载中的项目, 一次交给 [operationRunner], 与单项暂停走同一路径.
+     */
+    fun pauseAll() {
+        val ids = uiState.value.entries
+            .filter { it.status == DownloadStatus.IN_PROGRESS && !it.isBusy }
+            .mapTo(hashSetOf()) { it.id }
+        if (ids.isNotEmpty()) operationRunner.run(ids, DownloadOperation.Pause)
+    }
+
+    /**
+     * macOS 快取页的「全部继续」(05 G25): 当前所有暂停的项目, 与单项继续走同一路径.
+     */
+    fun resumeAll() {
+        val ids = uiState.value.entries
+            .filter { it.isPaused && !it.isBusy }
+            .mapTo(hashSetOf()) { it.id }
+        if (ids.isNotEmpty()) operationRunner.run(ids, DownloadOperation.Resume)
+    }
+
+    /**
+     * 下载的本地文件, 用于「在 Finder 中显示」(05 G9). 下载已不存在或不是本地文件时为 `null`.
+     */
+    suspend fun localFilePath(item: DownloadItem): String? {
+        val download = downloadManager.downloads.value.firstOrNull { it.id == item.id } ?: return null
+        return (download.cache.getCachedMedia().download as? ResourceLocation.LocalFile)?.filePath
+    }
+
+    /**
+     * BT 快取位置的设置值 (05 G5), `null` 为默认位置. 冷流, 只有 macOS 快取页订阅.
+     */
+    val cacheDirectory: Flow<String?> = cacheDirectory
 
     /**
      * 批量操作累计的失败数, [dismissOperationFailures] 后归零.

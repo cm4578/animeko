@@ -142,6 +142,24 @@ class DownloadManagementViewModelTest {
     }
 
     @Test
+    fun `pause all and resume all apply to every matching download`() = withFixture {
+        storage.listFlow.value = listOf(
+            testDownloadCache(1, subjectId = 1),
+            testDownloadCache(2, subjectId = 2),
+            testDownloadCache(3, subjectId = 2, state = MediaCacheState.COMPLETED),
+        )
+        awaitState { it.entries.size == 3 }
+
+        vm.pauseAll()
+        val paused = awaitState { state -> state.entries.count { it.status == DownloadStatus.PAUSED } == 2 }
+        assertEquals(DownloadStatus.COMPLETED, paused.entries.single { it.episodeId == 3 }.status)
+
+        vm.resumeAll()
+        val resumed = awaitState { state -> state.entries.count { it.status == DownloadStatus.IN_PROGRESS } == 2 }
+        assertEquals(DownloadStatus.COMPLETED, resumed.entries.single { it.episodeId == 3 }.status)
+    }
+
+    @Test
     fun `failed operations are counted and can be dismissed`() = withFixture {
         storage.listFlow.value = listOf(
             object : MediaCache by testDownloadCache(1) {

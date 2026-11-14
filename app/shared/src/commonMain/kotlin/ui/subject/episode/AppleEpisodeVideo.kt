@@ -428,7 +428,7 @@ internal fun AppleEpisodeVideoTopBar(
  * 「分享」的下一层: 复制或打开播放链接与资料来源页面, 项目同现有的「外部链接」菜单.
  */
 @Composable
-private fun ShareMenuItems(
+internal fun ShareMenuItems(
     data: MediaShareData,
     onDismissRequest: () -> Unit,
 ) {
@@ -494,17 +494,18 @@ private fun renderVideoEnhancementMode(mode: VideoEnhancementMode): String = whe
 }
 
 /**
- * 视频中央的播放钮: 56 圆, 底为 `rgba(10,14,18,0.45)`, 白色图标.
+ * 视频中央的播放钮: 圆形 (手机 56, macOS 64), 底为 `rgba(10,14,18,0.45)`, 白色图标.
  */
 @Composable
 internal fun AppleVideoPlayButton(
     isPlaying: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    size: Dp = AppleEpisodeVideoDefaults.PlayButtonSize,
 ) {
     Box(
         modifier
-            .size(56.dp)
+            .size(size)
             .clip(CircleShape)
             .background(AppleEpisodeVideoDefaults.PlayButtonScrim)
             .clickable(role = Role.Button, onClick = onClick)
@@ -569,7 +570,7 @@ internal fun AppleEpisodeVideoControls(
  * 弹幕开关「彈」: 22×22 圆角 6. 开启时底为品牌天蓝, 字 #0D141B `12 700`; 关闭时白色描边与白字.
  */
 @Composable
-private fun AppleDanmakuToggle(
+internal fun AppleDanmakuToggle(
     enabled: Boolean,
     onToggle: () -> Unit,
 ) {
@@ -690,6 +691,7 @@ internal fun AppleVideoPlayButtonHost(
     playerState: MediampPlayer,
     playerControllerState: PlayerControllerState,
     videoLoadingStateFlow: Flow<VideoLoadingState>,
+    size: Dp = AppleEpisodeVideoDefaults.PlayButtonSize,
 ) {
     val state by playerState.state.collectAsStateWithLifecycle()
     val videoLoadingState by videoLoadingStateFlow.collectAsStateWithLifecycle(VideoLoadingState.Initial)
@@ -706,12 +708,16 @@ internal fun AppleVideoPlayButtonHost(
         AppleVideoPlayButton(
             isPlaying = state.playWhenReady,
             onClick = { playerState.togglePlayWhenReady() },
+            size = size,
         )
     }
 }
 
 /**
  * C9 播放器进度条的配色: 轨道白 28%、缓冲白 45%、已播放品牌天蓝、白色拖动点. 拖动、预览与 BT 分块状态沿用现有进度条.
+ *
+ * @param showPreviewTimeTextOnThumb 拖动点上显示预览时间 (macOS 有鼠标悬停).
+ * @param showFramePreviewInPopup 在进度条上方的弹层显示预览画面 (macOS).
  */
 @Composable
 internal fun AppleVideoProgressSlider(
@@ -719,6 +725,8 @@ internal fun AppleVideoProgressSlider(
     cacheProgressInfoFlow: Flow<MediaCacheProgressInfo>,
     framePreview: MediaProgressFramePreviewState?,
     touchSeekState: TouchSeekState?,
+    showPreviewTimeTextOnThumb: Boolean = false,
+    showFramePreviewInPopup: Boolean = false,
 ) {
     val cacheProgressInfo by cacheProgressInfoFlow.collectAsStateWithLifecycle(null)
     MediaProgressSlider(
@@ -730,9 +738,9 @@ internal fun AppleVideoProgressSlider(
             thumbColor = Color.White,
             cachedProgressColor = Color.White.copy(alpha = 0.45f),
         ),
-        showPreviewTimeTextOnThumb = false,
+        showPreviewTimeTextOnThumb = showPreviewTimeTextOnThumb,
         framePreview = framePreview,
-        showFramePreviewInPopup = false,
+        showFramePreviewInPopup = showFramePreviewInPopup,
         touchSeekState = touchSeekState,
     )
 }
@@ -740,6 +748,12 @@ internal fun AppleVideoProgressSlider(
 internal object AppleEpisodeVideoDefaults {
     /** 播放钮底色 `rgba(10,14,18,0.45)`. */
     val PlayButtonScrim = Color(0xFF0A0E12).copy(alpha = 0.45f)
+
+    /** 手机中央播放钮的尺寸. */
+    val PlayButtonSize = 56.dp
+
+    /** macOS 视窗模式中央播放钮的尺寸 (04 §3.8). */
+    val MacPlayButtonSize = 64.dp
 
     /** 弹幕开关开启时的文字颜色. */
     val DanmakuToggleOnText = Color(0xFF0D141B)

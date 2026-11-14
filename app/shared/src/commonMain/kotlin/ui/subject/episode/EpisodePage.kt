@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
@@ -143,6 +144,7 @@ import me.him188.ani.app.ui.foundation.layout.setSystemBarVisible
 import me.him188.ani.app.ui.foundation.navigation.BackHandler
 import me.him188.ani.app.ui.foundation.pagerTabIndicatorOffset
 import me.him188.ani.app.ui.foundation.rememberImageViewerHandler
+import me.him188.ani.app.ui.foundation.theme.AniTextStyles
 import me.him188.ani.app.ui.foundation.theme.AniTheme
 import me.him188.ani.app.ui.foundation.theme.LocalThemeSettings
 import me.him188.ani.app.ui.foundation.theme.isSystemInDarkThemeDetected
@@ -150,6 +152,7 @@ import me.him188.ani.app.ui.foundation.theme.weaken
 import me.him188.ani.app.ui.foundation.widgets.LocalToaster
 import me.him188.ani.app.ui.foundation.widgets.showLoadError
 import me.him188.ani.app.ui.lang.Lang
+import me.him188.ani.app.ui.lang.subject_episode_default_title
 import me.him188.ani.app.ui.lang.episode_comments
 import me.him188.ani.app.ui.lang.episode_comments_with_count
 import me.him188.ani.app.ui.lang.episode_send_danmaku
@@ -213,6 +216,7 @@ import org.openani.mediamp.source.MediaData
  * 番剧详情 (播放) 页面
  *
  * @param appleStyle 窄屏非全屏时, 播放器的顶栏与控制列、播放器下方的内容使用 Apple 版 (03 §3.7).
+ * @param macStyle 宽屏时使用 macOS 版 (04 §3.8): 视窗模式的影片区为 macOS 顶端列与控制列, 右侧为 360 宽的面板.
  */
 @Composable
 fun EpisodeScreen(
@@ -220,6 +224,7 @@ fun EpisodeScreen(
     modifier: Modifier = Modifier,
     windowInsets: WindowInsets = ScaffoldDefaults.contentWindowInsets,
     appleStyle: Boolean = false,
+    macStyle: Boolean = false,
 ) {
     val themeSettings = LocalThemeSettings.current
     AniTheme(
@@ -235,6 +240,7 @@ fun EpisodeScreen(
                     Modifier,
                     windowInsets = windowInsets,
                     appleStyle = appleStyle,
+                    macStyle = macStyle,
                 )
             }
         }
@@ -247,6 +253,7 @@ private fun EpisodeScreenContent(
     modifier: Modifier = Modifier,
     windowInsets: WindowInsets = ScaffoldDefaults.contentWindowInsets,
     appleStyle: Boolean = false,
+    macStyle: Boolean = false,
 ) {
     // 处理当用户点击返回键时, 如果是全屏, 则退出全屏
     // 按返回退出全屏
@@ -436,6 +443,7 @@ private fun EpisodeScreenContent(
                         modifier = Modifier.fillMaxSize(),
                         windowInsets = windowInsets,
                         appleStyle = appleStyle,
+                        macStyle = macStyle,
                     )
                 }
             }
@@ -527,7 +535,10 @@ private fun EpisodeScreenBody(
     modifier: Modifier = Modifier,
     windowInsets: WindowInsets = ScaffoldDefaults.contentWindowInsets,
     appleStyle: Boolean = false,
+    macStyle: Boolean = false,
 ) {
+    // macOS 版只用于宽屏; 窗口窄到窄屏布局时沿用现有版式
+    val macLayout = macStyle && showExpandedUI
     val compactWindowInsets = windowInsets
         .union(WindowInsets.desktopTitleBar)
         .run {
@@ -565,10 +576,18 @@ private fun EpisodeScreenBody(
                 expanded = showExpandedUI || vm.isFullscreen,
                 windowInsets = videoWindowInsets,
                 appleStyle = appleStyle,
+                macStyle = macLayout,
             )
         },
         secondary = {
-            if (showExpandedUI) {
+            if (macLayout) {
+                MacEpisodeSidebar(
+                    vm,
+                    page,
+                    pauseOnPlaying = pauseOnPlaying,
+                    setShowEditCommentSheet = setShowEditCommentSheet,
+                )
+            } else if (showExpandedUI) {
                 EpisodeScreenSidebar(
                     vm,
                     page,
@@ -607,6 +626,7 @@ private fun EpisodeScreenBody(
                 Modifier
             },
         ),
+        wideSidebarWidth = if (macLayout) MacEpisodeSidebarDefaults.Width else null,
     )
 }
 
@@ -1116,6 +1136,7 @@ private fun EpisodeVideo(
     maintainAspectRatio: Boolean = !expanded,
     windowInsets: WindowInsets = ScaffoldDefaults.contentWindowInsets,
     appleStyle: Boolean = false,
+    macStyle: Boolean = false,
 ) {
     val context by rememberUpdatedState(LocalContext.current)
     val navigator = LocalNavigator.current
@@ -1399,6 +1420,36 @@ private fun EpisodeVideo(
             )
         } else {
             null
+        },
+        macChrome = if (macStyle) {
+            val episode = page.episodePresentation
+            val subject = page.subjectPresentation
+            val useOriginalTitle = LocalSubjectAppearanceSettings.current.useOriginalTitle
+            MacEpisodeVideoChrome(
+                title = macEpisodeVideoTitle(
+                    subjectTitle = if (useOriginalTitle) subject.originalTitle else subject.title,
+                    episodeLabel = stringResource(Lang.subject_episode_default_title, macEpisodeNumber(episode.ep)),
+                    episodeTitle = if (useOriginalTitle) episode.originalTitle else episode.title,
+                ),
+                collectionTypeState = vm.editableSubjectCollectionTypeState,
+                isLoggedIn = page.selfInfo.isSessionValid != false,
+                onClickLogin = { navigator.navigateEmailLoginStart() },
+            )
+        } else {
+            null
+        },
+        macDanmakuEditor = { editorModifier ->
+            PlayerDanmakuEditor(
+                danmakuEditorState,
+                danmakuTextPlaceholder = danmakuTextPlaceholder,
+                playerState = vm.player,
+                videoScaffoldConfig = vm.videoScaffoldConfig,
+                playerControllerState = playerControllerState,
+                modifier = editorModifier.height(MacEpisodeVideoDefaults.DanmakuInputHeight),
+                colors = macDanmakuTextFieldColors(),
+                shape = RoundedCornerShape(16.dp),
+                textStyle = AniTextStyles.macCallout,
+            )
         },
     )
 }

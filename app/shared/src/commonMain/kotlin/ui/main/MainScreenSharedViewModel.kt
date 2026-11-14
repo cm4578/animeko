@@ -16,30 +16,39 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import me.him188.ani.app.data.models.subject.SubjectCollectionCounts
 import me.him188.ani.app.data.repository.episode.EpisodeCollectionRepository
 import me.him188.ani.app.data.repository.player.EpisodePlayHistoryRepository
 import me.him188.ani.app.data.repository.subject.BangumiSyncCommandRepository
+import me.him188.ani.app.data.repository.subject.SubjectCollectionRepository
 import me.him188.ani.app.data.repository.user.SettingsRepository
 import me.him188.ani.app.domain.foundation.HttpClientProvider
 import me.him188.ani.app.domain.foundation.ServerListFeature
 import me.him188.ani.app.domain.foundation.ServerListFeatureConfig
 import me.him188.ani.app.domain.foundation.get
 import me.him188.ani.app.domain.foundation.withValue
+import me.him188.ani.app.domain.media.cache.MediaCacheState
+import me.him188.ani.app.domain.media.download.MediaDownloadManager
 import me.him188.ani.app.domain.notification.NotificationBadgeManager
 import me.him188.ani.app.domain.settings.ServiceConnectionTester
 import me.him188.ani.app.domain.settings.ServiceConnectionTesters
 import me.him188.ani.app.ui.foundation.AbstractViewModel
 import me.him188.ani.app.ui.foundation.launchInBackground
 import me.him188.ani.app.ui.notification.showsEntryDot
+import me.him188.ani.app.ui.subject.AiringLabelState
 import me.him188.ani.app.ui.user.SelfInfoStateProducer
+import me.him188.ani.datasources.api.topic.UnifiedCollectionType
 import me.him188.ani.utils.logging.warn
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -120,6 +129,60 @@ open class MainScreenSharedViewModel : AbstractViewModel(), KoinComponent {
             .stateIn(backgroundScope, SharingStarted.WhileSubscribed(5000), 0)
     }
 
+    private val subjectCollectionRepository: SubjectCollectionRepository by inject()
+    private val mediaDownloadManager: MediaDownloadManager by inject()
+
+    /**
+     * 「追番」有没有新集数: 在看的条目中, 有连载中且有可以看的新集 (同追番页状态行的「有新集」, [AiringLabelState.highlightProgress]).
+     * 只读本地数据库, 取最近更新的 [NEW_EPISODES_SUBJECT_LIMIT] 部.
+     *
+     * 只有 macOS 侧边栏订阅.
+     */
+    val hasNewEpisodes: StateFlow<Boolean> by lazy {
+        subjectCollectionRepository.mostRecentlyUpdatedSubjectCollectionsFlow(
+            limit = NEW_EPISODES_SUBJECT_LIMIT,
+            types = listOf(UnifiedCollectionType.DOING),
+        ).map { list ->
+            list.any { AiringLabelState(it.airingInfo, it.progressInfo).highlightProgress }
+        }.distinctUntilChanged()
+            .catch { e ->
+                logger.warn(e) { "Failed to check new episodes" }
+                emit(false)
+            }
+            .stateIn(backgroundScope, SharingStarted.WhileSubscribed(5000), false)
+    }
+
+    /**
+     * 「快取」进行中的下载数: 状态为 [MediaCacheState.IN_PROGRESS] 的下载, 不含暂停与失败.
+     *
+     * 只有 macOS 侧边栏订阅.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val activeDownloadCount: StateFlow<Int> by lazy {
+        mediaDownloadManager.downloads
+            .flatMapLatest { downloads ->
+                if (downloads.isEmpty()) {
+                    flowOf(0)
+                } else {
+                    combine(downloads.map { it.cache.state }) { states ->
+                        states.count { it == MediaCacheState.IN_PROGRESS }
+                    }
+                }
+            }
+            .distinctUntilChanged()
+            .stateIn(backgroundScope, SharingStarted.WhileSubscribed(5000), 0)
+    }
+
+    /**
+     * 各类收藏的数量 (帐号窗格的在看 / 想看 / 看过). 请求失败时为 `null`.
+     *
+     * 只有 macOS 设定窗口订阅.
+     */
+    val subjectCollectionCounts: StateFlow<SubjectCollectionCounts?> by lazy {
+        subjectCollectionRepository.subjectCollectionCountsFlow()
+            .stateIn(backgroundScope, SharingStarted.WhileSubscribed(5000), null)
+    }
+
     init {
         launchInBackground {
             val client = clientProvider.get(
@@ -136,5 +199,12 @@ open class MainScreenSharedViewModel : AbstractViewModel(), KoinComponent {
                 }
             }
         }
+    }
+
+    private companion object {
+        /**
+         * [hasNewEpisodes] 检查的在看条目数, 与追番「继续观看」相同.
+         */
+        const val NEW_EPISODES_SUBJECT_LIMIT = 64
     }
 }

@@ -11,16 +11,21 @@ package me.him188.ani.app.ui.foundation.apple
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
@@ -36,7 +41,13 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import me.him188.ani.app.ui.foundation.TestGlobalLifecycleOwner
+import me.him188.ani.app.ui.foundation.navigation.LocalOnBackPressedDispatcherOwner
+import me.him188.ani.app.ui.foundation.navigation.OnBackPressedDispatcher
+import me.him188.ani.app.ui.foundation.navigation.OnBackPressedDispatcherOwner
 import me.him188.ani.app.ui.framework.runAniComposeUiTest
+import me.him188.ani.utils.platform.annotations.TestOnly
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -257,6 +268,38 @@ class MacComponentsTest {
     }
 
     @Test
+    fun `table rows can grow with their content and use an end padding`() = runAniComposeUiTest {
+        val columns = MacTableColumns(
+            listOf(MacTableColumn(), MacTableColumn(width = 40.dp, alignment = Alignment.End)),
+            horizontalPadding = 12.dp,
+            endPadding = 16.dp,
+        )
+        setAniStyleContent(MacOSPlatform) {
+            Box(Modifier.width(300.dp)) {
+                MacTable {
+                    MacTableRow(columns, Modifier.testTag("fixed")) {
+                        Box(Modifier.height(80.dp))
+                        Text("A")
+                    }
+                    MacTableRow(columns, Modifier.testTag("wrap"), wrapContentHeight = true) {
+                        Box(Modifier.width(20.dp).height(80.dp).testTag("tall"))
+                        Text("B", Modifier.testTag("end"))
+                    }
+                    MacTableRow(columns, Modifier.testTag("short"), wrapContentHeight = true) {
+                        Text("C")
+                    }
+                }
+            }
+        }
+        assertEquals(52f, heightOf("fixed").value, SIZE_TOLERANCE)
+        // 80 + 上下各 8
+        assertEquals(96f, heightOf("wrap").value, SIZE_TOLERANCE)
+        assertEquals(52f, heightOf("short").value, SIZE_TOLERANCE)
+        assertEquals(12f, boundsOf("tall").left.value, SIZE_TOLERANCE)
+        assertEquals(300f - 16f, boundsOf("end").right.value, SIZE_TOLERANCE)
+    }
+
+    @Test
     fun `table rows report selection and double clicks`() = runAniComposeUiTest {
         var selected by mutableStateOf(false)
         var opened = 0
@@ -306,6 +349,85 @@ class MacComponentsTest {
         onNodeWithTag("resume").performClick()
         waitForIdle()
         assertEquals("resume", clicked)
+    }
+
+    /**
+     * 桌面的 Esc 经由 App 的返回分派 ([OnBackPressedDispatcher]). 没有其他处理者时返回离开页面, 计入 [pageBack].
+     */
+    @OptIn(TestOnly::class)
+    private fun ComposeUiTest.setContentWithBackDispatcher(
+        pageBack: () -> Unit,
+        content: @Composable () -> Unit,
+    ): OnBackPressedDispatcher {
+        val dispatcher = OnBackPressedDispatcher(pageBack)
+        setAniStyleContent(MacOSPlatform) {
+            CompositionLocalProvider(
+                LocalOnBackPressedDispatcherOwner provides remember {
+                    object : OnBackPressedDispatcherOwner {
+                        override val onBackPressedDispatcher: OnBackPressedDispatcher = dispatcher
+                        override val lifecycle: Lifecycle get() = TestGlobalLifecycleOwner.lifecycle
+                    }
+                },
+                content = content,
+            )
+        }
+        return dispatcher
+    }
+
+    @Test
+    fun `back closes the popover menu and stays on the page`() = runAniComposeUiTest {
+        var pageBack = 0
+        var expanded by mutableStateOf(true)
+        val dispatcher = setContentWithBackDispatcher({ pageBack++ }) {
+            Box {
+                ApplePopoverMenu(expanded, onDismissRequest = { expanded = false }) {
+                    PopoverMenuItem("Resume", onClick = {}, Modifier.testTag("resume"))
+                }
+            }
+        }
+        onNodeWithTag("resume").assertExists()
+
+        runOnIdle { dispatcher.onBackPressed() }
+        waitForIdle()
+        onNodeWithTag("resume").assertDoesNotExist()
+        assertEquals(0, pageBack)
+
+        runOnIdle { dispatcher.onBackPressed() }
+        assertEquals(1, pageBack)
+    }
+
+    @Test
+    fun `back closes the sheet and the unfollow dialog and stays on the page`() = runAniComposeUiTest {
+        var pageBack = 0
+        var showSheet by mutableStateOf(true)
+        var showDialog by mutableStateOf(false)
+        val dispatcher = setContentWithBackDispatcher({ pageBack++ }) {
+            if (showSheet) {
+                MacSheet(onDismissRequest = { showSheet = false }) {
+                    Text("Sheet", Modifier.testTag("sheet"))
+                }
+            }
+            if (showDialog) {
+                UnfollowConfirmDialog(
+                    onConfirm = {},
+                    onDismissRequest = { showDialog = false },
+                    confirmButtonModifier = Modifier.testTag("unfollow"),
+                )
+            }
+        }
+        // sheet 吸收点击, 文字并入 sheet 的语义节点
+        onNodeWithTag("sheet", useUnmergedTree = true).assertExists()
+        runOnIdle { dispatcher.onBackPressed() }
+        waitForIdle()
+        onNodeWithTag("sheet", useUnmergedTree = true).assertDoesNotExist()
+
+        showDialog = true
+        waitForIdle()
+        onNodeWithTag("unfollow").assertExists()
+        runOnIdle { dispatcher.onBackPressed() }
+        waitForIdle()
+        onNodeWithTag("unfollow").assertDoesNotExist()
+        assertEquals(0, pageBack)
     }
 
     @Test

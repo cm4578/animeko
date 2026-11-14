@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -233,12 +234,16 @@ fun MacSettingsCategoryItem(
  * 分组用 [GroupedListSection] (macOS 圆角 14), 行用 [SettingsRow] 系列 (macOS 规格).
  *
  * @param back 子页 (Bangumi 同步、Peer 过滤) 的返回按钮, 用 [MacSettingsBackButton].
+ * @param actions 标题栏右侧的按钮.
+ * @param scrollable 为 `false` 时内容自己处理滚动 (例如内含 LazyColumn), 窗格本身不纵向滚动.
  */
 @Composable
 fun MacSettingsPane(
     title: String,
     modifier: Modifier = Modifier,
     back: (@Composable () -> Unit)? = null,
+    actions: @Composable RowScope.() -> Unit = {},
+    scrollable: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
@@ -257,18 +262,19 @@ fun MacSettingsPane(
             back?.invoke()
             Text(
                 title,
-                Modifier.semantics { heading() },
+                Modifier.weight(1f).semantics { heading() },
                 style = AniTextStyles.macWindowTitle,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+            actions()
         }
         Column(
             Modifier
                 .fillMaxWidth()
                 .weight(1f)
-                .verticalScroll(rememberScrollState())
+                .then(if (scrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier)
                 .padding(
                     start = MacSettingsWindowDefaults.PanePadding,
                     top = 4.dp,

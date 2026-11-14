@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.coerceIn
 import androidx.compose.ui.unit.dp
 
@@ -80,6 +81,7 @@ internal class EpisodeSidebarState(
  * 因此旋转、进出全屏、窗口宽度跨过宽屏阈值都只能改变 [mode], 不能把播放器放进另一个布局.
  *
  * @param secondary 次要内容. [EpisodeScreenLayoutMode.VIDEO_ONLY] 时不组合.
+ * @param wideSidebarWidth 宽屏侧边栏的固定宽度 (macOS 为 360). 为 `null` 时为窗口宽度的 25%, 限制在 340–460.
  */
 @Composable
 fun EpisodeScreenLayout(
@@ -87,6 +89,7 @@ fun EpisodeScreenLayout(
     video: @Composable () -> Unit,
     secondary: @Composable () -> Unit,
     modifier: Modifier = Modifier,
+    wideSidebarWidth: Dp? = null,
 ) {
     val secondaryContent = if (mode == EpisodeScreenLayoutMode.VIDEO_ONLY) EmptyContent else secondary
     Layout(
@@ -115,7 +118,9 @@ fun EpisodeScreenLayout(
             }
 
             EpisodeScreenLayoutMode.WIDE -> {
-                val sidebarWidth = (width.toDp() * 0.25f).coerceIn(340.dp, 460.dp).roundToPx().coerceAtMost(width)
+                val sidebarWidth = (wideSidebarWidth ?: (width.toDp() * 0.25f).coerceIn(340.dp, 460.dp))
+                    .roundToPx()
+                    .coerceAtMost(width)
                 val videoWidth = width - sidebarWidth
                 val videoPlaceables = videoMeasurables.map { it.measure(Constraints.fixed(videoWidth, height)) }
                 val secondaryPlaceables = secondaryMeasurables.map { it.measure(Constraints.fixed(sidebarWidth, height)) }

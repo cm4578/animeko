@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
+import me.him188.ani.app.ui.foundation.navigation.BackHandler
 import me.him188.ani.app.ui.foundation.theme.AniColors
 import me.him188.ani.app.ui.foundation.theme.AniTextStyles
 
@@ -84,8 +85,24 @@ fun ApplePopoverMenu(
             shadowPadding = with(density) { ApplePopoverMenuDefaults.ShadowPadding.roundToPx() },
         )
     }
+    PopoverMenuPopup(positionProvider, onDismissRequest, modifier, content)
+}
+
+/**
+ * C15 菜单的弹出窗口与外观, 由 [positionProvider] 决定位置. 位置要扣除四周的阴影空间 [ApplePopoverMenuDefaults.ShadowPadding].
+ */
+@Composable
+internal fun PopoverMenuPopup(
+    positionProvider: PopupPositionProvider,
+    onDismissRequest: () -> Unit,
+    modifier: Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
     val mac = isMacStyle
     val shape = RoundedCornerShape(if (mac) 10.dp else 14.dp)
+    // 桌面的 Esc 由窗口交给 App 的返回分派, 不会经过 Popup 自己的返回处理.
+    // 菜单打开时返回只关闭菜单, 不离开所在页面.
+    BackHandler(onBack = onDismissRequest)
     Popup(
         popupPositionProvider = positionProvider,
         onDismissRequest = onDismissRequest,

@@ -26,6 +26,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -63,6 +64,7 @@ import me.him188.ani.app.data.repository.user.SettingsRepository
 import me.him188.ani.app.data.repository.user.UserRepository
 import me.him188.ani.app.desktop.storage.AppFolderResolver
 import me.him188.ani.app.desktop.storage.AppInfo
+import me.him188.ani.app.desktop.window.DesktopMacSettingsWindowHost
 import me.him188.ani.app.desktop.window.WindowFrame
 import me.him188.ani.app.domain.settings.ProxyProvider
 import me.him188.ani.app.domain.update.UpdateManager
@@ -95,6 +97,8 @@ import me.him188.ani.app.torrent.anitorrent.AnitorrentLibraryLoader
 import me.him188.ani.app.ui.foundation.LocalPlatform
 import me.him188.ani.app.ui.foundation.LocalWindowState
 import me.him188.ani.app.ui.foundation.WindowDropHost
+import me.him188.ani.app.ui.foundation.apple.LocalMacKeyboardShortcuts
+import me.him188.ani.app.ui.foundation.apple.MacKeyboardShortcuts
 import me.him188.ani.app.ui.foundation.input.ProvideTouchViewConfiguration
 import me.him188.ani.app.ui.foundation.effects.OverrideCaptionButtonAppearance
 import me.him188.ani.app.ui.foundation.ifThen
@@ -116,6 +120,7 @@ import me.him188.ani.app.ui.foundation.widgets.ToastViewModel
 import me.him188.ani.app.ui.foundation.widgets.Toaster
 import me.him188.ani.app.ui.main.AniApp
 import me.him188.ani.app.ui.main.AniAppContent
+import me.him188.ani.app.ui.main.LocalMacSettingsWindowHost
 import me.him188.ani.app.ui.update.InstallPackageDropDialogs
 import me.him188.ani.app.ui.update.rememberDropInstallPackageState
 import me.him188.ani.app.ui.update.rememberInstallPackageDropHandler
@@ -528,6 +533,8 @@ object AniDesktop {
                 OnBackPressedDispatcher(fallback = { navigator.popBackStack() })
             }
             val backKeyEventHandler = remember { BackKeyEventHandler() }
+            // macOS 主窗口的 ⌘ 快捷键 (05 C2), 由各页面注册
+            val macKeyboardShortcuts = remember { if (currentPlatformDesktop().isMacOS()) MacKeyboardShortcuts() else null }
             Window(
                 visible = !trayState.isWindowHiddenToTray,
                 onCloseRequest = {
@@ -543,7 +550,10 @@ object AniDesktop {
                 // 只在没有任何节点消费按键时才会走到这里 (通常是没有焦点, 例如侧边栏关闭后清除了焦点).
                 // 不接管的话, Compose Desktop 会把这个 Escape 直接交给 Navigation 3 出栈,
                 // 绕过播放页全屏等 BackHandler, 表现为「全屏按 ESC 返回了上一页」.
-                onKeyEvent = { event -> backKeyEventHandler.onKeyEvent(event, backPressedDispatcher::onBackPressed) },
+                onKeyEvent = { event ->
+                    macKeyboardShortcuts?.dispatch(event) == true ||
+                            backKeyEventHandler.onKeyEvent(event, backPressedDispatcher::onBackPressed)
+                },
             ) {
                 // In dev mode this enables hot reload,
                 // In release mode this just executes the content
@@ -596,6 +606,7 @@ object AniDesktop {
                     LocalAppWindowVisible provides remember(trayState) {
                         derivedStateOf { !trayState.isWindowHiddenToTray }
                     },
+                    LocalMacKeyboardShortcuts provides macKeyboardShortcuts,
                     // 二级窗口 (图片查看器) 沿用主窗口的自定义外观
                     LocalSecondaryWindowFrame provides if (isRunningUnderWine()) {
                         null
@@ -610,7 +621,7 @@ object AniDesktop {
                 ) {
                     if (isRunningUnderWine()) {
                         ProvideTouchViewConfiguration {
-                            MainWindowContent(navigator, settingsRepository)
+                            MainWindowContent(navigator, settingsRepository, onRestoreFromTray = trayState::restoreWindow)
                         }
                     } else {
                         HandleWindowsWindowProc()
@@ -636,7 +647,7 @@ object AniDesktop {
                             },
                         ) {
                             ProvideTouchViewConfiguration {
-                                MainWindowContent(navigator, settingsRepository)
+                                MainWindowContent(navigator, settingsRepository, onRestoreFromTray = trayState::restoreWindow)
                             }
                         }
                     }
@@ -687,7 +698,23 @@ object AniDesktop {
 private fun FrameWindowScope.MainWindowContent(
     aniNavigator: AniNavigator,
     settingsRepository: SettingsRepository,
+    onRestoreFromTray: () -> Unit,
 ) {
+    // macOS 设定为独立窗口 (05 B4)
+    val currentOnRestoreFromTray by rememberUpdatedState(onRestoreFromTray)
+    val macSettingsWindowHost = remember(window) {
+        if (currentPlatformDesktop().isMacOS()) {
+            DesktopMacSettingsWindowHost(
+                onShowMainWindow = {
+                    currentOnRestoreFromTray()
+                    window.extendedState = window.extendedState and Frame.ICONIFIED.inv()
+                    window.toFront()
+                },
+            )
+        } else {
+            null
+        }
+    }
     AniApp {
         val themeSettings = LocalThemeSettings.current
         val titleBarThemeController = LocalTitleBarThemeController.current
@@ -733,6 +760,7 @@ private fun FrameWindowScope.MainWindowContent(
                         }
                     },
                     LocalContextMenuRepresentation provides DesktopContextMenuRepresentation,
+                    LocalMacSettingsWindowHost provides macSettingsWindowHost,
                 ) {
                     Box(Modifier.padding(all = paddingByWindowSize)) {
                         // 主窗口级拖放: 各功能以 WindowDropHandler 接入, 按顺序第一个接管的生效.

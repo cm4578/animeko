@@ -29,6 +29,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import me.him188.ani.app.ui.foundation.theme.AniTextStyles
@@ -52,7 +53,9 @@ enum class EpisodeTileState {
  * C13 选集方块: 52×52、圆角 12, 文字为 17 号等宽数字.
  *
  * @param label 集数文字. 整数集数用 [episodeTileLabel] 补零到两位.
+ * @param modifier 外层的尺寸修饰优先于 52×52, 例如 macOS 条目详情的网格用等宽、高 [EpisodeTileDefaults.MacGridHeight].
  * @param onLongClick 长按, 例如切换看过. `null` 时不响应长按.
+ * @param cornerRadius 圆角. macOS 条目详情的网格为 [EpisodeTileDefaults.MacCornerRadius].
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -62,9 +65,10 @@ fun EpisodeTile(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     onLongClick: (() -> Unit)? = null,
+    cornerRadius: Dp = EpisodeTileDefaults.CornerRadius,
 ) {
     val colorScheme = MaterialTheme.colorScheme
-    val shape = RoundedCornerShape(12.dp)
+    val shape = RoundedCornerShape(cornerRadius)
     val containerColor: Color
     val textColor: Color
     when (state) {
@@ -133,6 +137,11 @@ fun episodeTileLabel(sort: EpisodeSort): String {
 
 object EpisodeTileDefaults {
     val Size = 52.dp
+    val CornerRadius = 12.dp
+
+    /** macOS 条目详情选集网格的方块高度 (04 §3.7). */
+    val MacGridHeight = 40.dp
+    val MacCornerRadius = 10.dp
 }
 
 @Composable

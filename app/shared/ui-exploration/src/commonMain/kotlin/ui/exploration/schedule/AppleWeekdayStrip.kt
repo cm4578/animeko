@@ -34,9 +34,11 @@ import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
+import me.him188.ani.app.ui.foundation.LocalPlatform
 import me.him188.ani.app.ui.foundation.apple.AppleComponentDefaults
 import me.him188.ani.app.ui.foundation.theme.AniColors
 import me.him188.ani.app.ui.foundation.theme.AniTextStyles
+import me.him188.ani.utils.platform.isMacOS
 
 /**
  * [date] 所在一周的 7 天, 周一在前.
@@ -49,6 +51,7 @@ internal fun currentWeek(date: LocalDate): List<LocalDate> {
 /**
  * 7 栏星期条 (03 §3.2、§3.3): 每格高 52、圆角 14, 格距 2. 周名 `caption` label2, 日期 `headline` labelSoft 500;
  * [selectedDate] 为 tint 底 + onTint、日期 700. 停用的格子不能点, 内容 opacity 0.35.
+ * macOS (探索页的新番时间表小工具, 04 §3.3) 每格高 48、圆角 12, 周名 `macCaption`, 日期 15 号.
  *
  * @param week 一周的 7 天, 见 [currentWeek].
  * @param cellModifier 每一格的 Modifier, 例如测试标签.
@@ -84,10 +87,11 @@ private fun WeekdayCell(
     modifier: Modifier = Modifier,
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    val mac = LocalPlatform.current.isMacOS()
     Column(
         modifier
-            .height(52.dp)
-            .clip(RoundedCornerShape(14.dp))
+            .height(if (mac) 48.dp else 52.dp)
+            .clip(RoundedCornerShape(if (mac) 12.dp else 14.dp))
             .background(if (selected) colorScheme.secondaryContainer else Color.Transparent)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .semantics { this.selected = selected }
@@ -97,13 +101,13 @@ private fun WeekdayCell(
     ) {
         Text(
             renderWeekdayName(date.dayOfWeek),
-            style = AniTextStyles.caption,
+            style = if (mac) AniTextStyles.macCaption else AniTextStyles.caption,
             color = if (selected) colorScheme.onSecondaryContainer else colorScheme.secondary,
             maxLines = 1,
         )
         Text(
             date.day.toString(),
-            style = AniTextStyles.headline,
+            style = if (mac) AniTextStyles.macWindowTitle else AniTextStyles.headline,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
             color = if (selected) colorScheme.onSecondaryContainer else AniColors.labelSoft,
             maxLines = 1,

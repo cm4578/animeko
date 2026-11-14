@@ -58,6 +58,7 @@ import me.him188.ani.app.navigation.LocalNavigator
 import me.him188.ani.app.navigation.MainScreenPage
 import me.him188.ani.app.navigation.NavRoutes
 import me.him188.ani.app.navigation.OverrideNavigation
+import me.him188.ani.app.navigation.SettingsTab
 import me.him188.ani.app.navigation.SubjectDetailPlaceholder
 import me.him188.ani.app.navigation.rememberAniBackStack
 import me.him188.ani.app.platform.LocalContext
@@ -78,6 +79,7 @@ import me.him188.ani.app.ui.download.details.MediaDetailsLazyGrid
 import me.him188.ani.app.ui.download.subject.SubjectDownloadsScreen
 import me.him188.ani.app.ui.exploration.schedule.AiringScheduleItemPresentation
 import me.him188.ani.app.ui.exploration.schedule.AppleSchedulePage
+import me.him188.ani.app.ui.exploration.schedule.MacSchedulePage
 import me.him188.ani.app.ui.exploration.schedule.ScheduleScreen
 import me.him188.ani.app.ui.exploration.schedule.ScheduleViewModel
 import me.him188.ani.app.ui.exploration.trends.TrendingRankingScreen
@@ -116,6 +118,7 @@ import me.him188.ani.app.ui.qrlogin.QrLoginConfirmViewModel
 import me.him188.ani.app.ui.qrlogin.QrLoginScanScreen
 import me.him188.ani.app.ui.qrlogin.isQrCodeScannerSupported
 import me.him188.ani.app.ui.search.AppleSearchScreen
+import me.him188.ani.app.ui.search.MacSearchScreen
 import me.him188.ani.app.ui.search.SearchScreen
 import me.him188.ani.app.ui.settings.SettingsScreen
 import me.him188.ani.app.ui.settings.SettingsViewModel
@@ -131,6 +134,7 @@ import me.him188.ani.app.ui.settings.notification.NotificationSettingsViewModel
 import me.him188.ani.app.ui.settings.tabs.media.torrent.peer.PeerFilterSettingsScreen
 import me.him188.ani.app.ui.settings.tabs.media.torrent.peer.PeerFilterSettingsViewModel
 import me.him188.ani.app.ui.subject.details.AppleSubjectDetailsScreen
+import me.him188.ani.app.ui.subject.details.MacSubjectDetailsScreen
 import me.him188.ani.app.ui.subject.details.SubjectDetailsScreen
 import me.him188.ani.app.ui.subject.details.SubjectDetailsViewModel
 import me.him188.ani.app.ui.subject.episode.EpisodeScreen
@@ -152,6 +156,7 @@ import me.him188.ani.utils.analytics.Analytics
 import me.him188.ani.utils.analytics.AnalyticsEvent.Companion.SubjectEnter
 import me.him188.ani.utils.analytics.recordEvent
 import me.him188.ani.utils.platform.isIos
+import me.him188.ani.utils.platform.isMacOS
 import org.jetbrains.compose.resources.stringResource
 import org.koin.mp.KoinPlatform
 
@@ -217,60 +222,161 @@ private fun AniAppContentImpl(
     modifier: Modifier = Modifier,
     onOpenPlayFlowDebugWindow: () -> Unit,
 ) {
-    // 必须传给所有 Scaffold 和 TopAppBar. 注意, 如果你不传, 你的 UI 很可能会在 macOS 不工作.
-    val windowInsetsWithoutTitleBar = ScaffoldDefaults.contentWindowInsets
-    val windowInsets = ScaffoldDefaults.contentWindowInsets
-        .add(WindowInsets.desktopTitleBar()) // Compose 目前不支持这个所以我们要自己加上
     val navMotionScheme by rememberUpdatedState(NavigationMotionScheme.current)
     val emailLoginViewModel = viewModel<EmailLoginViewModel> { EmailLoginViewModel() }
 
-    // iOS 的导航栏画在 NavDisplay 外层, 推入页也显示 (05 G10); 其他平台的导航栏在 MainScreen 内.
-    val isIos = LocalPlatform.current.isIos()
+    // Apple 平台的导航画在 NavDisplay 外层, 推入页也显示: iOS 为浮动导航栏或 rail (05 G10), macOS 为侧边栏 (05 B3).
+    // 其他平台的导航栏在 MainScreen 内.
+    val platform = LocalPlatform.current
+    val appleShell = when {
+        platform.isIos() -> AppleShell.Ios
+        platform.isMacOS() -> AppleShell.Mac
+        else -> null
+    }
     val navigationLayoutType = AniNavigationSuiteDefaults.calculateLayoutType(currentWindowAdaptiveInfo1())
-    val appleMainPages = if (isIos) rememberAppleMainPages(backStack) else null
-    val appleTabBarInsetDecorator = rememberAppleTabBarInsetDecorator(backStack, navigationLayoutType)
+    val appleMainPages = if (appleShell != null) rememberAppleMainPages(backStack) else null
 
-    if (appleMainPages != null) {
-        AppleNavigationShell(
-            backStack,
-            aniNavigator,
-            appleMainPages,
-            navigationLayoutType,
-            modifier,
-        ) {
+    when (appleShell) {
+        AppleShell.Ios -> {
+            val appleTabBarInsetDecorator = rememberAppleTabBarInsetDecorator(backStack, navigationLayoutType)
+            AppleNavigationShell(
+                backStack,
+                aniNavigator,
+                appleMainPages!!,
+                navigationLayoutType,
+                modifier,
+            ) {
+                AniNavDisplay(
+                    aniNavigator,
+                    backStack,
+                    mainSceneInitialPage,
+                    Modifier.fillMaxSize(),
+                    navMotionScheme,
+                    emailLoginViewModel,
+                    appleShell,
+                    appleMainPages,
+                    sharedViewModel = null,
+                    extraEntryDecorators = listOf(appleTabBarInsetDecorator),
+                    onOpenSettings = { aniNavigator.navigateSettings(it) },
+                    onOpenPlayFlowDebugWindow,
+                )
+            }
+        }
+
+        AppleShell.Mac -> {
+            // 侧边栏与主分页共用一个实例: 侧边栏在 NavDisplay 外层, 读不到 Main 条目里的 ViewModel.
+            val sharedViewModel = viewModel { MainScreenSharedViewModel() }
+            val searchField = remember { MacSearchFieldState() }
+            // 设定为独立窗口 (05 B4): 有宿主时, 主窗口里所有打开设定的入口都打开设定窗口
+            val settingsWindowHost = LocalMacSettingsWindowHost.current
+            val settingsWindow = remember { MacSettingsWindowState() }
+            val navigator = remember(aniNavigator, settingsWindowHost, settingsWindow) {
+                if (settingsWindowHost != null) MacSettingsWindowNavigator(aniNavigator, settingsWindow) else aniNavigator
+            }
+            val onOpenSettings: (SettingsTab?) -> Unit = { navigator.navigateSettings(it) }
+            CompositionLocalProvider(LocalNavigator provides navigator) {
+                MacNavigationShell(
+                    backStack,
+                    navigator,
+                    appleMainPages!!,
+                    status = rememberMacSidebarStatus(sharedViewModel),
+                    searchField = searchField,
+                    onOpenAccount = {
+                        val selfInfo = sharedViewModel.selfInfo.value
+                        if (selfInfo.isSessionValid == true) {
+                            onOpenSettings(SettingsTab.PROFILE)
+                        } else {
+                            navigator.navigateEmailLoginStart()
+                        }
+                    },
+                    onOpenSettings = { onOpenSettings(null) },
+                    modifier = modifier,
+                ) {
+                    CompositionLocalProvider(LocalMacSearchField provides searchField) {
+                        AniNavDisplay(
+                            navigator,
+                            backStack,
+                            mainSceneInitialPage,
+                            Modifier.fillMaxSize(),
+                            navMotionScheme,
+                            emailLoginViewModel,
+                            appleShell,
+                            appleMainPages,
+                            sharedViewModel = sharedViewModel,
+                            extraEntryDecorators = emptyList(),
+                            onOpenSettings = onOpenSettings,
+                            onOpenPlayFlowDebugWindow,
+                        )
+                    }
+                }
+            }
+            settingsWindowHost?.SettingsWindow(settingsWindow) {
+                MacSettingsWindowScreen(
+                    settingsWindow,
+                    sharedViewModel,
+                    navigator,
+                    onShowMainWindow = settingsWindowHost::showMainWindow,
+                    onOpenPlayFlowDebugWindow = onOpenPlayFlowDebugWindow,
+                )
+            }
+        }
+
+        null -> {
             AniNavDisplay(
                 aniNavigator,
                 backStack,
                 mainSceneInitialPage,
-                Modifier.fillMaxSize(),
-                windowInsets,
-                windowInsetsWithoutTitleBar,
+                modifier,
                 navMotionScheme,
                 emailLoginViewModel,
-                appleMainPages,
-                extraEntryDecorators = listOf(appleTabBarInsetDecorator),
+                appleShell = null,
+                appleMainPages = null,
+                sharedViewModel = null,
+                extraEntryDecorators = emptyList(),
+                onOpenSettings = { aniNavigator.navigateSettings(it) },
                 onOpenPlayFlowDebugWindow,
             )
         }
-    } else {
-        AniNavDisplay(
-            aniNavigator,
-            backStack,
-            mainSceneInitialPage,
-            modifier,
-            windowInsets,
-            windowInsetsWithoutTitleBar,
-            navMotionScheme,
-            emailLoginViewModel,
-            appleMainPages = null,
-            extraEntryDecorators = emptyList(),
-            onOpenPlayFlowDebugWindow,
-        )
     }
 }
 
 /**
- * @param appleMainPages iOS 主分页的选中状态, 其他平台为 `null`.
+ * Apple 平台的导航外壳.
+ */
+internal enum class AppleShell {
+    /** [AppleNavigationShell]: iPhone 浮动导航栏, iPad rail. */
+    Ios,
+
+    /** [MacNavigationShell]: macOS 侧边栏. */
+    Mac,
+}
+
+/**
+ * macOS 侧边栏的状态. 各项都是冷流, 只有侧边栏订阅.
+ */
+@Composable
+private fun rememberMacSidebarStatus(vm: MainScreenSharedViewModel): MacSidebarStatus {
+    val selfInfo by vm.selfInfo.collectAsStateWithLifecycle()
+    val showNotificationDot by vm.showNotificationDot.collectAsStateWithLifecycle()
+    val pendingSyncCount by vm.bangumiPendingSyncCount.collectAsStateWithLifecycle()
+    val hasNewEpisodes by vm.hasNewEpisodes.collectAsStateWithLifecycle()
+    val activeDownloadCount by vm.activeDownloadCount.collectAsStateWithLifecycle()
+    // 与 MainScreen 相同: 未登录 (包括 token 过期且因网络错误未能刷新) 时不显示红点.
+    val notificationDot = showNotificationDot && selfInfo.isSessionValid == true && selfInfo.selfInfo != null
+    return MacSidebarStatus(
+        selfInfo = selfInfo,
+        notificationDot = notificationDot,
+        pendingSyncCount = pendingSyncCount,
+        hasNewEpisodes = hasNewEpisodes,
+        activeDownloadCount = activeDownloadCount,
+    )
+}
+
+/**
+ * @param appleShell Apple 平台的导航外壳, 其他平台为 `null`. 决定各页面用 Apple 版还是既有版本.
+ * @param appleMainPages Apple 平台主分页的选中状态, 其他平台为 `null`.
+ * @param sharedViewModel 外壳持有的 [MainScreenSharedViewModel] (macOS). 为 `null` 时 Main 条目自己创建.
+ * @param onOpenSettings 主分页上的设定入口.
  */
 @Composable
 private fun AniNavDisplay(
@@ -278,14 +384,21 @@ private fun AniNavDisplay(
     backStack: List<NavRoutes>,
     mainSceneInitialPage: MainScreenPage,
     modifier: Modifier,
-    windowInsets: WindowInsets,
-    windowInsetsWithoutTitleBar: WindowInsets,
     navMotionScheme: NavigationMotionScheme,
     emailLoginViewModel: EmailLoginViewModel,
+    appleShell: AppleShell?,
     appleMainPages: AppleMainPages?,
+    sharedViewModel: MainScreenSharedViewModel?,
     extraEntryDecorators: List<NavEntryDecorator<NavRoutes>>,
+    onOpenSettings: (SettingsTab?) -> Unit,
     onOpenPlayFlowDebugWindow: () -> Unit,
 ) {
+    val isIosShell = appleShell == AppleShell.Ios
+    // 必须传给所有 Scaffold 和 TopAppBar. 注意, 如果你不传, 你的 UI 很可能会在 macOS 不工作.
+    // 在这里读取标题栏: macOS 侧边栏显示时, 外壳把内容区的标题栏设为 0.
+    val windowInsetsWithoutTitleBar = ScaffoldDefaults.contentWindowInsets
+    val windowInsets = ScaffoldDefaults.contentWindowInsets
+        .add(WindowInsets.desktopTitleBar()) // Compose 目前不支持这个所以我们要自己加上
     NavDisplay(
         backStack = backStack,
         modifier = modifier,
@@ -390,7 +503,7 @@ private fun AniNavDisplay(
                         currentWindowAdaptiveInfo1(),
                     )
 
-                val vm = viewModel { MainScreenSharedViewModel() }
+                val vm = sharedViewModel ?: viewModel { MainScreenSharedViewModel() }
                 var currentPage by rememberSaveable { mutableStateOf(route.initialPage) }
 
                 val toaster = LocalToaster.current
@@ -401,7 +514,7 @@ private fun AniNavDisplay(
                     }
                 }
 
-                // iOS 的选中分页放在 NavDisplay 外层, 推入页上的导航栏也要读写它
+                // Apple 平台的选中分页放在 NavDisplay 外层, 推入页上的导航栏与侧边栏也要读写它
                 fun setPage(page: MainScreenPage) {
                     if (appleMainPages != null) appleMainPages.setPage(route, page) else currentPage = page
                 }
@@ -417,17 +530,25 @@ private fun AniNavDisplay(
                 ) {
                     val selfInfo by vm.selfInfo.collectAsState() // not -WithLifecycle
                     val showNotificationDot by vm.showNotificationDot.collectAsStateWithLifecycle()
-                    if (appleMainPages != null) {
-                        AppleMainScreen(
-                            page = appleMainPages.pageOf(route),
+                    when (appleShell) {
+                        AppleShell.Ios -> AppleMainScreen(
+                            page = appleMainPages!!.pageOf(route),
                             selfInfo = selfInfo,
                             sharedViewModel = vm,
                             showNotificationDot = showNotificationDot,
                             onNavigateToPage = ::setPage,
                             modifier = Modifier.fillMaxSize(),
                         )
-                    } else {
-                        MainScreen(
+
+                        AppleShell.Mac -> MacMainScreen(
+                            page = appleMainPages!!.pageOf(route),
+                            selfInfo = selfInfo,
+                            showNotificationDot = showNotificationDot,
+                            onOpenSettings = onOpenSettings,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+
+                        null -> MainScreen(
                             page = currentPage,
                             selfInfo = selfInfo,
                             onNavigateToPage = { currentPage = it },
@@ -442,8 +563,11 @@ private fun AniNavDisplay(
             entry<NavRoutes.SubjectSearch> { route ->
                 val navigator = LocalNavigator.current
                 val vm = viewModel(key = route.toString()) { SearchViewModel(route.toQuery()) }
+                if (appleShell == AppleShell.Mac) {
+                    AttachMacSearchField(vm)
+                }
 
-                if (appleMainPages != null) {
+                if (isIosShell) {
                     AppleSearchScreen(
                         vm,
                         onNavigateBack = {
@@ -456,6 +580,16 @@ private fun AniNavDisplay(
                             navigator.navigateEpisodeDetails(subjectId, episodeId)
                         },
                         contentPadding = WindowInsets.navigationBars.only(WindowInsetsSides.Bottom).asPaddingValues(),
+                    )
+                } else if (appleShell == AppleShell.Mac) {
+                    MacSearchScreen(
+                        vm,
+                        onNavigateToSubjectDetails = { subjectId, placeholder ->
+                            navigator.navigateSubjectDetails(subjectId, placeholder)
+                        },
+                        onNavigateToEpisodeDetails = { subjectId, episodeId ->
+                            navigator.navigateEpisodeDetails(subjectId, episodeId)
+                        },
                     )
                 } else {
                     SearchScreen(
@@ -483,7 +617,7 @@ private fun AniNavDisplay(
                 val onClickTag: (Tag) -> Unit = {
                     aniNavigator.navigateSubjectSearch(NavRoutes.SubjectSearch(tags = listOf(it.name)))
                 }
-                if (appleMainPages != null) {
+                if (isIosShell) {
                     AppleSubjectDetailsScreen(
                         vm,
                         onPlay = { aniNavigator.navigateEpisodeDetails(route.subjectId, it) },
@@ -491,6 +625,14 @@ private fun AniNavDisplay(
                         onClickTag = onClickTag,
                         onBack = { aniNavigator.popBackStack(route, inclusive = true) },
                         contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else if (appleShell == AppleShell.Mac) {
+                    MacSubjectDetailsScreen(
+                        vm,
+                        onPlay = { aniNavigator.navigateEpisodeDetails(route.subjectId, it) },
+                        onLoadErrorRetry = { vm.reload() },
+                        onClickTag = onClickTag,
+                        modifier = Modifier.fillMaxSize(),
                     )
                 } else {
                     SubjectDetailsScreen(
@@ -533,7 +675,13 @@ private fun AniNavDisplay(
                         context,
                     )
                 }
-                EpisodeScreen(vm, Modifier.fillMaxSize(), windowInsets, appleStyle = appleMainPages != null)
+                EpisodeScreen(
+                    vm,
+                    Modifier.fillMaxSize(),
+                    windowInsets,
+                    appleStyle = isIosShell,
+                    macStyle = appleShell == AppleShell.Mac,
+                )
             }
             entry<NavRoutes.Settings> { route ->
                 SettingsScreen(
@@ -882,7 +1030,17 @@ private fun AniNavDisplay(
                         ),
                     )
                 }
-                if (appleMainPages != null) {
+                if (appleShell == AppleShell.Mac) {
+                    val selfInfo by remember { SelfInfoStateProducer() }.flow.collectAsState(null)
+                    MacSchedulePage(
+                        presentation,
+                        state = vm.pageState,
+                        quickFollowState = vm.quickFollowState.takeIf { selfInfo?.isSessionValid == true },
+                        onRetry = { vm.refresh() },
+                        onClickItem = onClickItem,
+                        Modifier.fillMaxSize(),
+                    )
+                } else if (isIosShell) {
                     val selfInfo by remember { SelfInfoStateProducer() }.flow.collectAsState(null)
                     AppleSchedulePage(
                         presentation,
