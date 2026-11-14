@@ -71,11 +71,11 @@ internal class DownloadFilterAndSortState {
     var selectedStatus by mutableStateOf<DownloadStatusFilter?>(null)
     var sortOption by mutableStateOf(DownloadSortOption.Newest)
 
-    private fun matchesFilters(entry: DownloadItem): Boolean {
+    private fun matchesFilters(entry: DownloadItem, status: DownloadStatusFilter?): Boolean {
         return (selectedCollectionType == null || (entry.subjectCollectionType
             ?: UnifiedCollectionType.NOT_COLLECTED) == selectedCollectionType) &&
                 (selectedEngineKey == null || entry.engineKey == selectedEngineKey) &&
-                (selectedStatus == null || entry.statusFilter == selectedStatus)
+                (status == null || entry.statusFilter == status)
     }
 
     /**
@@ -86,31 +86,41 @@ internal class DownloadFilterAndSortState {
     @Composable
     fun applyFilterAndSortGrouped(groups: List<SubjectDownloadGroup>): List<SubjectDownloadGroup> {
         val result by remember(groups) {
-            derivedStateOf {
-                val filtered = groups.mapNotNull { group ->
-                    val entries = group.entries.filter { matchesFilters(it) }
-                    when {
-                        entries.isEmpty() -> null
-                        entries.size == group.entries.size -> group
-                        else -> group.copy(entries = entries)
-                    }
-                }
-
-                when (sortOption) {
-                    DownloadSortOption.Newest -> filtered.sortedByDescending { group ->
-                        group.entries.maxOfOrNull { it.creationTime ?: Long.MIN_VALUE } ?: Long.MIN_VALUE
-                    }
-
-                    DownloadSortOption.Oldest -> filtered.sortedBy { group ->
-                        group.entries.minOfOrNull { it.creationTime ?: Long.MAX_VALUE } ?: Long.MAX_VALUE
-                    }
-
-                    DownloadSortOption.SubjectAsc -> filtered.sortedBy { it.subjectName }
-                    DownloadSortOption.SubjectDesc -> filtered.sortedByDescending { it.subjectName }
-                }
-            }
+            derivedStateOf { filterAndSort(groups) }
         }
         return result
+    }
+
+    /**
+     * [applyFilterAndSortGrouped] 的非 Composable 版本.
+     *
+     * @param status 下载状态筛选, 默认为 [selectedStatus]. 用于计算各状态的分组数.
+     */
+    fun filterAndSort(
+        groups: List<SubjectDownloadGroup>,
+        status: DownloadStatusFilter? = selectedStatus,
+    ): List<SubjectDownloadGroup> {
+        val filtered = groups.mapNotNull { group ->
+            val entries = group.entries.filter { matchesFilters(it, status) }
+            when {
+                entries.isEmpty() -> null
+                entries.size == group.entries.size -> group
+                else -> group.copy(entries = entries)
+            }
+        }
+
+        return when (sortOption) {
+            DownloadSortOption.Newest -> filtered.sortedByDescending { group ->
+                group.entries.maxOfOrNull { it.creationTime ?: Long.MIN_VALUE } ?: Long.MIN_VALUE
+            }
+
+            DownloadSortOption.Oldest -> filtered.sortedBy { group ->
+                group.entries.minOfOrNull { it.creationTime ?: Long.MAX_VALUE } ?: Long.MAX_VALUE
+            }
+
+            DownloadSortOption.SubjectAsc -> filtered.sortedBy { it.subjectName }
+            DownloadSortOption.SubjectDesc -> filtered.sortedByDescending { it.subjectName }
+        }
     }
 
     companion object {
@@ -377,7 +387,7 @@ internal enum class DownloadSortOption {
 }
 
 @Composable
-private fun renderStatusFilter(type: DownloadStatusFilter): String {
+internal fun renderStatusFilter(type: DownloadStatusFilter): String {
     return when (type) {
         DownloadStatusFilter.Downloading -> stringResource(Lang.cache_filter_status_downloading)
         DownloadStatusFilter.Finished -> stringResource(Lang.cache_filter_status_finished)
@@ -385,7 +395,7 @@ private fun renderStatusFilter(type: DownloadStatusFilter): String {
 }
 
 @Composable
-private fun renderSortOption(option: DownloadSortOption): String {
+internal fun renderSortOption(option: DownloadSortOption): String {
     return when (option) {
         DownloadSortOption.Newest -> stringResource(Lang.cache_filter_sort_newest)
         DownloadSortOption.Oldest -> stringResource(Lang.cache_filter_sort_oldest)
@@ -395,7 +405,7 @@ private fun renderSortOption(option: DownloadSortOption): String {
 }
 
 @Composable
-private fun renderCollectionType(type: UnifiedCollectionType): String {
+internal fun renderCollectionType(type: UnifiedCollectionType): String {
     return when (type) {
         UnifiedCollectionType.WISH -> stringResource(Lang.cache_filter_collection_wish)
         UnifiedCollectionType.DOING -> stringResource(Lang.cache_filter_collection_doing)
@@ -406,7 +416,7 @@ private fun renderCollectionType(type: UnifiedCollectionType): String {
     }
 }
 
-private fun renderEngineKey(key: MediaCacheEngineKey): String = when (key) {
+internal fun renderEngineKey(key: MediaCacheEngineKey): String = when (key) {
     MediaCacheEngineKey.Anitorrent -> "BT"
     MediaCacheEngineKey.WebM3u -> "Web"
     else -> key.key

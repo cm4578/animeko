@@ -12,22 +12,36 @@ package me.him188.ani.app.ui.subject.collection
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.paging.PagingData
+import androidx.paging.filter
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import me.him188.ani.app.data.models.bangumi.BangumiSyncState
+import me.him188.ani.app.data.models.player.EpisodeHistory
+import me.him188.ani.app.data.models.preference.CollectionLayout
 import me.him188.ani.app.data.models.preference.MyCollectionsSettings
+import me.him188.ani.app.data.models.preference.NsfwMode
+import me.him188.ani.app.data.models.subject.FollowedSubjectInfo
 import me.him188.ani.app.data.models.subject.SubjectCollectionInfo
+import me.him188.ani.app.data.models.subject.subjectInfo
 import me.him188.ani.app.data.repository.episode.AnimeScheduleRepository
 import me.him188.ani.app.data.repository.episode.EpisodeCollectionRepository
 import me.him188.ani.app.data.repository.episode.EpisodeProgressRepository
+import me.him188.ani.app.data.repository.player.EpisodePlayHistoryRepository
+import me.him188.ani.app.data.repository.subject.FollowedSubjectsRepository
 import me.him188.ani.app.data.repository.subject.SetSubjectCollectionTypeOrDeleteUseCase
 import me.him188.ani.app.data.repository.subject.SubjectCollectionRepository
 import me.him188.ani.app.data.repository.user.SettingsRepository
 import me.him188.ani.app.domain.foundation.LoadError
+import me.him188.ani.app.domain.media.cache.EpisodeCacheStatus
 import me.him188.ani.app.domain.session.SessionEvent
 import me.him188.ani.app.domain.session.SessionStateProvider
 import me.him188.ani.app.navigation.AniNavigator
@@ -66,6 +80,50 @@ open class UserCollectionsViewModel : AbstractViewModel(), KoinComponent {
     val myCollectionsSettings: MyCollectionsSettings by settingsRepository.uiSettings.flow
         .map { it.myCollections }
         .produceState(MyCollectionsSettings.Default)
+
+    private val followedSubjectsRepository: FollowedSubjectsRepository by inject()
+    private val episodePlayHistoryRepository: EpisodePlayHistoryRepository by inject()
+
+    /**
+     * Apple 版追番页「继续观看」的条目, 与探索页的「继续观看」相同 (05 G3).
+     *
+     * 冷流: 只有 Apple 版追番页订阅时才计算.
+     */
+    val continueWatchingPager: Flow<PagingData<FollowedSubjectInfo>> by lazy {
+        combine(
+            settingsRepository.uiSettings.flow.map { it.searchSettings.nsfwMode },
+            followedSubjectsRepository.followedSubjectsPager(),
+        ) { nsfwMode, subjects ->
+            if (nsfwMode != NsfwMode.HIDE) return@combine subjects
+            subjects.filter { !it.subjectInfo.nsfw }
+        }
+    }
+
+    /**
+     * 一集的播放记录, 用于「继续观看」的剩余分钟与进度 (05 G27). 没有记录时为 `null`.
+     */
+    fun episodePlayHistoryFlow(episodeId: Int): Flow<EpisodeHistory?> =
+        episodePlayHistoryRepository.flowByEpisodeIds(listOf(episodeId)).map { it.firstOrNull() }
+
+    /**
+     * 条目的下一集 (第一个未看的集) 是否已快取, 用于追番列表的「已快取」 (05 G29).
+     */
+    fun nextEpisodeCachedFlow(subjectId: Int): Flow<Boolean> =
+        episodeProgressRepository.subjectEpisodeProgressesInfoFlow(subjectId)
+            .map { episodes ->
+                val next = episodes.firstOrNull { !it.collectionType.isDoneOrDropped() }
+                next?.cacheStatus is EpisodeCacheStatus.Cached
+            }
+            .distinctUntilChanged()
+
+    /**
+     * 记住 Apple 版「我的追番」的排版 (05 C1).
+     */
+    fun setCollectionLayout(layout: CollectionLayout) {
+        backgroundScope.launch {
+            settingsRepository.uiSettings.update { copy(myCollections = myCollections.copy(layout = layout)) }
+        }
+    }
 
     private val fullSyncTasker = MonoTasker(backgroundScope)
     val fullSyncState: MutableStateFlow<BangumiSyncState?> = MutableStateFlow(null)

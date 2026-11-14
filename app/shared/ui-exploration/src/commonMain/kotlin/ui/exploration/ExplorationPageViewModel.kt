@@ -22,9 +22,12 @@ import me.him188.ani.app.data.models.subject.subjectInfo
 import me.him188.ani.app.data.network.RecommendationRepository
 import me.him188.ani.app.data.network.TrendsRepository
 import me.him188.ani.app.data.repository.subject.FollowedSubjectsRepository
+import me.him188.ani.app.data.repository.subject.SetSubjectCollectionTypeOrDeleteUseCase
+import me.him188.ani.app.data.repository.subject.SubjectCollectionRepository
 import me.him188.ani.app.data.repository.user.SettingsRepository
 import me.him188.ani.app.domain.session.SessionManager
 import me.him188.ani.app.domain.usecase.GlobalKoin
+import me.him188.ani.app.ui.exploration.follow.QuickFollowState
 import me.him188.ani.app.ui.foundation.AbstractViewModel
 import org.koin.core.Koin
 import org.koin.core.component.KoinComponent
@@ -39,6 +42,8 @@ open class ExplorationPageViewModel(private val koin: Koin = GlobalKoin) : Abstr
     private val sessionManager: SessionManager by inject()
     private val followedSubjectsRepository: FollowedSubjectsRepository by inject()
     private val settingsRepository: SettingsRepository by inject()
+    private val subjectCollectionRepository: SubjectCollectionRepository by inject()
+    private val setSubjectCollectionTypeOrDeleteUseCase: SetSubjectCollectionTypeOrDeleteUseCase by inject()
 
     private val nsfwSettingFlow = settingsRepository.uiSettings.flow.map { it.searchSettings.nsfwMode }
     private val horizontalScrollTipFlow =
@@ -76,4 +81,11 @@ open class ExplorationPageViewModel(private val koin: Koin = GlobalKoin) : Abstr
 //                emit(arrayOfNulls<FollowedSubjectInfo>(10).toList())
 //            }
     )
+
+    /**
+     * Apple 版推荐卡片的快速追番 (05 G2). 只在 Apple 版画面读取时创建.
+     */
+    val quickFollowState: QuickFollowState by lazy {
+        QuickFollowState(subjectCollectionRepository, setSubjectCollectionTypeOrDeleteUseCase)
+    }
 }

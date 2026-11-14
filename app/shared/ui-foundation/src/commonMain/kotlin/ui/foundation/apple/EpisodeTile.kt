@@ -9,9 +9,10 @@
 
 package me.him188.ani.app.ui.foundation.apple
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -31,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import me.him188.ani.app.ui.foundation.theme.AniTextStyles
+import me.him188.ani.datasources.api.EpisodeSort
 
 /**
  * C13 选集方块的状态.
@@ -50,13 +52,16 @@ enum class EpisodeTileState {
  * C13 选集方块: 52×52、圆角 12, 文字为 17 号等宽数字.
  *
  * @param label 集数文字. 整数集数用 [episodeTileLabel] 补零到两位.
+ * @param onLongClick 长按, 例如切换看过. `null` 时不响应长按.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun EpisodeTile(
     label: String,
     state: EpisodeTileState,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(12.dp)
@@ -91,7 +96,7 @@ fun EpisodeTile(
                 },
             )
             .semantics { selected = state == EpisodeTileState.Playing }
-            .clickable(role = Role.Button, onClick = onClick),
+            .combinedClickable(role = Role.Button, onLongClick = onLongClick, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -117,6 +122,14 @@ fun EpisodeTile(
  * 整数集数补零到两位: 4 → "04", 12 → "12", 120 → "120".
  */
 fun episodeTileLabel(number: Int): String = number.toString().padStart(2, '0')
+
+/**
+ * 整数集数补零到两位, 其他 (例如 SP、12.5) 用原文.
+ */
+fun episodeTileLabel(sort: EpisodeSort): String {
+    val number = (sort as? EpisodeSort.Normal)?.number
+    return if (number != null && number.toInt().toFloat() == number) episodeTileLabel(number.toInt()) else sort.toString()
+}
 
 object EpisodeTileDefaults {
     val Size = 52.dp

@@ -84,11 +84,24 @@ data class LegacyThemeSettings(
 @Immutable
 data class MyCollectionsSettings(
     val enableListAnimation1: Boolean = true,
+    /**
+     * Apple 版追番页「我的追番」的排版. iOS 与 macOS 共用.
+     */
+    val layout: CollectionLayout = CollectionLayout.LIST,
 ) {
     companion object {
         @Stable
         val Default = MyCollectionsSettings()
     }
+}
+
+@Serializable
+enum class CollectionLayout {
+    /** 列表: 每列一部, 显示封面、状态与进度条. */
+    LIST,
+
+    /** 海报网格. */
+    GRID,
 }
 
 @Serializable

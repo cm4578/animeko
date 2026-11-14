@@ -34,6 +34,7 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
@@ -98,6 +99,8 @@ fun PillTab(
  * 未套用为 card 底 + labelSoft W500; 已套用 ([applied]) 为 tint 底 + onTint W600.
  * 手机内距 0 10 0 14、13 号箭头; macOS 内距 0 10 0 12、12 号箭头.
  * 多个筛选胶囊放进 [FilterPillFlowRow] 换行排列, 不横向滚动.
+ *
+ * @param enabled 停用时不能点, 内容 opacity 0.35.
  */
 @Composable
 fun FilterPill(
@@ -105,14 +108,16 @@ fun FilterPill(
     applied: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     val contentColor = if (applied) MaterialTheme.colorScheme.onSecondaryContainer else AniColors.labelSoft
     PillLayout(
-        modifier = modifier,
+        modifier = modifier.alpha(if (enabled) 1f else AppleComponentDefaults.DisabledAlpha),
         interaction = { source ->
             clickable(
                 interactionSource = source,
                 indication = null,
+                enabled = enabled,
                 role = Role.DropdownList,
                 onClick = onClick,
             )

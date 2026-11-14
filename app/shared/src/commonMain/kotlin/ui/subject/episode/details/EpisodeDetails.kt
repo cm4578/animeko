@@ -93,6 +93,7 @@ import me.him188.ani.app.domain.media.cache.EpisodeCacheStatus
 import me.him188.ani.app.domain.media.cache.engine.MediaCacheEngineKey
 import me.him188.ani.app.domain.media.selector.SelectTrigger
 import me.him188.ani.app.domain.player.VideoLoadingState
+import me.him188.ani.app.navigation.AniNavigator
 import me.him188.ani.app.navigation.LocalNavigator
 import me.him188.ani.app.navigation.SubjectDetailPlaceholder
 import me.him188.ani.app.platform.LocalContext
@@ -247,32 +248,15 @@ fun EpisodeDetails(
         mutableStateOf<DanmakuServiceId?>(null)
     }
 
-    if (state.subjectId != 0) {
-        val subjectDetailsState by state.subjectDetailsStateLoader.state
-            .collectAsStateWithLifecycle()
-        if (showSubjectDetails) {
-            ModalBottomSheet(
-                { showSubjectDetails = false },
-                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = currentWindowAdaptiveInfo1().isWidthAtLeastMedium),
-                modifier = Modifier.desktopTitleBarPadding().statusBarsPadding(),
-                contentWindowInsets = {
-                    BottomSheetDefaults.windowInsets
-                        .add(WindowInsets.desktopTitleBar())
-                        .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
-                },
-            ) {
-                SubjectDetailsScreen(
-                    subjectDetailsState,
-                    selfInfo,
-                    onPlay = onSwitchEpisode,
-                    onLoadErrorRetry = { state.subjectDetailsStateLoader.retry() },
-                    onClickTag = onClickTag,
-                    onEpisodeCollectionUpdate = onEpisodeCollectionUpdate,
-                    showTopBar = false,
-                    showBlurredBackground = false,
-                )
-            }
-        }
+    if (showSubjectDetails) {
+        SubjectDetailsSheet(
+            state,
+            selfInfo,
+            onPlay = onSwitchEpisode,
+            onClickTag = onClickTag,
+            onEpisodeCollectionUpdate = onEpisodeCollectionUpdate,
+            onDismissRequest = { showSubjectDetails = false },
+        )
     }
 
     val context = LocalContext.current
@@ -497,30 +481,11 @@ fun EpisodeDetails(
                 item("subject_recommendation_${recommendation.uniqueId}") {
                     SubjectRecommendationCard(
                         {
-                            val uri = recommendation.uri
-                            val targetSubjectId = recommendation.subjectId?.toInt()
-                            Analytics.recordEvent(SubjectRecommendationClick) {
-                                targetSubjectId?.let { put("subject_id", it) }
-                                uri?.let { put("target_uri", it) }
-                            }
-                            Analytics.recordEvent(SubjectEnter) {
-                                put("source", "episode_recommendation")
-                                targetSubjectId?.let { put("subject_id", it) }
-                                uri?.let { put("target_uri", it) }
-                            }
-                            if (uri != null) {
-                                browserNavigator.openBrowser(context, uri)
-                            } else if (targetSubjectId != null) {
-                                navigator.navigateSubjectDetails(
-                                    targetSubjectId,
-                                    SubjectDetailPlaceholder(
-                                        id = targetSubjectId,
-                                        name = recommendation.name,
-                                        nameCN = recommendation.nameCn ?: "",
-                                        coverUrl = recommendation.imageUrl,
-                                    ),
-                                )
-                            }
+                            openSubjectRecommendation(
+                                recommendation,
+                                openBrowser = { browserNavigator.openBrowser(context, it) },
+                                navigator,
+                            )
                         },
                         recommendation,
                         Modifier
@@ -650,139 +615,286 @@ fun EpisodeDetails(
                 }
             }
         } else {
-            ModalBottomSheet(
-                closeSelector,
-                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                modifier = Modifier.desktopTitleBarPadding().statusBarsPadding(),
-                contentWindowInsets = {
-                    BottomSheetDefaults.windowInsets
-                        .add(WindowInsets.desktopTitleBar())
-                        .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
-                },
-            ) {
-                val topBar = @Composable {
-                    Row(
-                        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            stringResource(Lang.media_selector_sources),
-                            Modifier.weight(1f),
-                            style = MaterialTheme.typography.titleLarge,
-                        )
-                        MediaSelectorModeChip(mediaSelectorMode, onMediaSelectorModeChange, showBt = showBt)
-                    }
-                }
-                when (mediaSelectorMode) {
-                    MediaSelectorMode.AUTO -> Column(Modifier.fillMaxWidth()) {
-                        topBar()
-                        AutoMatchPage(
-                            mediaSelectorState,
-                            onClickItem = {
-                                mediaSelectorState.select(it, SelectTrigger.MANUAL_AUTO_PAGE)
-                                closeSelector()
-                            },
-                            onRestartSource = onRestartSource,
-                            onRequestManualSearch = { onMediaSelectorModeChange(MediaSelectorMode.MANUAL) },
-                            modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(),
-                            scrollable = true,
-                        )
-                    }
-
-                    MediaSelectorMode.MANUAL -> ManualBrowsePage(
-                        manualBrowseState,
-                        watchingEpisode,
-                        onPlayed = closeSelector,
-                        topBar = topBar,
-                        modifier = Modifier.fillMaxSize(),
-                    )
-
-                    // Lazy 列表需要有界高度, 与下载对话框一样铺满 sheet.
-                    MediaSelectorMode.BT -> Column(Modifier.fillMaxSize()) {
-                        topBar()
-                        BtResourcesPage(
-                            mediaSelectorState,
-                            sourceResults,
-                            watchingEpisode,
-                            fetchRequest,
-                            onFetchRequestChange,
-                            onClickItem = {
-                                mediaSelectorState.select(it, SelectTrigger.MANUAL_BT_PAGE)
-                                closeSelector()
-                            },
-                            onRestartSource = onRestartSource,
-                            modifier = Modifier.fillMaxWidth().weight(1f),
-                        )
-                    }
-                }
-            }
+            CompactMediaSelectorSheet(
+                mediaSelectorMode,
+                onMediaSelectorModeChange,
+                mediaSelectorState,
+                sourceResults,
+                watchingEpisode,
+                fetchRequest,
+                onFetchRequestChange,
+                onRestartSource,
+                manualBrowseState,
+                onDismissRequest = closeSelector,
+            )
         }
     }
 
     if (showDanmakuInfoSheet) {
-        ModalBottomSheet(
-            { showDanmakuInfoSheet = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
-            modifier = Modifier.desktopTitleBarPadding().statusBarsPadding(),
-            contentWindowInsets = {
-                BottomSheetDefaults.windowInsets
-                    .add(WindowInsets.desktopTitleBar())
-                    .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
+        DanmakuInfoSheet(
+            danmakuListState,
+            onDismissRequest = { showDanmakuInfoSheet = false },
+            onSetDanmakuSourceEnabled = onSetDanmakuSourceEnabled,
+            onManualMatchDanmaku = onManualMatchDanmaku,
+            onAdjustShift = { serviceId ->
+                editingShiftServiceId = serviceId
             },
-        ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(bottom = 24.dp),
-            ) {
-                item("danmaku_info_sheet_title") {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
-                            .padding(bottom = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            "弹幕列表",
-                            Modifier.weight(1f),
-                            style = MaterialTheme.typography.titleLarge,
-                        )
-                    }
-                }
-
-                if (danmakuListState != null) {
-                    item("danmaku_info_sheet_list") {
-                        DanmakuListContent(
-                            state = danmakuListState,
-                            onSetEnabled = onSetDanmakuSourceEnabled,
-                            onManualMatch = onManualMatchDanmaku,
-                            onAdjustShift = { serviceId ->
-                                editingShiftServiceId = serviceId
-                            },
-                            modifier = Modifier.padding(horizontal = 8.dp),
-                            onSetTextConversion = onSetDanmakuTextConversion,
-                            onSetTextConversionGlobal = onSetDanmakuTextConversionGlobal,
-                            onResetTextConversionOverrides = onResetDanmakuTextConversionOverrides,
-                        )
-                    }
-                }
-            }
-        }
+            onSetDanmakuTextConversion = onSetDanmakuTextConversion,
+            onSetDanmakuTextConversionGlobal = onSetDanmakuTextConversionGlobal,
+            onResetDanmakuTextConversionOverrides = onResetDanmakuTextConversionOverrides,
+        )
     }
 
-    val editingShiftSource = editingShiftServiceId?.let { serviceId ->
-        danmakuStatistics.fetchResults.firstOrNull { it.serviceId == serviceId }
+    DanmakuTimeShiftEditor(
+        danmakuStatistics,
+        editingShiftServiceId,
+        onDismissRequest = { editingShiftServiceId = null },
+        onAdjustDanmakuSourceShift = onAdjustDanmakuSourceShift,
+    )
+}
+
+/**
+ * 打开相关推荐: 有链接时用浏览器打开, 否则推入条目详情; 同时记录点击事件.
+ */
+internal fun openSubjectRecommendation(
+    recommendation: SubjectRecommendation,
+    openBrowser: (uri: String) -> Unit,
+    navigator: AniNavigator,
+) {
+    val uri = recommendation.uri
+    val targetSubjectId = recommendation.subjectId?.toInt()
+    Analytics.recordEvent(SubjectRecommendationClick) {
+        targetSubjectId?.let { put("subject_id", it) }
+        uri?.let { put("target_uri", it) }
+    }
+    Analytics.recordEvent(SubjectEnter) {
+        put("source", "episode_recommendation")
+        targetSubjectId?.let { put("subject_id", it) }
+        uri?.let { put("target_uri", it) }
+    }
+    if (uri != null) {
+        openBrowser(uri)
+    } else if (targetSubjectId != null) {
+        navigator.navigateSubjectDetails(
+            targetSubjectId,
+            SubjectDetailPlaceholder(
+                id = targetSubjectId,
+                name = recommendation.name,
+                nameCN = recommendation.nameCn ?: "",
+                coverUrl = recommendation.imageUrl,
+            ),
+        )
+    }
+}
+
+/**
+ * 点番名打开的条目详情底部弹窗. 打开前调用 [EpisodeDetailsState.subjectDetailsStateLoader] 的 `load`.
+ */
+@Composable
+internal fun SubjectDetailsSheet(
+    state: EpisodeDetailsState,
+    selfInfo: SelfInfoUiState,
+    onPlay: (Int) -> Unit,
+    onClickTag: (Tag) -> Unit,
+    onEpisodeCollectionUpdate: (SetEpisodeCollectionTypeRequest) -> Unit,
+    onDismissRequest: () -> Unit,
+) {
+    if (state.subjectId == 0) return
+    val subjectDetailsState by state.subjectDetailsStateLoader.state
+        .collectAsStateWithLifecycle()
+    ModalBottomSheet(
+        onDismissRequest,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = currentWindowAdaptiveInfo1().isWidthAtLeastMedium),
+        modifier = Modifier.desktopTitleBarPadding().statusBarsPadding(),
+        contentWindowInsets = {
+            BottomSheetDefaults.windowInsets
+                .add(WindowInsets.desktopTitleBar())
+                .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
+        },
+    ) {
+        SubjectDetailsScreen(
+            subjectDetailsState,
+            selfInfo,
+            onPlay = onPlay,
+            onLoadErrorRetry = { state.subjectDetailsStateLoader.retry() },
+            onClickTag = onClickTag,
+            onEpisodeCollectionUpdate = onEpisodeCollectionUpdate,
+            showTopBar = false,
+            showBlurredBackground = false,
+        )
+    }
+}
+
+/**
+ * [serviceId] 不为 `null` 时, 打开该弹幕来源的时间偏移对话框.
+ */
+@Composable
+internal fun DanmakuTimeShiftEditor(
+    danmakuStatistics: DanmakuStatistics,
+    serviceId: DanmakuServiceId?,
+    onDismissRequest: () -> Unit,
+    onAdjustDanmakuSourceShift: (DanmakuServiceId, Long) -> Unit,
+) {
+    val editingShiftSource = serviceId?.let { id ->
+        danmakuStatistics.fetchResults.firstOrNull { it.serviceId == id }
     }
     if (editingShiftSource != null) {
         DanmakuTimeShiftDialog(
             serviceName = renderDanmakuServiceId(editingShiftSource.serviceId),
             currentShiftMillis = editingShiftSource.config.shiftMillis,
-            onDismissRequest = { editingShiftServiceId = null },
+            onDismissRequest = onDismissRequest,
             onConfirm = { newShift ->
                 onAdjustDanmakuSourceShift(editingShiftSource.serviceId, newShift)
-                editingShiftServiceId = null
+                onDismissRequest()
             },
         )
+    }
+}
+
+/**
+ * 窄屏的选择资料来源底部弹窗: 自动匹配、手动查找、BT 资源三种模式. 选中资源播放后关闭.
+ */
+@Composable
+internal fun CompactMediaSelectorSheet(
+    mediaSelectorMode: MediaSelectorMode,
+    onMediaSelectorModeChange: (MediaSelectorMode) -> Unit,
+    mediaSelectorState: MediaSelectorState,
+    sourceResults: MediaSourceResultListPresentation,
+    watchingEpisode: WatchingEpisode?,
+    fetchRequest: MediaFetchRequest?,
+    onFetchRequestChange: (MediaFetchRequest) -> Unit,
+    onRestartSource: (String) -> Unit,
+    manualBrowseState: ManualBrowseState,
+    onDismissRequest: () -> Unit,
+) {
+    val showBt = sourceResults.btSources.isNotEmpty()
+    ModalBottomSheet(
+        onDismissRequest,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        modifier = Modifier.desktopTitleBarPadding().statusBarsPadding(),
+        contentWindowInsets = {
+            BottomSheetDefaults.windowInsets
+                .add(WindowInsets.desktopTitleBar())
+                .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
+        },
+    ) {
+        val topBar = @Composable {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    stringResource(Lang.media_selector_sources),
+                    Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleLarge,
+                )
+                MediaSelectorModeChip(mediaSelectorMode, onMediaSelectorModeChange, showBt = showBt)
+            }
+        }
+        when (mediaSelectorMode) {
+            MediaSelectorMode.AUTO -> Column(Modifier.fillMaxWidth()) {
+                topBar()
+                AutoMatchPage(
+                    mediaSelectorState,
+                    onClickItem = {
+                        mediaSelectorState.select(it, SelectTrigger.MANUAL_AUTO_PAGE)
+                        onDismissRequest()
+                    },
+                    onRestartSource = onRestartSource,
+                    onRequestManualSearch = { onMediaSelectorModeChange(MediaSelectorMode.MANUAL) },
+                    modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(),
+                    scrollable = true,
+                )
+            }
+
+            MediaSelectorMode.MANUAL -> ManualBrowsePage(
+                manualBrowseState,
+                watchingEpisode,
+                onPlayed = onDismissRequest,
+                topBar = topBar,
+                modifier = Modifier.fillMaxSize(),
+            )
+
+            // Lazy 列表需要有界高度, 与下载对话框一样铺满 sheet.
+            MediaSelectorMode.BT -> Column(Modifier.fillMaxSize()) {
+                topBar()
+                BtResourcesPage(
+                    mediaSelectorState,
+                    sourceResults,
+                    watchingEpisode,
+                    fetchRequest,
+                    onFetchRequestChange,
+                    onClickItem = {
+                        mediaSelectorState.select(it, SelectTrigger.MANUAL_BT_PAGE)
+                        onDismissRequest()
+                    },
+                    onRestartSource = onRestartSource,
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * 窄屏的弹幕列表底部弹窗: 各弹幕来源的启用、手动匹配、时间偏移与繁简转换.
+ */
+@Composable
+internal fun DanmakuInfoSheet(
+    danmakuListState: DanmakuListState?,
+    onDismissRequest: () -> Unit,
+    onSetDanmakuSourceEnabled: (DanmakuServiceId, Boolean) -> Unit,
+    onManualMatchDanmaku: (DanmakuServiceId) -> Unit,
+    onAdjustShift: (DanmakuServiceId) -> Unit,
+    onSetDanmakuTextConversion: (DanmakuServiceId, DanmakuTextConversion?) -> Unit,
+    onSetDanmakuTextConversionGlobal: (DanmakuTextConversion) -> Unit,
+    onResetDanmakuTextConversionOverrides: () -> Unit,
+) {
+    ModalBottomSheet(
+        onDismissRequest,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
+        modifier = Modifier.desktopTitleBarPadding().statusBarsPadding(),
+        contentWindowInsets = {
+            BottomSheetDefaults.windowInsets
+                .add(WindowInsets.desktopTitleBar())
+                .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
+        },
+    ) {
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(bottom = 24.dp),
+        ) {
+            item("danmaku_info_sheet_title") {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "弹幕列表",
+                        Modifier.weight(1f),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                }
+            }
+
+            if (danmakuListState != null) {
+                item("danmaku_info_sheet_list") {
+                    DanmakuListContent(
+                        state = danmakuListState,
+                        onSetEnabled = onSetDanmakuSourceEnabled,
+                        onManualMatch = onManualMatchDanmaku,
+                        onAdjustShift = onAdjustShift,
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        onSetTextConversion = onSetDanmakuTextConversion,
+                        onSetTextConversionGlobal = onSetDanmakuTextConversionGlobal,
+                        onResetTextConversionOverrides = onResetDanmakuTextConversionOverrides,
+                    )
+                }
+            }
+        }
     }
 }
 

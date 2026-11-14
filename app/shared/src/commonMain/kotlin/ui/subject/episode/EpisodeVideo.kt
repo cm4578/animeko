@@ -211,6 +211,7 @@ internal const val TAG_EPISODE_SELECTOR_SHEET = "EpisodeSelectorSheet"
  * @param fullscreenState 全屏状态与全屏请求. 控制栏按钮、双击、F 键、上下滑手势全部走它
  * @param onClickScreenshot 点击截图按钮. 为 null 时不显示截图按钮, 即当前平台或播放器不支持截图
  * @param screenshotOverlay 截图反馈层, 见 [VideoScaffold] 的同名槽
+ * @param appleChrome 不为 `null` 时, 非全屏的顶栏、中央播放钮与控制列使用 Apple 版 (03 §3.7); 全屏沿用现有控制列.
  */
 @Composable
 internal fun EpisodeVideoImpl(
@@ -261,7 +262,10 @@ internal fun EpisodeVideoImpl(
     contentWindowInsets: WindowInsets = WindowInsets(0.dp),
     pictureInPictureController: PictureInPictureController = NoOpPictureInPictureController,
     isInPictureInPicture: Boolean = false,
+    appleChrome: AppleEpisodeVideoChrome? = null,
 ) {
+    // 只切换槽内容, 不改变 VideoScaffold 的组合结构, 进出全屏时视频节点不会重建.
+    val appleCompact = appleChrome != null && !expanded
     // Don't rememberSavable. 页面重建后都回到默认状态
     // 锁定按钮只在 expanded 时显示, 离开 expanded 时必须解锁, 否则无法再解除
     var isLocked by remember(expanded) { mutableStateOf(false) }
@@ -339,23 +343,41 @@ internal fun EpisodeVideoImpl(
             controllerState = playerControllerState,
             gestureLocked = isLocked,
             topBar = {
-                WindowDragArea {
-                    PlayerTopBar(
-                        Modifier.testTag(TAG_EPISODE_VIDEO_TOP_BAR),
-                        title = if (expanded) {
-                            { title() }
-                        } else {
-                            null
-                        },
-                        actions = {
-                            if (!verticalSplit) {
-                                topBarActions()
-                            }
-                        },
-                        // VideoScaffold already applies top/horizontal insets around the top bar.
-                        // Passing the same insets into TopAppBar duplicates the status-bar padding on iOS portrait.
-                        windowInsets = WindowInsets(0.dp),
+                if (appleCompact) {
+                    AppleEpisodeVideoTopBarHost(
+                        appleChrome,
+                        playerState = playerState,
+                        playerControllerState = playerControllerState,
+                        sheetsController = sheetsController,
+                        shareData = shareData,
+                        onClickCache = onClickCache,
+                        onClickWatchTogether = watchTogetherPlayerController::toggle,
+                        opEdSkipDuration = opEdSkipDuration,
+                        onClickSkipOpEd = onClickSkipOpEd,
+                        playerStatsVisible = showPlayerStats,
+                        onTogglePlayerStats = { showPlayerStats = !showPlayerStats },
+                        aspectRatio = videoAspectRatioControllerState,
+                        videoEnhancement = videoEnhancement,
                     )
+                } else {
+                    WindowDragArea {
+                        PlayerTopBar(
+                            Modifier.testTag(TAG_EPISODE_VIDEO_TOP_BAR),
+                            title = if (expanded) {
+                                { title() }
+                            } else {
+                                null
+                            },
+                            actions = {
+                                if (!verticalSplit) {
+                                    topBarActions()
+                                }
+                            },
+                            // VideoScaffold already applies top/horizontal insets around the top bar.
+                            // Passing the same insets into TopAppBar duplicates the status-bar padding on iOS portrait.
+                            windowInsets = WindowInsets(0.dp),
+                        )
+                    }
                 }
             },
             centerOverlay = if (expanded && LocalPlatform.current.isMobile()) {
@@ -433,6 +455,9 @@ internal fun EpisodeVideoImpl(
                     indicatorState,
                     fastForwardSpeed = fastForwardSpeed,
                 )
+                if (appleCompact) {
+                    AppleVideoPlayButtonHost(playerState, playerControllerState, videoLoadingStateFlow)
+                }
             },
             playerStatsOverlay = {
                 if (showPlayerStats) {
@@ -490,141 +515,165 @@ internal fun EpisodeVideoImpl(
                 }
             },
             bottomBar = {
-                PlayerControllerBar(
-                    startActions = {
-                        val playWhenReady by remember(playerState) { playerState.state.map { it.playWhenReady } }
-                            .collectAsStateWithLifecycle(false)
-                        val primaryActionModifier = if (verticalSplit) {
-                            val nextActionOffset = if (hasNextEpisode && expanded) 36.dp else 0.dp
-                            Modifier.offset(x = nextActionOffset).size(56.dp)
-                        } else {
-                            Modifier
-                        }
-                        PlayerControllerDefaults.PlaybackIcon(
-                            isPlaying = { playWhenReady },
-                            onClick = { playerState.togglePlayWhenReady() },
-                            modifier = primaryActionModifier,
-                        )
-
-                        if (hasNextEpisode && expanded) {
-                            PlayerControllerDefaults.NextEpisodeIcon(
-                                onClick = onClickNextEpisode,
+                if (appleCompact) {
+                    AppleEpisodeVideoControls(
+                        progressSlider = {
+                            AppleVideoProgressSlider(
+                                progressSliderState,
+                                cacheProgressInfoFlow,
+                                framePreview = framePreview,
+                                touchSeekState = touchSeekState,
+                            )
+                        },
+                        progressText = {
+                            MediaProgressIndicatorText(progressSliderState, playbackSpeedState = playbackSpeedControllerState)
+                        },
+                        danmakuEnabled = danmakuEnabled,
+                        onToggleDanmaku = onToggleDanmaku,
+                        isFullscreen = fullscreenState.isFullscreen,
+                        onToggleFullscreen = { fullscreenState.request(!fullscreenState.isFullscreen) },
+                        Modifier.weight(1f),
+                        controlsVisible = playerControllerState.visibility != ControllerVisibility.InlineSliderOnly,
+                    )
+                } else {
+                    PlayerControllerBar(
+                        startActions = {
+                            val playWhenReady by remember(playerState) { playerState.state.map { it.playWhenReady } }
+                                .collectAsStateWithLifecycle(false)
+                            val primaryActionModifier = if (verticalSplit) {
+                                val nextActionOffset = if (hasNextEpisode && expanded) 36.dp else 0.dp
+                                Modifier.offset(x = nextActionOffset).size(56.dp)
+                            } else {
+                                Modifier
+                            }
+                            PlayerControllerDefaults.PlaybackIcon(
+                                isPlaying = { playWhenReady },
+                                onClick = { playerState.togglePlayWhenReady() },
                                 modifier = primaryActionModifier,
                             )
-                        }
-                        if (!verticalSplit) {
-                            PlayerControllerDefaults.DanmakuIcon(
-                                danmakuEnabled,
-                                onClick = { onToggleDanmaku() },
-                            )
-                        }
 
-                        val audioLevelController = audioController as? MediampAudioLevelController
-                        // 用「有没有鼠标」而不是「此刻在用鼠标」: 后者会让这个常驻控件随输入方式反复显隐.
-                        val hasMouse = hasPointerDevice(
-                            LocalPlatform.current,
-                            LocalActiveInputSource.current.hasSeenMouse,
-                        )
-                        if (!verticalSplit && expanded && audioLevelController != null && hasMouse) {
-                            val level by audioLevelController.levelFlow.collectAsState()
-                            val isMute by audioLevelController.muteFlow.collectAsState()
+                            if (hasNextEpisode && expanded) {
+                                PlayerControllerDefaults.NextEpisodeIcon(
+                                    onClick = onClickNextEpisode,
+                                    modifier = primaryActionModifier,
+                                )
+                            }
+                            if (!verticalSplit) {
+                                PlayerControllerDefaults.DanmakuIcon(
+                                    danmakuEnabled,
+                                    onClick = { onToggleDanmaku() },
+                                )
+                            }
 
-                            PlayerControllerDefaults.AudioIcon(
-                                level,
-                                isMute = isMute,
-                                maxValue = audioLevelController.range.endInclusive,
-                                onClick = {
-                                    audioLevelController.toggleMute()
-                                },
-                                onchange = {
-                                    audioLevelController.setLevel(it)
-                                },
-                                controllerState = playerControllerState,
+                            val audioLevelController = audioController as? MediampAudioLevelController
+                            // 用「有没有鼠标」而不是「此刻在用鼠标」: 后者会让这个常驻控件随输入方式反复显隐.
+                            val hasMouse = hasPointerDevice(
+                                LocalPlatform.current,
+                                LocalActiveInputSource.current.hasSeenMouse,
                             )
-                        }
-                    },
-                    progressIndicator = {
-                        MediaProgressIndicatorText(
-                            progressSliderState,
-                            playbackSpeedState = playbackSpeedControllerState,
-                        )
-                    },
-                    progressSlider = {
-                        PlayerControllerDefaults.MediaProgressSlider(
-                            progressSliderState,
-                            cacheProgressInfoFlow = cacheProgressInfoFlow,
-                            showPreviewTimeTextOnThumb = expanded,
-                            framePreview = framePreview,
-                            showFramePreviewInPopup = expanded,
-                            touchSeekState = touchSeekState,
-                        )
-                    },
-                    danmakuEditor = {
-                        if (verticalSplit) {
-                            PlayerControllerDefaults.DanmakuIcon(
-                                danmakuEnabled,
-                                onClick = { onToggleDanmaku() },
-                            )
-                        }
-                        danmakuEditor()
-                    },
-                    endActions = {
-                        // 仅 Android 显示小窗按钮: Android 小窗是整机窗口采集, 按钮是除系统手势外的
-                        // 重要入口; iOS 小窗的主入口是系统手势 (上滑回桌面自动进入), 且按钮 enabled
-                        // 依赖 isPictureInPicturePossible, 其在部分机型上翻转不及时, 灰态观感差, 故不在 iOS 显示
-                        if (LocalPlatform.current.isAndroid() && pictureInPictureController.isSupported) {
-                            val pipPossible by pictureInPictureController.isPictureInPicturePossible
-                                .collectAsStateWithLifecycle()
-                            val mediaLoaded by remember(playerState) {
-                                playerState.state.map { it.isMediaLoaded }
-                            }.collectAsStateWithLifecycle(false)
-                            PlayerControllerDefaults.PictureInPictureIcon(
-                                enabled = pipPossible && mediaLoaded,
-                                onClick = { pictureInPictureController.enterPictureInPicture() },
-                            )
-                        }
+                            if (!verticalSplit && expanded && audioLevelController != null && hasMouse) {
+                                val level by audioLevelController.levelFlow.collectAsState()
+                                val isMute by audioLevelController.muteFlow.collectAsState()
 
-                        if (expanded) {
-                            PlayerControllerDefaults.SelectEpisodeIcon(
-                                onClick = { sheetsController.navigateTo(EpisodeVideoSideSheetPage.EPISODE_SELECTOR) },
+                                PlayerControllerDefaults.AudioIcon(
+                                    level,
+                                    isMute = isMute,
+                                    maxValue = audioLevelController.range.endInclusive,
+                                    onClick = {
+                                        audioLevelController.toggleMute()
+                                    },
+                                    onchange = {
+                                        audioLevelController.setLevel(it)
+                                    },
+                                    controllerState = playerControllerState,
+                                )
+                            }
+                        },
+                        progressIndicator = {
+                            MediaProgressIndicatorText(
+                                progressSliderState,
+                                playbackSpeedState = playbackSpeedControllerState,
                             )
+                        },
+                        progressSlider = {
+                            PlayerControllerDefaults.MediaProgressSlider(
+                                progressSliderState,
+                                cacheProgressInfoFlow = cacheProgressInfoFlow,
+                                showPreviewTimeTextOnThumb = expanded,
+                                framePreview = framePreview,
+                                showFramePreviewInPopup = expanded,
+                                touchSeekState = touchSeekState,
+                            )
+                        },
+                        danmakuEditor = {
+                            if (verticalSplit) {
+                                PlayerControllerDefaults.DanmakuIcon(
+                                    danmakuEnabled,
+                                    onClick = { onToggleDanmaku() },
+                                )
+                            }
+                            danmakuEditor()
+                        },
+                        endActions = {
+                            // 仅 Android 显示小窗按钮: Android 小窗是整机窗口采集, 按钮是除系统手势外的
+                            // 重要入口; iOS 小窗的主入口是系统手势 (上滑回桌面自动进入), 且按钮 enabled
+                            // 依赖 isPictureInPicturePossible, 其在部分机型上翻转不及时, 灰态观感差, 故不在 iOS 显示
+                            if (LocalPlatform.current.isAndroid() && pictureInPictureController.isSupported) {
+                                val pipPossible by pictureInPictureController.isPictureInPicturePossible
+                                    .collectAsStateWithLifecycle()
+                                val mediaLoaded by remember(playerState) {
+                                    playerState.state.map { it.isMediaLoaded }
+                                }.collectAsStateWithLifecycle(false)
+                                PlayerControllerDefaults.PictureInPictureIcon(
+                                    enabled = pipPossible && mediaLoaded,
+                                    onClick = { pictureInPictureController.enterPictureInPicture() },
+                                )
+                            }
 
-                            if (LocalPlatform.current.isDesktop()) {
-                                playerState.audioTracks?.let {
-                                    PlayerControllerDefaults.AudioSwitcher(it)
+                            if (expanded) {
+                                PlayerControllerDefaults.SelectEpisodeIcon(
+                                    onClick = { sheetsController.navigateTo(EpisodeVideoSideSheetPage.EPISODE_SELECTOR) },
+                                )
+
+                                if (LocalPlatform.current.isDesktop()) {
+                                    playerState.audioTracks?.let {
+                                        PlayerControllerDefaults.AudioSwitcher(it)
+                                    }
                                 }
-                            }
 
-                            playerState.subtitleTracks?.let {
-                                PlayerControllerDefaults.SubtitleSwitcher(it)
-                            }
+                                playerState.subtitleTracks?.let {
+                                    PlayerControllerDefaults.SubtitleSwitcher(it)
+                                }
 
-                            val playbackSpeedAlwaysOnRequester =
-                                rememberAlwaysOnRequester(playerControllerState, "speedSwitcher")
-                            playbackSpeedControllerState?.also { controller ->
-                                SpeedSwitcher(controller) {
-                                    if (it) {
-                                        playbackSpeedAlwaysOnRequester.request()
-                                    } else {
-                                        playbackSpeedAlwaysOnRequester.cancelRequest()
+                                val playbackSpeedAlwaysOnRequester =
+                                    rememberAlwaysOnRequester(playerControllerState, "speedSwitcher")
+                                playbackSpeedControllerState?.also { controller ->
+                                    SpeedSwitcher(controller) {
+                                        if (it) {
+                                            playbackSpeedAlwaysOnRequester.request()
+                                        } else {
+                                            playbackSpeedAlwaysOnRequester.cancelRequest()
+                                        }
                                     }
                                 }
                             }
-                        }
-                        PlayerControllerDefaults.FullscreenIcon(fullscreenState)
-                    },
-                    expanded = expanded,
-                    topActions = topBarActions,
-                    layout = if (verticalSplit) {
-                        PlayerControllerBarLayout.VerticalSplit
-                    } else {
-                        PlayerControllerBarLayout.Standard
-                    },
-                    sliderOnly = playerControllerState.visibility == ControllerVisibility.InlineSliderOnly,
-                )
+                            PlayerControllerDefaults.FullscreenIcon(fullscreenState)
+                        },
+                        expanded = expanded,
+                        topActions = topBarActions,
+                        layout = if (verticalSplit) {
+                            PlayerControllerBarLayout.VerticalSplit
+                        } else {
+                            PlayerControllerBarLayout.Standard
+                        },
+                        sliderOnly = playerControllerState.visibility == ControllerVisibility.InlineSliderOnly,
+                    )
+                }
             },
             detachedProgressSlider = detachedProgressSlider,
-            floatingBottomEnd = { fullscreenSwitchButton() },
+            floatingBottomEnd = {
+                if (!appleCompact) fullscreenSwitchButton()
+            },
             rhsSheet = { sideSheets(sheetsController) },
             leftBottomTips = leftBottomTips,
         )

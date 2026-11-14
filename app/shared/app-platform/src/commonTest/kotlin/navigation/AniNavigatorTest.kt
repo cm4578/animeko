@@ -69,7 +69,7 @@ class AniNavigatorTest {
     @Test
     fun `popBackStack targets the nearest matching route`() {
         val episode = NavRoutes.EpisodeDetail(1, 2)
-        val navigator = navigatorWith(main, episode, NavRoutes.Caches, episode, NavRoutes.Schedule)
+        val navigator = navigatorWith(main, episode, NavRoutes.Caches, episode, NavRoutes.Schedule())
         navigator.popBackStack(episode, inclusive = true)
 
         assertEquals(listOf(main, episode, NavRoutes.Caches), navigator.backStack)
@@ -78,7 +78,7 @@ class AniNavigatorTest {
     @Test
     fun `popBackStack does nothing when the route is absent`() {
         val navigator = navigatorWith(main, NavRoutes.Caches)
-        navigator.popBackStack(NavRoutes.Schedule, inclusive = true)
+        navigator.popBackStack(NavRoutes.Schedule(), inclusive = true)
 
         assertEquals(listOf(main, NavRoutes.Caches), navigator.backStack)
     }
@@ -119,7 +119,7 @@ class AniNavigatorTest {
     @Test
     fun `popBackOrNavigateToMain pops back to the first Main`() {
         val secondMain = NavRoutes.Main(MainScreenPage.Collection)
-        val navigator = navigatorWith(main, NavRoutes.Caches, secondMain, NavRoutes.Schedule)
+        val navigator = navigatorWith(main, NavRoutes.Caches, secondMain, NavRoutes.Schedule())
         navigator.popBackOrNavigateToMain(MainScreenPage.CacheManagement)
 
         assertEquals(listOf(main), navigator.backStack)

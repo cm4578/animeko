@@ -19,12 +19,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -40,6 +44,8 @@ import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
@@ -60,6 +66,7 @@ import me.him188.ani.app.ui.foundation.theme.AniTextStyles
  * 手机圆角 14、宽 232. macOS 圆角 10、内距 5、宽 232 (可用 [modifier] 改为 220–232).
  *
  * 放在锚点元素所在的 `Box` 内. 菜单的右缘与锚点对齐, 显示在锚点下方 8; 下方空间不足时显示在上方.
+ * 菜单最高 [ApplePopoverMenuDefaults.MaxHeight], 项目更多时在菜单内滚动.
  * 点菜单外或按返回键 (macOS 为 Esc) 时调用 [onDismissRequest].
  */
 @Composable
@@ -89,6 +96,7 @@ fun ApplePopoverMenu(
             Column(
                 modifier
                     .width(ApplePopoverMenuDefaults.Width)
+                    .heightIn(max = ApplePopoverMenuDefaults.MaxHeight)
                     .dropShadow(
                         shape,
                         Shadow(radius = 24.dp, color = AniColors.floatingShadowColor, offset = DpOffset(0.dp, 8.dp)),
@@ -96,6 +104,7 @@ fun ApplePopoverMenu(
                     .clip(shape)
                     .background(MaterialTheme.colorScheme.surfaceContainer)
                     .border(1.dp, AniColors.floatingBorder, shape)
+                    .verticalScroll(rememberScrollState())
                     .padding(if (mac) 5.dp else 0.dp),
                 content = content,
             )
@@ -111,6 +120,7 @@ fun ApplePopoverMenu(
  * 悬停的行为 accentFill 底 + onAccentFill 文字. 分隔线左右各缩进 10.
  *
  * @param value 当前值, 行尾显示 accent W600 文字 + `›` (例如「追番状态 在看 ›」).
+ * @param checked 单选项是否选中. 不为 `null` 时, 图标位置显示 accent 勾号 (未选中则留空), 同组的行文字对齐; [icon] 不显示.
  * @param shortcut macOS 的快捷键提示, 例如「⌘I」. 只写 05 C2 批准的快捷键. 手机不显示.
  * @param showDivider 在行上方画分隔线. 用于分组的第一行.
  */
@@ -124,9 +134,10 @@ fun PopoverMenuItem(
     shortcut: String? = null,
     showDivider: Boolean = false,
     enabled: Boolean = true,
+    checked: Boolean? = null,
 ) {
     if (isMacStyle) {
-        MacPopoverMenuItem(text, onClick, modifier, icon, value, shortcut, showDivider, enabled)
+        MacPopoverMenuItem(text, onClick, modifier, icon, value, shortcut, showDivider, enabled, checked)
         return
     }
     Box(modifier.fillMaxWidth()) {
@@ -136,11 +147,14 @@ fun PopoverMenuItem(
                 .height(48.dp)
                 .alpha(if (enabled) 1f else AppleComponentDefaults.DisabledAlpha)
                 .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+                .then(if (checked != null) Modifier.semantics { selected = checked } else Modifier)
                 .padding(start = 16.dp, end = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (icon != null) {
+            if (checked != null) {
+                CheckSlot(checked, Modifier.size(20.dp), MaterialTheme.colorScheme.primary)
+            } else if (icon != null) {
                 Icon(icon, contentDescription = null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurface)
             }
             Text(
@@ -188,6 +202,7 @@ private fun MacPopoverMenuItem(
     shortcut: String?,
     showDivider: Boolean,
     enabled: Boolean,
+    checked: Boolean?,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val highlighted = enabled && interactionSource.collectIsHoveredAsState().value
@@ -220,11 +235,18 @@ private fun MacPopoverMenuItem(
                     role = Role.Button,
                     onClick = onClick,
                 )
+                .then(if (checked != null) Modifier.semantics { selected = checked } else Modifier)
                 .padding(start = 10.dp, end = if (icon != null) 8.dp else 10.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (icon != null) {
+            if (checked != null) {
+                CheckSlot(
+                    checked,
+                    Modifier.size(16.dp),
+                    if (highlighted) AniColors.onAccentFill else MaterialTheme.colorScheme.primary,
+                )
+            } else if (icon != null) {
                 Icon(icon, contentDescription = null, Modifier.size(16.dp), tint = labelColor)
             }
             Text(
@@ -257,8 +279,23 @@ private fun MacPopoverMenuItem(
     }
 }
 
+/**
+ * 单选项的勾号位置: 选中时画勾, 未选中时留空.
+ */
+@Composable
+private fun CheckSlot(checked: Boolean, modifier: Modifier, color: Color) {
+    Box(modifier, contentAlignment = Alignment.Center) {
+        if (checked) {
+            Icon(AppleIcons.check(2.4f), contentDescription = null, Modifier.fillMaxSize(), tint = color)
+        }
+    }
+}
+
 object ApplePopoverMenuDefaults {
     val Width = 232.dp
+
+    /** 菜单的最大高度, 约 10 列; 更多时在菜单内滚动. */
+    val MaxHeight = 480.dp
 
     /** 弹出窗口四周为阴影留出的空间. */
     val ShadowPadding = 32.dp

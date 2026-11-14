@@ -298,7 +298,8 @@ private fun MainScreenNavigationLayout(
                         onDoubleClick = {
                             scope.launch {
                                 when (entry) {
-                                    MainScreenPage.Exploration ->
+                                    // Profile 只在 iOS 显示, iOS 不使用本画面
+                                    MainScreenPage.Exploration, MainScreenPage.Profile ->
                                         explorationPageViewModel.explorationPageState.pageScrollState.animateScrollToItem(
                                             0,
                                         )
@@ -346,7 +347,8 @@ private fun MainScreenNavigationLayout(
                 },
             ) { page ->
                 when (page) {
-                    MainScreenPage.Exploration -> {
+                    // Profile 只在 iOS 显示, iOS 不使用本画面
+                    MainScreenPage.Exploration, MainScreenPage.Profile -> {
                         ExplorationScreen(
                             explorationPageViewModel.explorationPageState,
                             selfInfo,
@@ -470,7 +472,7 @@ internal fun BottomNotifierStack(
 }
 
 @Composable
-private fun BoxScope.UpdateNotifierWithVersionExpiryCheck() {
+internal fun BoxScope.UpdateNotifierWithVersionExpiryCheck() {
     // Force check when version expired
     val updateVm = viewModel { AppUpdateViewModel() }
     val versionExpiryService = remember { KoinPlatform.getKoin().get<VersionExpiryService>() }
