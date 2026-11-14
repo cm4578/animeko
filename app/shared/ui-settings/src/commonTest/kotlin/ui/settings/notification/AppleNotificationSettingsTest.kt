@@ -14,15 +14,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ComposeUiTest
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import me.him188.ani.app.data.models.preference.NotificationSettings
 import me.him188.ani.app.ui.foundation.LocalPlatform
 import me.him188.ani.app.ui.foundation.ProvideCompositionLocalsForPreview
@@ -32,6 +35,8 @@ import me.him188.ani.app.ui.lang.Lang
 import me.him188.ani.app.ui.lang.notification_center_title
 import me.him188.ani.app.ui.lang.notification_settings_announcement_description
 import me.him188.ani.app.ui.lang.notification_settings_announcement_description_apple
+import me.him188.ani.app.ui.lang.notification_settings_group_interaction
+import me.him188.ani.app.ui.lang.notification_settings_group_system
 import me.him188.ani.app.ui.lang.notification_settings_system_group_description
 import me.him188.ani.app.ui.lang.notification_unread_count
 import me.him188.ani.app.ui.settings.framework.SettingsState
@@ -113,8 +118,28 @@ class AppleNotificationSettingsTest {
     }
 
     @Test
+    fun `interaction group comes first and switches comment replies`() = runAniComposeUiTest {
+        val page = showIos {
+            mapOf(
+                "interaction" to stringResource(Lang.notification_settings_group_interaction),
+                "system" to stringResource(Lang.notification_settings_group_system),
+            )
+        }
+        val interactionTop = onNodeWithText(page.texts.getValue("interaction")).fetchSemanticsNode().boundsInRoot.top
+        val systemTop = onNodeWithText(page.texts.getValue("system")).fetchSemanticsNode().boundsInRoot.top
+        val replyTop = onNodeWithTag(NotificationSettingsTestTags.COMMENT_REPLY).fetchSemanticsNode().boundsInRoot.top
+        assertTrue(interactionTop < replyTop)
+        assertTrue(replyTop < systemTop)
+
+        onNodeWithTag(NotificationSettingsTestTags.COMMENT_REPLY).assertIsOn().performClick()
+        waitUntil { !page.state.value.showCommentReplies }
+        assertEquals(NotificationSettings(showCommentReplies = false), page.state.value)
+    }
+
+    @Test
     fun `switches show the saved settings`() = runAniComposeUiTest {
-        showIos(NotificationSettings(showAccountSecurity = false, showAnnouncementDot = false))
+        showIos(NotificationSettings(showAccountSecurity = false, showAnnouncementDot = false, showCommentReplies = false))
+        onNodeWithTag(NotificationSettingsTestTags.COMMENT_REPLY).assertIsOff()
         onNodeWithTag(NotificationSettingsTestTags.REPORT_RESULT).assertIsOn()
         onNodeWithTag(NotificationSettingsTestTags.ACCOUNT_SECURITY).assertIsOff()
         onNodeWithTag(NotificationSettingsTestTags.ANNOUNCEMENT).assertIsOff()
@@ -129,7 +154,8 @@ class AppleNotificationSettingsTest {
                 "other" to stringResource(Lang.notification_settings_announcement_description),
             )
         }
-        onNodeWithText(page.texts.getValue("system")).assertExists()
+        // 「互動」与「系統」两组的说明相同
+        onAllNodesWithText(page.texts.getValue("system")).assertCountEquals(2)
         onNodeWithText(page.texts.getValue("apple")).assertExists()
         onNodeWithText(page.texts.getValue("other")).assertDoesNotExist()
     }
@@ -147,7 +173,8 @@ class AppleNotificationSettingsTest {
             .assertTextContains(page.texts.getValue("unread"))
             .performClick()
         assertEquals(1, page.notifications)
-        // 窗格也有两组开关
+        // 窗格也有三组开关
+        onNodeWithTag(NotificationSettingsTestTags.COMMENT_REPLY).assertIsOn()
         onNodeWithTag(NotificationSettingsTestTags.REPORT_RESULT).assertIsOn()
         onNodeWithTag(NotificationSettingsTestTags.ANNOUNCEMENT).assertIsOn()
     }

@@ -47,7 +47,9 @@ import me.him188.ani.app.ui.lang.notification_settings
 import me.him188.ani.app.ui.lang.notification_settings_account_security_item
 import me.him188.ani.app.ui.lang.notification_settings_announcement_description_apple
 import me.him188.ani.app.ui.lang.notification_settings_announcement_item
+import me.him188.ani.app.ui.lang.notification_settings_comment_reply_item
 import me.him188.ani.app.ui.lang.notification_settings_group_announcements
+import me.him188.ani.app.ui.lang.notification_settings_group_interaction
 import me.him188.ani.app.ui.lang.notification_settings_group_system
 import me.him188.ani.app.ui.lang.notification_settings_report_result_item
 import me.him188.ani.app.ui.lang.notification_settings_system_group_description
@@ -111,15 +113,26 @@ fun AppleNotificationSettingsScreen(
 }
 
 /**
- * 「系統」与「公告」两组 (03 §4.10, 04 §4.7): C6 列不放图标方块, 行尾为开关, 组说明在卡片下方.
- * iOS 通知设定页与 macOS 设定窗口的「通知」窗格共用. 两组之间的间距由调用处排列 ([GroupedListDefaults.SectionSpacing]).
+ * 「互動」「系統」「公告」三组, 顺序同其他平台的通知设定 (03 §4.10, 04 §4.7, 05 G59): C6 列不放图标方块, 行尾为开关,
+ * 组说明在卡片下方. iOS 通知设定页与 macOS 设定窗口的「通知」窗格共用. 组之间的间距由调用处排列 ([GroupedListDefaults.SectionSpacing]).
  *
- * 举报结果和账号安全各有一个开关, 关闭后本机不显示也不统计这类通知; 公告只控制未读提示点.
- * 公告组的说明用 Apple 平台的字串: 其他平台的说明提到的头像红点在 Apple 平台没有 (05 §8.3).
+ * 评论被回复、举报结果和账号安全各有一个开关, 关闭后本机不显示也不统计这类通知, 「互動」与「系統」两组的说明相同;
+ * 公告只控制未读提示点. 公告组的说明用 Apple 平台的字串: 其他平台的说明提到的头像红点在 Apple 平台没有 (05 §8.3).
  */
 @Composable
 fun AppleNotificationSettingsGroups(state: SettingsState<NotificationSettings>) {
     val settings by state
+    GroupedListSection(
+        title = stringResource(Lang.notification_settings_group_interaction),
+        footer = stringResource(Lang.notification_settings_system_group_description),
+    ) {
+        SettingsSwitchRow(
+            stringResource(Lang.notification_settings_comment_reply_item),
+            checked = settings.showCommentReplies,
+            onCheckedChange = { state.update(settings.copy(showCommentReplies = it)) },
+            Modifier.testTag(NotificationSettingsTestTags.COMMENT_REPLY),
+        )
+    }
     GroupedListSection(
         title = stringResource(Lang.notification_settings_group_system),
         footer = stringResource(Lang.notification_settings_system_group_description),
