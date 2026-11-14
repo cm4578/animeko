@@ -48,10 +48,12 @@ fun Modifier.onBackNavigationInput(onBack: () -> Unit): Modifier =
  * another window (the image viewer) that closed itself on key-down and let the key-up land on the
  * window behind it. Without this rule closing the image viewer with Escape also popped the page.
  *
- * Besides [onBackNavigationInput], this is also used as the window-level fallback on desktop: Compose
- * Desktop forwards an Escape that no node consumed straight into Navigation 3's back dispatcher,
- * which pops the page and bypasses every [BackHandler] (fullscreen, image viewer, ...). Routing the
- * unconsumed key through the app's own dispatcher instead keeps both paths consistent.
+ * Besides [onBackNavigationInput], this is also used as the window-level fallback on desktop, for an
+ * Escape that no node consumed, including one pressed in a focusable popup or dialog that does not
+ * handle it. Compose Desktop would forward such an Escape to the window's navigation event dispatcher,
+ * where Navigation 3 pops the page and bypasses every [BackHandler] (fullscreen, image viewer, ...).
+ * Routing it through the app's own dispatcher instead keeps both paths consistent; on desktop that
+ * dispatcher gives the back press to the topmost popup or dialog first.
  */
 class BackKeyEventHandler {
     private var escapePressed = false
