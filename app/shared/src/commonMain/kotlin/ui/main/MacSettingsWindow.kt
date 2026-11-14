@@ -89,7 +89,7 @@ class MacSettingsWindowState {
 }
 
 /**
- * macOS 设定窗口的宿主, 由 app-desktop 提供: 窗口取用 `LocalSecondaryWindowFrame`, 并接上 App 菜单的「设定…」(⌘,).
+ * macOS 设定窗口的宿主, 由 app-desktop 提供: 窗口取用 `LocalSecondaryWindowFrame`, 并接上 App 菜单的「Preferences…」(⌘,).
  *
  * 没有宿主 (其他平台、UI 测试) 时, 设定在主窗口内打开.
  */
