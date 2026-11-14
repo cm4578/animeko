@@ -36,6 +36,7 @@ internal fun DownloadSnapshot.toDownloadItem(
         stats = DownloadItem.Stats(downloadSpeed, progress, totalSize),
         status = toDownloadStatus(status),
         playbackProgress = history.toPlaybackProgress(),
+        playbackPositionMillis = history.toPlaybackPositionMillis(),
         engineKey = engineKey,
         subjectCollectionType = collectionType,
         playability = when {
@@ -46,6 +47,14 @@ internal fun DownloadSnapshot.toDownloadItem(
         mediaSourceId = mediaSourceId,
         isBusy = isBusy,
     )
+}
+
+/**
+ * 播放历史中的播放位置. 没有播放历史、已删除或没有播放过 (位置为 0) 时为 `null`.
+ */
+internal fun EpisodeHistory?.toPlaybackPositionMillis(): Long? {
+    if (this == null || isDeleted || positionMillis <= 0L) return null
+    return positionMillis
 }
 
 internal fun EpisodeHistory?.toPlaybackProgress(): Progress {

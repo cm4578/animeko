@@ -410,7 +410,7 @@ internal fun MacSubjectDownloadsLayout(
                                         sourceInfoProvider.rememberMediaSourceInfo(it).value?.displayName
                                     },
                                     watchStatus = if (download.isFinished) {
-                                        downloadWatchStatusText(download, state.episodeCollectionTypes[download.episodeId])
+                                        macDownloadWatchStatusText(download, state.episodeCollectionTypes[download.episodeId])
                                     } else {
                                         null
                                     },

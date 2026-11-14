@@ -51,6 +51,8 @@ import me.him188.ani.app.ui.foundation.navigation.OnBackPressedDispatcher
 import me.him188.ani.app.ui.framework.runAniComposeUiTest
 import me.him188.ani.app.ui.lang.Lang
 import me.him188.ani.app.ui.lang.cache_episode_download_failed
+import me.him188.ani.app.ui.lang.cache_episode_watched_position
+import me.him188.ani.app.ui.lang.cache_filter_collection_done
 import me.him188.ani.app.ui.lang.cache_table_speed
 import me.him188.ani.app.ui.mediafetch.createTestMediaSourceInfoProvider
 import me.him188.ani.utils.platform.Arch
@@ -71,6 +73,8 @@ class MacSubjectDownloadsPageTest {
         var openedSubject = 0
         var speedLabel = ""
         var failedLabel = ""
+        var watchedPositionLabel = ""
+        var doneLabel = ""
         var dispatcher: OnBackPressedDispatcher? = null
     }
 
@@ -82,6 +86,8 @@ class MacSubjectDownloadsPageTest {
                 CompositionLocalProvider(LocalPlatform provides Platform.MacOS(Arch.AARCH64)) {
                     page.speedLabel = stringResource(Lang.cache_table_speed)
                     page.failedLabel = stringResource(Lang.cache_episode_download_failed)
+                    page.watchedPositionLabel = stringResource(Lang.cache_episode_watched_position, "12:05")
+                    page.doneLabel = stringResource(Lang.cache_filter_collection_done)
                     page.dispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
                     MacSubjectDownloadsLayout(
                         state,
@@ -302,5 +308,22 @@ class MacSubjectDownloadsPageTest {
             .assertTextContains(page.failedLabel, substring = true)
         onNodeWithTag(MacSubjectDownloadsTestTags.pause(TestSubjectDownloads.failed.id)).assertDoesNotExist()
         onNodeWithTag(MacSubjectDownloadsTestTags.resume(TestSubjectDownloads.failed.id)).assertDoesNotExist()
+    }
+
+    @Test
+    fun `finished rows show the watched position or the watch status`() = runAniComposeUiTest {
+        val watched = TestSubjectDownloads.finished2.copy(playbackPositionMillis = 725_000)
+        val page = setPage(
+            TestSubjectDownloads.state(
+                downloads = TestSubjectDownloads.downloads.map { if (it.id == watched.id) watched else it },
+            ),
+        )
+        onNodeWithTag(MacSubjectDownloadsTestTags.row(watched.id))
+            .onChildren().filterToOne(hasClickAction())
+            .assertTextContains(page.watchedPositionLabel, substring = true)
+        // 第 1 集标为看过, 显示「看过」
+        onNodeWithTag(MacSubjectDownloadsTestTags.row(TestSubjectDownloads.finished1.id))
+            .onChildren().filterToOne(hasClickAction())
+            .assertTextContains(page.doneLabel, substring = true)
     }
 }

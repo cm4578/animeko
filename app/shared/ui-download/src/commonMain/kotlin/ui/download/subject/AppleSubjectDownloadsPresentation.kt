@@ -17,6 +17,7 @@ import me.him188.ani.app.ui.download.components.DownloadStatus
 import me.him188.ani.app.ui.download.components.renderFileSize
 import me.him188.ani.app.ui.foundation.widgets.LocalToaster
 import me.him188.ani.app.ui.lang.Lang
+import me.him188.ani.app.ui.lang.cache_episode_watched_position
 import me.him188.ani.app.ui.lang.cache_episode_watched_progress
 import me.him188.ani.app.ui.lang.cache_filter_collection_done
 import me.him188.ani.app.ui.lang.cache_filter_collection_dropped
@@ -167,6 +168,31 @@ internal fun downloadWatchStatusText(download: DownloadItem, collectionType: Uni
         UnifiedCollectionType.DROPPED -> stringResource(Lang.cache_filter_collection_dropped)
         else -> download.playbackProgressText?.let { stringResource(Lang.cache_episode_watched_progress, it) }
     }
+
+/**
+ * macOS 已完成的下载的观看状态 (04 §4.3): 剧集标为看过时为「看过」, 抛弃时为「抛弃」, 有播放位置时为「看到 12:05」.
+ * 都没有时为 `null`. 播放位置来自与「已观看 N%」相同的播放历史.
+ */
+@Composable
+internal fun macDownloadWatchStatusText(download: DownloadItem, collectionType: UnifiedCollectionType?): String? =
+    when (collectionType) {
+        UnifiedCollectionType.DONE -> stringResource(Lang.cache_filter_collection_done)
+        UnifiedCollectionType.DROPPED -> stringResource(Lang.cache_filter_collection_dropped)
+        else -> download.playbackPositionMillis?.let {
+            stringResource(Lang.cache_episode_watched_position, formatPlaybackPosition(it))
+        }
+    }
+
+/**
+ * 播放位置的文字: 不到一小时为「分:秒」, 例如 12:05; 一小时以上为「时:分:秒」, 例如 1:02:03.
+ */
+internal fun formatPlaybackPosition(millis: Long): String {
+    val totalSeconds = millis.coerceAtLeast(0L) / 1000
+    val hours = totalSeconds / 3600
+    val minutes = totalSeconds % 3600 / 60
+    val seconds = (totalSeconds % 60).toString().padStart(2, '0')
+    return if (hours > 0) "$hours:${minutes.toString().padStart(2, '0')}:$seconds" else "$minutes:$seconds"
+}
 
 /**
  * 尚未下载的剧集的观看状态: 看过或抛弃; 其余为 `null`. 同既有的剧集行.

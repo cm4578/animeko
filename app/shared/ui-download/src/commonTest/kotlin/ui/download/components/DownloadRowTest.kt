@@ -41,4 +41,18 @@ class DownloadRowTest {
         assertEquals(Progress.Unspecified, history.copy(durationMillis = 0).toPlaybackProgress())
         assertEquals(Progress.Unspecified, history.copy(deletedAtMillis = 1).toPlaybackProgress())
     }
+
+    @Test
+    fun `playback position is kept without requiring a duration`() {
+        val history = EpisodeHistory(
+            episodeId = 1,
+            positionMillis = 725_000,
+            durationMillis = null,
+        )
+
+        assertEquals(725_000L, history.toPlaybackPositionMillis())
+        assertEquals(null, null.toPlaybackPositionMillis())
+        assertEquals(null, history.copy(positionMillis = 0).toPlaybackPositionMillis())
+        assertEquals(null, history.copy(deletedAtMillis = 1).toPlaybackPositionMillis())
+    }
 }
