@@ -11,7 +11,6 @@ package me.him188.ani.app.ui.download
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
@@ -54,13 +53,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -72,7 +68,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -95,12 +90,15 @@ import me.him188.ani.app.ui.download.components.renderSortOption
 import me.him188.ani.app.ui.download.components.renderSpeed
 import me.him188.ani.app.ui.foundation.AsyncImage
 import me.him188.ani.app.ui.foundation.apple.AppleCircleButton
-import me.him188.ani.app.ui.foundation.apple.AppleComponentDefaults
 import me.him188.ani.app.ui.foundation.apple.AppleCover
 import me.him188.ani.app.ui.foundation.apple.AppleDivider
 import me.him188.ani.app.ui.foundation.apple.AppleIcons
 import me.him188.ani.app.ui.foundation.apple.AppleModalBottomSheet
 import me.him188.ani.app.ui.foundation.apple.AppleProgressBar
+import me.him188.ani.app.ui.foundation.apple.AppleSelectionCircle
+import me.him188.ani.app.ui.foundation.apple.AppleSelectionToolbar
+import me.him188.ani.app.ui.foundation.apple.AppleSelectionToolbarAction
+import me.him188.ani.app.ui.foundation.apple.AppleSelectionToolbarDefaults
 import me.him188.ani.app.ui.foundation.apple.AppleTextButton
 import me.him188.ani.app.ui.foundation.apple.CoverAspect
 import me.him188.ani.app.ui.foundation.apple.GroupedListDefaults
@@ -109,7 +107,6 @@ import me.him188.ani.app.ui.foundation.apple.LargeTitleHeader
 import me.him188.ani.app.ui.foundation.apple.PillTab
 import me.him188.ani.app.ui.foundation.apple.SettingsRow
 import me.him188.ani.app.ui.foundation.layout.AniWindowInsets
-import me.him188.ani.app.ui.foundation.theme.AniColors
 import me.him188.ani.app.ui.foundation.theme.AniTextStyles
 import me.him188.ani.app.ui.lang.Lang
 import me.him188.ani.app.ui.lang.cache_episode_pause_download
@@ -306,28 +303,43 @@ internal fun AppleDownloadManagementLayout(
             }
             if (selectionState.inSelection) {
                 // 让最后一列可以滚到选择工具栏上方.
-                item(key = "toolbar-space") { Spacer(Modifier.height(SelectionToolbarHeight + 12.dp)) }
+                item(key = "toolbar-space") { Spacer(Modifier.height(AppleSelectionToolbarDefaults.Height + 12.dp)) }
             }
         }
 
         if (selectionState.inSelection) {
             val layoutDirection = LocalLayoutDirection.current
-            SelectionToolbar(
-                resumeEnabled = selectedEntries.none { it.isBusy } && selectedEntries.any { !it.isFinished && it.isPaused },
-                pauseEnabled = selectedEntries.none { it.isBusy } &&
-                        selectedEntries.any { !it.isFinished && !it.isPaused && !it.isFailed },
-                deleteEnabled = selectedEntries.isNotEmpty() && selectedEntries.none { it.isBusy },
-                onResume = { selectedEntries.forEach(onResume) },
-                onPause = { selectedEntries.forEach(onPause) },
-                onDelete = { pendingDeleteEntries = selectedEntries },
-                modifier = Modifier
+            val resumeEnabled = selectedEntries.none { it.isBusy } && selectedEntries.any { !it.isFinished && it.isPaused }
+            val pauseEnabled = selectedEntries.none { it.isBusy } &&
+                    selectedEntries.any { !it.isFinished && !it.isPaused && !it.isFailed }
+            val deleteEnabled = selectedEntries.isNotEmpty() && selectedEntries.none { it.isBusy }
+            AppleSelectionToolbar(
+                Modifier
                     .align(Alignment.BottomCenter)
                     .padding(
                         start = contentPadding.calculateStartPadding(layoutDirection) + 16.dp,
                         end = contentPadding.calculateEndPadding(layoutDirection) + 16.dp,
                         bottom = contentPadding.calculateBottomPadding() + 12.dp,
-                    ),
-            )
+                    )
+                    .testTag(AppleDownloadTestTags.Toolbar),
+            ) {
+                AppleSelectionToolbarAction(
+                    stringResource(Lang.cache_management_resume_selected),
+                    resumeEnabled,
+                    onClick = { selectedEntries.forEach(onResume) },
+                )
+                AppleSelectionToolbarAction(
+                    stringResource(Lang.cache_management_pause_selected),
+                    pauseEnabled,
+                    onClick = { selectedEntries.forEach(onPause) },
+                )
+                AppleSelectionToolbarAction(
+                    stringResource(Lang.cache_management_delete_selected),
+                    deleteEnabled,
+                    onClick = { pendingDeleteEntries = selectedEntries },
+                    Modifier.testTag(AppleDownloadTestTags.DeleteSelected),
+                )
+            }
         }
     }
 }
@@ -519,7 +531,7 @@ private fun GroupRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (selectionMode) {
-                SelectionCircle(selected)
+                AppleSelectionCircle(selected)
             }
             AppleCover(CoverAspect.Portrait3x4, group.subjectName, Modifier.width(48.dp), cornerRadius = 8.dp) {
                 AsyncImage(group.imageUrl, contentDescription = null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
@@ -683,82 +695,6 @@ private fun RowActionButton(
         contentAlignment = Alignment.Center,
     ) {
         Icon(icon, contentDescription = null, Modifier.size(14.dp), tint = iconColor)
-    }
-}
-
-/**
- * 选择模式的勾选圆圈: 选中为 accent 底白勾, 未选中为 label2 圆框.
- */
-@Composable
-private fun SelectionCircle(selected: Boolean) {
-    val colorScheme = MaterialTheme.colorScheme
-    Box(
-        Modifier
-            .size(22.dp)
-            .clip(CircleShape)
-            .then(
-                if (selected) {
-                    Modifier.background(colorScheme.primary)
-                } else {
-                    Modifier.border(1.5.dp, colorScheme.secondary, CircleShape)
-                },
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (selected) {
-            Icon(AppleIcons.check(3f), contentDescription = null, Modifier.size(13.dp), tint = colorScheme.onPrimary)
-        }
-    }
-}
-
-private val SelectionToolbarHeight = 56.dp
-
-/**
- * 选择模式的浮动工具栏: tabBg 胶囊、floatingShadow, 放在浮动导航栏上方. 继续、暂停、删除各占一格.
- */
-@Composable
-private fun SelectionToolbar(
-    resumeEnabled: Boolean,
-    pauseEnabled: Boolean,
-    deleteEnabled: Boolean,
-    onResume: () -> Unit,
-    onPause: () -> Unit,
-    onDelete: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val shape = RoundedCornerShape(SelectionToolbarHeight / 2)
-    Row(
-        modifier
-            .fillMaxWidth()
-            .height(SelectionToolbarHeight)
-            .dropShadow(shape, Shadow(radius = 24.dp, color = AniColors.floatingShadowColor, offset = DpOffset(0.dp, 8.dp)))
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surfaceContainer)
-            .border(1.dp, AniColors.floatingBorder, shape)
-            .testTag(AppleDownloadTestTags.Toolbar),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        ToolbarAction(stringResource(Lang.cache_management_resume_selected), resumeEnabled, onResume, Modifier.weight(1f))
-        ToolbarAction(stringResource(Lang.cache_management_pause_selected), pauseEnabled, onPause, Modifier.weight(1f))
-        ToolbarAction(
-            stringResource(Lang.cache_management_delete_selected),
-            deleteEnabled,
-            onDelete,
-            Modifier.weight(1f).testTag(AppleDownloadTestTags.DeleteSelected),
-        )
-    }
-}
-
-@Composable
-private fun ToolbarAction(text: String, enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Box(
-        modifier
-            .fillMaxHeight()
-            .alpha(if (enabled) 1f else AppleComponentDefaults.DisabledAlpha)
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(text, style = AniTextStyles.callout, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
     }
 }
 

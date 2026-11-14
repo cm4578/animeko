@@ -73,4 +73,12 @@ class SubjectDownloadsPresentationTest {
     }
 
     private fun episode(id: Int) = EpisodeDownloadItem(id, EpisodeSort(id), "Episode $id", UnifiedCollectionType.DOING, true)
+
+    @Test
+    fun `playback position is shown as minutes and seconds or hours`() {
+        assertEquals("12:05", formatPlaybackPosition(725_000))
+        assertEquals("0:05", formatPlaybackPosition(5_400))
+        assertEquals("1:02:03", formatPlaybackPosition(3_723_000))
+        assertEquals("0:00", formatPlaybackPosition(-1))
+    }
 }

@@ -188,7 +188,7 @@ internal fun LazyGridScope.downloaderDetailsItems(details: DownloaderDetails, un
  * 记录状态, 引擎有额外信息 (启动失败、校验文件、获取种子信息等) 时以 " · " 追加.
  */
 @Composable
-private fun downloadStateText(details: DownloaderDetails): String {
+internal fun downloadStateText(details: DownloaderDetails): String {
     val base = stringResource(
         when (details.cacheState) {
             MediaCacheState.IN_PROGRESS -> Lang.cache_details_state_downloading

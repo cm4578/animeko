@@ -110,7 +110,7 @@ import me.him188.ani.app.ui.settings.account.ProfileViewModel
 import me.him188.ani.app.ui.settings.account.settingsGroups
 import me.him188.ani.app.ui.settings.account.settingsTabIcon
 import me.him188.ani.app.ui.settings.framework.SettingsState
-import me.him188.ani.app.ui.settings.notification.NotificationSettingsGroups
+import me.him188.ani.app.ui.settings.notification.MacNotificationSettingsPaneContent
 import me.him188.ani.app.ui.settings.tabs.AniHelperDestination
 import me.him188.ani.app.ui.settings.tabs.DebugTab
 import me.him188.ani.app.ui.settings.tabs.about.AboutTab
@@ -145,7 +145,7 @@ import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * macOS 设定窗口的分类 (02 C20). 「通知」没有对应的 [SettingsTab], 嵌入现有的通知设定 (05 B4).
+ * macOS 设定窗口的分类 (02 C20). 「通知」没有对应的 [SettingsTab], 窗格为通知中心入口与通知设定 (04 §4.7, 05 B4).
  */
 @Immutable
 sealed interface MacSettingsCategory {
@@ -369,7 +369,12 @@ private fun CategoryPane(
     val scope = rememberCoroutineScope()
     when (category) {
         MacSettingsCategory.Notifications -> MacSettingsPane(title) {
-            SettingsTab { NotificationSettingsGroups(notificationSettings) }
+            MacNotificationSettingsPaneContent(
+                notificationSettings,
+                unreadCount = account.notificationUnreadCount,
+                showNotificationDot = account.showNotificationDot,
+                onOpenNotifications = onOpenNotifications,
+            )
         }
 
         is MacSettingsCategory.Tab -> when (val tab = category.tab) {

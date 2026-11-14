@@ -28,6 +28,9 @@ enum class AlertDotStyle(val size: Dp, val ringWidth: Dp) {
     /** 行内与图标上. */
     Default(8.dp, 0.dp),
 
+    /** C4 分页胶囊的文字后 (未选中的分页有未读). */
+    Small(6.dp, 0.dp),
+
     /** 封面右上角, 外加白环. */
     OnCover(10.dp, 2.dp),
 

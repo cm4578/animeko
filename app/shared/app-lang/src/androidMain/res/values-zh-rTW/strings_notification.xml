@@ -1,5 +1,6 @@
 <resources>
     <string name="notification_title">通知</string>
+    <string name="notification_center_title">通知中心</string>
     <string name="notification_mark_all_read">全部標為已讀</string>
     <string name="notification_settings">通知設定</string>
     <string name="notification_unread">未讀</string>
@@ -46,6 +47,7 @@
     <string name="notification_report_result_upheld">檢舉成立</string>
     <string name="notification_report_result_description_removed">經審核，該評論違反社群規範，已被刪除。感謝你的檢舉。</string>
     <string name="notification_report_result_description_handled">經審核，該評論違反社群規範，已處理。感謝你的檢舉。</string>
+    <string name="notification_report_info_title">處理資訊</string>
     <string name="notification_report_reason">檢舉原因</string>
     <string name="notification_report_target">檢舉對象</string>
     <string name="notification_report_reported_at">檢舉時間</string>
@@ -88,4 +90,5 @@
     <string name="notification_settings_group_announcements">公告</string>
     <string name="notification_settings_announcement_item">你收到新公告</string>
     <string name="notification_settings_announcement_description">關閉後新公告不會在頭像上顯示紅點。</string>
+    <string name="notification_settings_announcement_description_apple">關閉後，新公告不會顯示未讀提示點。</string>
 </resources>

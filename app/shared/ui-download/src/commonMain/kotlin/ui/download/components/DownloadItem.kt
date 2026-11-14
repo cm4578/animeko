@@ -39,6 +39,10 @@ data class DownloadItem(
      * 该剧集的观看进度. 仅在播放历史包含有效时长和大于 0 的播放位置时可用.
      */
     val playbackProgress: Progress = Progress.Unspecified,
+    /**
+     * 该剧集的播放位置, 毫秒. 仅在播放历史包含大于 0 的播放位置时可用, 否则为 `null`.
+     */
+    val playbackPositionMillis: Long? = null,
     val engineKey: MediaCacheEngineKey?,
     val subjectCollectionType: UnifiedCollectionType?,
     val playability: Playability = Playability.PLAYABLE,

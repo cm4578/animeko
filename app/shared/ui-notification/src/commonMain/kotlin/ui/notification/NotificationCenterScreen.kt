@@ -48,6 +48,7 @@ import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
 import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
@@ -125,8 +126,7 @@ import kotlin.math.floor
  * 打开一条通知或执行它的行内操作都会立即把它标为已读.
  * 标签页已加载的通知中有客户端不认识的类型 ([isUnknownType]) 时, 列表顶部提示更新 ([NotificationActions.onCheckUpdate]).
  *
- * 列表不会自动加载新到的通知, 而未读数由后台定时刷新. 所以 "全部标为已读" 之后, 以及某个分组的未读数增加到超过它的列表中的未读通知时,
- * 重新加载对应的列表, 让新通知显示出来: "全部标为已读" 只标记已加载的通知.
+ * 列表的加载与刷新见 [collectNotificationCenterState].
  *
  * @param onNavigateToDetail 窄屏打开通知详情.
  * @param onLogin 游客点击登录.
@@ -145,6 +145,70 @@ fun NotificationCenterScreen(
     navigationIcon: @Composable () -> Unit = {},
     windowInsets: WindowInsets = AniWindowInsets.forPageContent(),
 ) {
+    val state = collectNotificationCenterState(vm)
+    NotificationCenterScreen(
+        pages = state.pages,
+        selectedGroup = state.selectedGroup,
+        onSelectGroup = state.onSelectGroup,
+        access = state.access,
+        badgeState = state.badgeState,
+        onOpenNotification = state.onOpenNotification,
+        onMarkAllRead = state.onMarkAllRead,
+        onRefresh = state.onRefresh,
+        onNavigateToDetail = onNavigateToDetail,
+        onNavigateToAnnouncements = onNavigateToAnnouncements,
+        onNavigateToSettings = onNavigateToSettings,
+        onLogin = onLogin,
+        actions = actions,
+        modifier = modifier,
+        navigator = navigator,
+        navigationIcon = navigationIcon,
+        windowInsets = windowInsets,
+    )
+}
+
+/**
+ * 通知中心的数据与操作, 由 [collectNotificationCenterState] 从 [NotificationCenterViewModel] 得到. 各平台的通知中心共用.
+ *
+ * @property pages 每个标签页一个, 按显示顺序.
+ * @property selectedGroup 选中的标签页.
+ * @property onSelectGroup 切换标签页.
+ * @property onOpenNotification 打开一条通知或执行它的行内操作时调用 (用于标为已读), 之后再导航.
+ * @property onMarkAllRead 把一个分组标为已读, 参数见 [MarkAllReadRequest]. 完成后重新加载这个分组的列表.
+ * @property onRefresh 重新加载一个分组的列表, 并刷新未读数.
+ */
+@Stable
+class NotificationCenterState(
+    val pages: List<NotificationCenterPage>,
+    val selectedGroup: NotificationGroup,
+    val access: NotificationAccess,
+    val badgeState: NotificationBadgeState,
+    val onSelectGroup: (NotificationGroup) -> Unit,
+    val onOpenNotification: (AppNotification) -> Unit,
+    val onMarkAllRead: (group: NotificationGroup, newestCreatedAtMillis: Long) -> Unit,
+    val onRefresh: (NotificationGroup) -> Unit,
+) {
+    /**
+     * 选中的标签页. [selectedGroup] 不在 [pages] 中时为第一个.
+     */
+    val selectedPage: NotificationCenterPage
+        get() = pages.firstOrNull { it.group == selectedGroup } ?: pages.first()
+
+    /**
+     * "全部标为已读" 作用于选中的标签页, 不能标记时为 `null`, 见 [markAllReadRequest].
+     */
+    val markAllReadRequest: MarkAllReadRequest?
+        get() = markAllReadRequest(pages, selectedGroup, access, badgeState)
+}
+
+/**
+ * 收集 [vm] 的通知中心状态.
+ *
+ * 列表不会自动加载新到的通知, 而未读数由后台定时刷新. 所以 "全部标为已读" 之后, 以及某个分组的未读数增加到超过它的列表中的未读通知时,
+ * 重新加载对应的列表, 让新通知显示出来: "全部标为已读" 只标记已加载的通知.
+ */
+@Composable
+fun collectNotificationCenterState(vm: NotificationCenterViewModel): NotificationCenterState {
     val access by vm.access.collectAsStateWithLifecycle()
     val readOverlays by vm.readOverlays.collectAsStateWithLifecycle()
     val badgeState by vm.badgeState.collectAsStateWithLifecycle()
@@ -180,12 +244,12 @@ fun NotificationCenterScreen(
 
     fun pageOf(group: NotificationGroup) = pages.first { it.group == group }
 
-    NotificationCenterScreen(
+    return NotificationCenterState(
         pages = pages,
         selectedGroup = selectedGroup,
-        onSelectGroup = vm::selectGroup,
         access = access,
         badgeState = badgeState,
+        onSelectGroup = vm::selectGroup,
         onOpenNotification = vm::markRead,
         onMarkAllRead = { group, newestCreatedAtMillis ->
             asyncHandler.launch {
@@ -197,15 +261,6 @@ fun NotificationCenterScreen(
             pageOf(group).items.refresh()
             vm.refreshBadge()
         },
-        onNavigateToDetail = onNavigateToDetail,
-        onNavigateToAnnouncements = onNavigateToAnnouncements,
-        onNavigateToSettings = onNavigateToSettings,
-        onLogin = onLogin,
-        actions = actions,
-        modifier = modifier,
-        navigator = navigator,
-        navigationIcon = navigationIcon,
-        windowInsets = windowInsets,
     )
 }
 
@@ -224,6 +279,33 @@ data class NotificationCenterPage(
     val loadedItems: List<AppNotification> get() = items.itemSnapshotList.items
 
     fun loadedUnreadCount(): Int = loadedItems.count { !readOverlay.isRead(it) }
+}
+
+/**
+ * "全部标为已读" 的参数.
+ *
+ * @property newestCreatedAtMillis [group] 已加载的最新一条通知的创建时间, 以免把用户还没看到的通知也标为已读.
+ */
+@Immutable
+data class MarkAllReadRequest(
+    val group: NotificationGroup,
+    val newestCreatedAtMillis: Long,
+)
+
+/**
+ * "全部标为已读" 作用于选中的标签页. 未登录、选中的标签页还没有加载到通知, 或它没有未读通知时不能标记, 返回 `null`.
+ */
+fun markAllReadRequest(
+    pages: List<NotificationCenterPage>,
+    selectedGroup: NotificationGroup,
+    access: NotificationAccess,
+    badgeState: NotificationBadgeState,
+): MarkAllReadRequest? {
+    if (access != NotificationAccess.AUTHORIZED) return null
+    val page = pages.firstOrNull { it.group == selectedGroup } ?: return null
+    val newestCreatedAtMillis = page.loadedItems.maxOfOrNull { it.createdAtMillis } ?: return null
+    if (badgeState.unreadCountOf(page.group) <= 0 && page.loadedUnreadCount() <= 0) return null
+    return MarkAllReadRequest(page.group, newestCreatedAtMillis)
 }
 
 /**
@@ -287,10 +369,7 @@ fun NotificationCenterScreen(
 
     // "全部标为已读" 作用于选中的标签页
     val selectedPage = pages.firstOrNull { it.group == selectedGroup }
-    val newestCreatedAtMillis = selectedPage?.loadedItems?.maxOfOrNull { it.createdAtMillis }
-    val canMarkAllRead = access == NotificationAccess.AUTHORIZED && selectedPage != null &&
-            newestCreatedAtMillis != null &&
-            (badgeState.unreadCountOf(selectedPage.group) > 0 || selectedPage.loadedUnreadCount() > 0)
+    val markAllRead = markAllReadRequest(pages, selectedGroup, access, badgeState)
 
     Surface(modifier, color = AniThemeDefaults.pageContentBackgroundColor) {
         AniListDetailPaneScaffold(
@@ -302,12 +381,12 @@ fun NotificationCenterScreen(
                     actions = {
                         IconButton(
                             onClick = {
-                                if (selectedPage != null && newestCreatedAtMillis != null) {
-                                    onMarkAllRead(selectedPage.group, newestCreatedAtMillis)
+                                if (markAllRead != null) {
+                                    onMarkAllRead(markAllRead.group, markAllRead.newestCreatedAtMillis)
                                 }
                             },
                             Modifier.testTag(NotificationTestTags.MARK_ALL_READ),
-                            enabled = canMarkAllRead,
+                            enabled = markAllRead != null,
                         ) {
                             Icon(Icons.Rounded.DoneAll, stringResource(Lang.notification_mark_all_read))
                         }
@@ -822,19 +901,19 @@ val NotificationGroup.labelRes: StringResource
         NotificationGroup.NOTICE -> Lang.notification_group_notice
     }
 
-private val NotificationGroup.emptyIcon: ImageVector
+internal val NotificationGroup.emptyIcon: ImageVector
     get() = when (this) {
         NotificationGroup.INTERACTION -> Icons.Outlined.Forum
         NotificationGroup.NOTICE -> Icons.Outlined.Notifications
     }
 
-private val NotificationGroup.emptyTextRes: StringResource
+internal val NotificationGroup.emptyTextRes: StringResource
     get() = when (this) {
         NotificationGroup.INTERACTION -> Lang.notification_interaction_empty
         NotificationGroup.NOTICE -> Lang.notification_empty
     }
 
-private val NotificationGroup.emptySupportingTextRes: StringResource
+internal val NotificationGroup.emptySupportingTextRes: StringResource
     get() = when (this) {
         NotificationGroup.INTERACTION -> Lang.notification_interaction_empty_supporting
         NotificationGroup.NOTICE -> Lang.notification_empty_supporting

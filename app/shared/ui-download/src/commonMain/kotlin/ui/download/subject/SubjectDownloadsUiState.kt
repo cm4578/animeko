@@ -10,8 +10,10 @@
 package me.him188.ani.app.ui.download.subject
 
 import androidx.compose.runtime.Immutable
+import me.him188.ani.app.data.models.subject.SubjectAiringInfo
 import me.him188.ani.app.ui.download.components.DownloadItem
 import me.him188.ani.datasources.api.EpisodeSort
+import me.him188.ani.datasources.api.PackedDate
 import me.him188.ani.datasources.api.topic.UnifiedCollectionType
 
 @Immutable
@@ -44,6 +46,12 @@ data class DownloadRequestUiState(
     val canCancel: Boolean = false,
 )
 
+/**
+ * @param coverUrl 条目封面, 来自已加载的条目信息. 供 Apple 版页头 (03 §4.3、04 §4.3) 使用.
+ * @param airDate 放送开始日期, 用于页头的季度文字; 未知时为 [PackedDate.Invalid].
+ * @param airingInfo 连载状态与正片话数, 用于页头的「全 N 话」; 条目信息未加载时为 `null`.
+ * @param episodeCollectionTypes 各剧集的观看状态 (看过、抛弃等), 键为剧集 id. Apple 版在已完成的下载上显示「看过」.
+ */
 @Immutable
 data class SubjectDownloadsUiState(
     val title: String? = null,
@@ -55,4 +63,8 @@ data class SubjectDownloadsUiState(
     val episodesFailed: Boolean = false,
     val downloadsFailed: Boolean = false,
     val request: DownloadRequestUiState = DownloadRequestUiState(),
+    val coverUrl: String? = null,
+    val airDate: PackedDate = PackedDate.Invalid,
+    val airingInfo: SubjectAiringInfo? = null,
+    val episodeCollectionTypes: Map<Int, UnifiedCollectionType> = emptyMap(),
 )

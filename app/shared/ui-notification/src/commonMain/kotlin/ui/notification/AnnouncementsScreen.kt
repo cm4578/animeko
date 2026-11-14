@@ -34,6 +34,7 @@ import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
@@ -87,6 +88,42 @@ fun AnnouncementsScreen(
     navigationIcon: @Composable () -> Unit = {},
     windowInsets: WindowInsets = AniWindowInsets.forPageContent(),
 ) {
+    val state = collectAnnouncementsState(vm)
+    AnnouncementsScreen(
+        items = state.items,
+        access = state.access,
+        readOverlay = state.readOverlay,
+        onOpenAnnouncement = state.onOpenAnnouncement,
+        onRefresh = state.onRefresh,
+        onNavigateToDetail = onNavigateToDetail,
+        onLogin = onLogin,
+        modifier = modifier,
+        navigator = navigator,
+        navigationIcon = navigationIcon,
+        windowInsets = windowInsets,
+    )
+}
+
+/**
+ * 公告列表的数据与操作, 由 [collectAnnouncementsState] 从 [AnnouncementsViewModel] 得到. 各平台的公告列表共用.
+ *
+ * @property onOpenAnnouncement 打开一条公告时调用 (用于标为已读), 之后再导航到详情.
+ * @property onRefresh 重新加载列表, 并刷新未读数.
+ */
+@Stable
+class AnnouncementsState(
+    val items: LazyPagingItems<Announcement>,
+    val access: NotificationAccess,
+    val readOverlay: ReadOverlay,
+    val onOpenAnnouncement: (Announcement) -> Unit,
+    val onRefresh: () -> Unit,
+)
+
+/**
+ * 收集 [vm] 的公告列表状态. 列表每加载完一页, 就把已加载的公告标为已读 ([AnnouncementsViewModel.markLoadedAnnouncementsRead]).
+ */
+@Composable
+fun collectAnnouncementsState(vm: AnnouncementsViewModel): AnnouncementsState {
     val items = vm.announcementsPager.collectAsLazyPagingItemsWithLifecycle()
     val access by vm.access.collectAsStateWithLifecycle()
     val readOverlay by vm.readOverlay.collectAsStateWithLifecycle()
@@ -98,7 +135,7 @@ fun AnnouncementsScreen(
         }
     }
 
-    AnnouncementsScreen(
+    return AnnouncementsState(
         items = items,
         access = access,
         readOverlay = readOverlay,
@@ -107,12 +144,6 @@ fun AnnouncementsScreen(
             items.refresh()
             vm.refreshBadge()
         },
-        onNavigateToDetail = onNavigateToDetail,
-        onLogin = onLogin,
-        modifier = modifier,
-        navigator = navigator,
-        navigationIcon = navigationIcon,
-        windowInsets = windowInsets,
     )
 }
 

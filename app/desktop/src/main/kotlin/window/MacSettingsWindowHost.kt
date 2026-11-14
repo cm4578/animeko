@@ -17,6 +17,11 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isMetaPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.rememberWindowState
@@ -36,8 +41,7 @@ import org.jetbrains.compose.resources.stringResource
 /**
  * macOS 设定窗口的宿主 (05 B4): 920×680 的独立窗口, 照图片查看器沿用主窗口的窗口外观 ([LocalSecondaryWindowFrame]).
  *
- * App 菜单的「设定…」(⌘,) 打开窗口, 窗口已开着时带到前面; 红色按钮关闭窗口, 不影响主窗口.
- * 不加 ⌘W: 05 C2 以外的快捷键没有批准.
+ * App 菜单的「Preferences…」(⌘,, JDK 提供的项目) 打开窗口, 窗口已开着时带到前面; ⌘W 或红色按钮关闭窗口, 不影响主窗口 (05 C2).
  *
  * @param onShowMainWindow 把主窗口带到前面 (包括从托盘还原).
  */
@@ -58,6 +62,14 @@ class DesktopMacSettingsWindowHost(
             onCloseRequest = state::close,
             state = windowState,
             title = stringResource(Lang.settings),
+            onKeyEvent = { event ->
+                if (event.type == KeyEventType.KeyDown && event.isMetaPressed && event.key == Key.W) {
+                    state.close()
+                    true
+                } else {
+                    false
+                }
+            },
         ) {
             SideEffect {
                 window.minimumSize = Dimension(MIN_WIDTH, MIN_HEIGHT)
@@ -100,7 +112,7 @@ class DesktopMacSettingsWindowHost(
 }
 
 /**
- * 接上 App 菜单的「设定…」(⌘,). 离开组合时移除, 菜单项恢复为不可用.
+ * 接上 App 菜单的「Preferences…」(⌘,). 离开组合时移除, 菜单项恢复为不可用.
  */
 @Composable
 private fun PreferencesHandlerEffect(state: MacSettingsWindowState) {

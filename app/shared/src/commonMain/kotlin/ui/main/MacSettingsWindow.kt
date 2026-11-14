@@ -71,7 +71,14 @@ class MacSettingsWindowState {
      * 打开设定窗口. [tab] 不为 `null` 时切换到该分类, 否则停在上次的分类.
      */
     fun open(tab: SettingsTab? = null) {
-        if (tab != null) category = MacSettingsCategory.Tab(tab)
+        open(tab?.let { MacSettingsCategory.Tab(it) })
+    }
+
+    /**
+     * 打开设定窗口. [category] 不为 `null` 时切换到该分类, 例如通知中心的设置钮打开「通知」(04 §4.6).
+     */
+    fun open(category: MacSettingsCategory?) {
+        if (category != null) this.category = category
         isOpen = true
         openRequests++
     }
@@ -82,7 +89,7 @@ class MacSettingsWindowState {
 }
 
 /**
- * macOS 设定窗口的宿主, 由 app-desktop 提供: 窗口取用 `LocalSecondaryWindowFrame`, 并接上 App 菜单的「设定…」(⌘,).
+ * macOS 设定窗口的宿主, 由 app-desktop 提供: 窗口取用 `LocalSecondaryWindowFrame`, 并接上 App 菜单的「Preferences…」(⌘,).
  *
  * 没有宿主 (其他平台、UI 测试) 时, 设定在主窗口内打开.
  */
@@ -103,18 +110,23 @@ interface MacSettingsWindowHost {
 val LocalMacSettingsWindowHost = staticCompositionLocalOf<MacSettingsWindowHost?> { null }
 
 /**
- * macOS 主窗口用的 [AniNavigator]: 打开设定 ([navigateSettings] 或 [NavRoutes.Settings]) 时打开设定窗口, 其他导航照常.
+ * macOS 主窗口用的 [AniNavigator]: 打开设定 ([navigateSettings] 或 [NavRoutes.Settings]) 时打开设定窗口,
+ * 打开通知设定 ([navigateNotificationSettings] 或 [NavRoutes.NotificationSettings]) 时打开设定窗口的「通知」分类, 其他导航照常.
  */
 internal class MacSettingsWindowNavigator(
     private val delegate: AniNavigator,
     private val settingsWindow: MacSettingsWindowState,
 ) : AniNavigator by delegate {
     override fun navigate(route: NavRoutes) {
-        if (route is NavRoutes.Settings) {
-            settingsWindow.open(route.tab)
-        } else {
-            delegate.navigate(route)
+        when (route) {
+            is NavRoutes.Settings -> settingsWindow.open(route.tab)
+            NavRoutes.NotificationSettings -> settingsWindow.open(MacSettingsCategory.Notifications)
+            else -> delegate.navigate(route)
         }
+    }
+
+    override fun navigateNotificationSettings() {
+        settingsWindow.open(MacSettingsCategory.Notifications)
     }
 
     override fun navigateSettings(tab: SettingsTab?) {

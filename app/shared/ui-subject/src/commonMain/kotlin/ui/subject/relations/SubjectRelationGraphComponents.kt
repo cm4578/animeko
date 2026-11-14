@@ -314,14 +314,7 @@ internal fun SubjectRelationGraphCompactCard(
  */
 @Composable
 private fun MainNodeLabel(node: SubjectRelationGraphMainNode, ordinal: Int?, isCurrent: Boolean) {
-    val label = when {
-        ordinal != null -> stringResource(Lang.subject_relation_graph_ordinal, ordinal)
-        else -> when (node.subject.platform) {
-            SubjectRelationGraphPlatform.MOVIE -> stringResource(Lang.subject_relation_graph_platform_movie)
-            SubjectRelationGraphPlatform.OVA -> "OVA"
-            else -> stringResource(Lang.subject_relation_graph_platform_special)
-        }
-    }
+    val label = renderMainNodeLabel(node, ordinal)
     Text(
         if (isCurrent) stringResource(Lang.subject_relation_graph_label_current, label) else label,
         style = MaterialTheme.typography.labelMedium,
@@ -500,9 +493,22 @@ private fun CollectionTypeText(type: UnifiedCollectionType) {
     )
 }
 
+/**
+ * "第 N 部", 非正片条目为 "剧场版", "OVA" 或 "特别篇".
+ */
+@Composable
+internal fun renderMainNodeLabel(node: SubjectRelationGraphMainNode, ordinal: Int?): String = when {
+    ordinal != null -> stringResource(Lang.subject_relation_graph_ordinal, ordinal)
+    else -> when (node.subject.platform) {
+        SubjectRelationGraphPlatform.MOVIE -> stringResource(Lang.subject_relation_graph_platform_movie)
+        SubjectRelationGraphPlatform.OVA -> "OVA"
+        else -> stringResource(Lang.subject_relation_graph_platform_special)
+    }
+}
+
 /** 未收藏时为 `null` */
 @Composable
-private fun renderCollectionType(type: UnifiedCollectionType): String? = when (type) {
+internal fun renderCollectionType(type: UnifiedCollectionType): String? = when (type) {
     UnifiedCollectionType.WISH -> stringResource(Lang.subject_collection_wish)
     UnifiedCollectionType.DOING -> stringResource(Lang.subject_collection_doing)
     UnifiedCollectionType.DONE -> stringResource(Lang.subject_collection_done)

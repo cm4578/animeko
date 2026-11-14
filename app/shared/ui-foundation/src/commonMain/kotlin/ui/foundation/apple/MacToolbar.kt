@@ -92,6 +92,7 @@ fun MacToolbar(
  * C18 工具栏图标按钮: 28×28、圆角 6、无底, 16 号 label2 图标.
  *
  * @param checked 不为 `null` 时为开关按钮 (例如检阅器): 开启时 tint 底 + accent 图标.
+ * @param width 按钮宽度; 检阅器开关为 [MacToolbarDefaults.SegmentWidth] (32×28).
  */
 @Composable
 fun MacToolbarIconButton(
@@ -101,6 +102,7 @@ fun MacToolbarIconButton(
     modifier: Modifier = Modifier,
     checked: Boolean? = null,
     enabled: Boolean = true,
+    width: Dp = MacToolbarDefaults.ButtonSize,
 ) {
     val interaction = if (checked != null) {
         Modifier.toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = { onClick() })
@@ -111,7 +113,7 @@ fun MacToolbarIconButton(
         icon = icon,
         contentDescription = contentDescription,
         highlighted = checked == true,
-        width = MacToolbarDefaults.ButtonSize,
+        width = width,
         modifier = modifier
             .alpha(if (enabled) 1f else AppleComponentDefaults.DisabledAlpha)
             .clip(RoundedCornerShape(6.dp))

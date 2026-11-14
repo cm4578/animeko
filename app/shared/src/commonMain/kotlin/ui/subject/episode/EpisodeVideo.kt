@@ -597,6 +597,11 @@ internal fun EpisodeVideoImpl(
                             controlsVisible = playerControllerState.visibility != ControllerVisibility.InlineSliderOnly,
                         )
                     } else if (appleCompact) {
+                        val pipPossible by pictureInPictureController.isPictureInPicturePossible
+                            .collectAsStateWithLifecycle()
+                        val mediaLoaded by remember(playerState) {
+                            playerState.state.map { it.isMediaLoaded }
+                        }.collectAsStateWithLifecycle(false)
                         AppleEpisodeVideoControls(
                             progressSlider = {
                                 AppleVideoProgressSlider(
@@ -614,6 +619,8 @@ internal fun EpisodeVideoImpl(
                             isFullscreen = fullscreenState.isFullscreen,
                             onToggleFullscreen = { fullscreenState.request(!fullscreenState.isFullscreen) },
                             Modifier.weight(1f),
+                            showPictureInPicture = pictureInPictureController.isSupported && pipPossible && mediaLoaded,
+                            onEnterPictureInPicture = { pictureInPictureController.enterPictureInPicture() },
                             controlsVisible = playerControllerState.visibility != ControllerVisibility.InlineSliderOnly,
                         )
                     } else {
@@ -699,6 +706,7 @@ internal fun EpisodeVideoImpl(
                                 // 仅 Android 显示小窗按钮: Android 小窗是整机窗口采集, 按钮是除系统手势外的
                                 // 重要入口; iOS 小窗的主入口是系统手势 (上滑回桌面自动进入), 且按钮 enabled
                                 // 依赖 isPictureInPicturePossible, 其在部分机型上翻转不及时, 灰态观感差, 故不在 iOS 显示
+                                // (iOS 直式的 Apple 版控制列在可以进入小窗时才显示按钮, 见 AppleEpisodeVideoControls)
                                 if (LocalPlatform.current.isAndroid() && pictureInPictureController.isSupported) {
                                     val pipPossible by pictureInPictureController.isPictureInPicturePossible
                                         .collectAsStateWithLifecycle()

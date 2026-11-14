@@ -45,11 +45,12 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import androidx.paging.compose.collectAsLazyPagingItemsWithLifecycle
 import me.him188.ani.app.data.models.subject.SubjectInfo
+import me.him188.ani.app.data.models.subject.SubjectRelationGraphSubject
 import me.him188.ani.app.data.models.subject.Tag
 import me.him188.ani.app.domain.mediasource.jsonapi.JsonApiMediaSource
 import me.him188.ani.app.domain.mediasource.rss.RssMediaSource
-import me.him188.ani.app.domain.notification.NotificationBadgeManager
 import me.him188.ani.app.domain.mediasource.web.SelectorMediaSource
+import me.him188.ani.app.domain.notification.NotificationBadgeManager
 import me.him188.ani.app.domain.search.SubjectSearchQuery
 import me.him188.ani.app.domain.session.auth.OAuthPlatform
 import me.him188.ani.app.navigation.AniNavigator
@@ -70,18 +71,25 @@ import me.him188.ani.app.ui.bangumi.merge.BangumiMergeViewModel
 import me.him188.ani.app.ui.comment.thread.CommentThreadScreen
 import me.him188.ani.app.ui.comment.thread.CommentThreadViewModel
 import me.him188.ani.app.ui.download.DownloadManagementScreen
+import me.him188.ani.app.ui.download.components.DownloadItem
 import me.him188.ani.app.ui.download.createDownloadManagementViewModel
 import me.him188.ani.app.ui.download.createSubjectDownloadsViewModel
+import me.him188.ani.app.ui.download.details.AppleMediaCacheDetailsScreen
 import me.him188.ani.app.ui.download.details.MediaCacheDetailsPageViewModel
 import me.him188.ani.app.ui.download.details.MediaCacheDetailsScreen
 import me.him188.ani.app.ui.download.details.MediaDetails
 import me.him188.ani.app.ui.download.details.MediaDetailsLazyGrid
+import me.him188.ani.app.ui.download.subject.AppleSubjectDownloadsScreen
+import me.him188.ani.app.ui.download.subject.MacSubjectDownloadsScreen
 import me.him188.ani.app.ui.download.subject.SubjectDownloadsScreen
 import me.him188.ani.app.ui.exploration.schedule.AiringScheduleItemPresentation
 import me.him188.ani.app.ui.exploration.schedule.AppleSchedulePage
 import me.him188.ani.app.ui.exploration.schedule.MacSchedulePage
 import me.him188.ani.app.ui.exploration.schedule.ScheduleScreen
 import me.him188.ani.app.ui.exploration.schedule.ScheduleViewModel
+import me.him188.ani.app.ui.exploration.trends.AppleTrendingRankingPage
+import me.him188.ani.app.ui.exploration.trends.MacTrendingRankingPage
+import me.him188.ani.app.ui.exploration.trends.TrendingRankingItemPresentation
 import me.him188.ani.app.ui.exploration.trends.TrendingRankingScreen
 import me.him188.ani.app.ui.exploration.trends.TrendingRankingViewModel
 import me.him188.ani.app.ui.foundation.LocalPlatform
@@ -101,6 +109,14 @@ import me.him188.ani.app.ui.notification.AnnouncementDetailScreen
 import me.him188.ani.app.ui.notification.AnnouncementDetailViewModel
 import me.him188.ani.app.ui.notification.AnnouncementsScreen
 import me.him188.ani.app.ui.notification.AnnouncementsViewModel
+import me.him188.ani.app.ui.notification.AppleAnnouncementDetailScreen
+import me.him188.ani.app.ui.notification.AppleAnnouncementsScreen
+import me.him188.ani.app.ui.notification.AppleNotificationCenterScreen
+import me.him188.ani.app.ui.notification.AppleNotificationDetailScreen
+import me.him188.ani.app.ui.notification.MacAnnouncementDetailScreen
+import me.him188.ani.app.ui.notification.MacAnnouncementsScreen
+import me.him188.ani.app.ui.notification.MacNotificationCenterScreen
+import me.him188.ani.app.ui.notification.MacNotificationDetailScreen
 import me.him188.ani.app.ui.notification.NotificationCenterScreen
 import me.him188.ani.app.ui.notification.NotificationCenterViewModel
 import me.him188.ani.app.ui.notification.NotificationDetailScreen
@@ -109,8 +125,11 @@ import me.him188.ani.app.ui.notification.NotificationForegroundObserver
 import me.him188.ani.app.ui.notification.rememberNotificationActions
 import me.him188.ani.app.ui.oauth.OAuthAuthorizeScreen
 import me.him188.ani.app.ui.oauth.OAuthAuthorizeViewModel
+import me.him188.ani.app.ui.playback.ApplePlaybackHistoryPage
+import me.him188.ani.app.ui.playback.MacPlaybackHistoryPage
 import me.him188.ani.app.ui.playback.PlaybackHistoryScreen
 import me.him188.ani.app.ui.playback.PlaybackHistorySyncStatusScreen
+import me.him188.ani.app.ui.playback.PlaybackHistoryUiItem
 import me.him188.ani.app.ui.playback.PlaybackHistoryViewModel
 import me.him188.ani.app.ui.profile.auth.AniContactList
 import me.him188.ani.app.ui.qrlogin.QrLoginConfirmScreen
@@ -123,12 +142,13 @@ import me.him188.ani.app.ui.search.SearchScreen
 import me.him188.ani.app.ui.settings.SettingsScreen
 import me.him188.ani.app.ui.settings.SettingsViewModel
 import me.him188.ani.app.ui.settings.account.AppleBangumiSyncScreen
-import me.him188.ani.app.ui.settings.mediasource.rss.EditRssMediaSourceScreen
-import me.him188.ani.app.ui.settings.mediasource.rss.EditRssMediaSourceViewModel
 import me.him188.ani.app.ui.settings.mediasource.jsonapi.EditJsonApiMediaSourceScreen
 import me.him188.ani.app.ui.settings.mediasource.jsonapi.EditJsonApiMediaSourceViewModel
+import me.him188.ani.app.ui.settings.mediasource.rss.EditRssMediaSourceScreen
+import me.him188.ani.app.ui.settings.mediasource.rss.EditRssMediaSourceViewModel
 import me.him188.ani.app.ui.settings.mediasource.selector.EditSelectorMediaSourceScreen
 import me.him188.ani.app.ui.settings.mediasource.selector.EditSelectorMediaSourceViewModel
+import me.him188.ani.app.ui.settings.notification.AppleNotificationSettingsScreen
 import me.him188.ani.app.ui.settings.notification.NotificationSettingsScreen
 import me.him188.ani.app.ui.settings.notification.NotificationSettingsViewModel
 import me.him188.ani.app.ui.settings.tabs.media.torrent.peer.PeerFilterSettingsScreen
@@ -138,12 +158,18 @@ import me.him188.ani.app.ui.subject.details.MacSubjectDetailsScreen
 import me.him188.ani.app.ui.subject.details.SubjectDetailsScreen
 import me.him188.ani.app.ui.subject.details.SubjectDetailsViewModel
 import me.him188.ani.app.ui.subject.episode.EpisodeScreen
-import me.him188.ani.app.ui.subject.episode.analytics.PlayFlowDebugFloatingWindow
 import me.him188.ani.app.ui.subject.episode.EpisodeViewModel
+import me.him188.ani.app.ui.subject.episode.analytics.PlayFlowDebugFloatingWindow
+import me.him188.ani.app.ui.subject.person.AppleCharacterDetailsScreen
+import me.him188.ani.app.ui.subject.person.ApplePersonDetailsScreen
 import me.him188.ani.app.ui.subject.person.CharacterDetailsScreen
 import me.him188.ani.app.ui.subject.person.CharacterDetailsViewModel
+import me.him188.ani.app.ui.subject.person.MacCharacterDetailsScreen
+import me.him188.ani.app.ui.subject.person.MacPersonDetailsScreen
 import me.him188.ani.app.ui.subject.person.PersonDetailsScreen
 import me.him188.ani.app.ui.subject.person.PersonDetailsViewModel
+import me.him188.ani.app.ui.subject.relations.AppleSubjectRelationGraphScreen
+import me.him188.ani.app.ui.subject.relations.MacSubjectRelationGraphScreen
 import me.him188.ani.app.ui.subject.relations.SubjectRelationGraphScreen
 import me.him188.ani.app.ui.subject.relations.SubjectRelationGraphViewModel
 import me.him188.ani.app.ui.user.SelfInfoStateProducer
@@ -707,28 +733,48 @@ private fun AniNavDisplay(
                 )
             }
             entry<NavRoutes.PlaybackHistory> { route ->
-                PlaybackHistoryScreen(
-                    vm = viewModel { PlaybackHistoryViewModel() },
-                    onNavigateBack = { aniNavigator.popBackStack(route, inclusive = true) },
-                    onOpenHistory = { history ->
-                        val subjectId = history.subjectId
-                        if (subjectId != null) {
-                            aniNavigator.navigateEpisodeDetails(subjectId, history.episodeId)
-                        }
-                    },
-                    onOpenSyncStatus = {
-                        aniNavigator.navigatePlaybackHistorySyncStatus()
-                    },
-                    modifier = Modifier.fillMaxSize(),
-                    navigationIcon = {
-                        BackNavigationIconButton(
-                            {
-                                aniNavigator.popBackStack(route, inclusive = true)
-                            },
-                        )
-                    },
-                    windowInsets = windowInsetsWithoutTitleBar,
-                )
+                val vm = viewModel { PlaybackHistoryViewModel() }
+                val onOpenHistory: (PlaybackHistoryUiItem) -> Unit = { history ->
+                    val subjectId = history.subjectId
+                    if (subjectId != null) {
+                        aniNavigator.navigateEpisodeDetails(subjectId, history.episodeId)
+                    }
+                }
+                if (appleShell == AppleShell.Mac) {
+                    MacPlaybackHistoryPage(
+                        vm,
+                        onOpenHistory = onOpenHistory,
+                        onOpenSyncStatus = { aniNavigator.navigatePlaybackHistorySyncStatus() },
+                        Modifier.fillMaxSize(),
+                    )
+                } else if (isIosShell) {
+                    ApplePlaybackHistoryPage(
+                        vm,
+                        onOpenHistory = onOpenHistory,
+                        onOpenSyncStatus = { aniNavigator.navigatePlaybackHistorySyncStatus() },
+                        onBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        Modifier.fillMaxSize(),
+                        contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else {
+                    PlaybackHistoryScreen(
+                        vm = vm,
+                        onNavigateBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        onOpenHistory = onOpenHistory,
+                        onOpenSyncStatus = {
+                            aniNavigator.navigatePlaybackHistorySyncStatus()
+                        },
+                        modifier = Modifier.fillMaxSize(),
+                        navigationIcon = {
+                            BackNavigationIconButton(
+                                {
+                                    aniNavigator.popBackStack(route, inclusive = true)
+                                },
+                            )
+                        },
+                        windowInsets = windowInsetsWithoutTitleBar,
+                    )
+                }
             }
             entry<NavRoutes.PlaybackHistorySyncStatus> { route ->
                 PlaybackHistorySyncStatusScreen(
@@ -767,63 +813,145 @@ private fun AniNavDisplay(
                 )
             }
             entry<NavRoutes.Notifications> { route ->
-                NotificationCenterScreen(
-                    vm = viewModel { NotificationCenterViewModel() },
-                    onNavigateToDetail = { aniNavigator.navigateNotificationDetail(it) },
-                    onNavigateToAnnouncements = { aniNavigator.navigateAnnouncements() },
-                    onNavigateToSettings = { aniNavigator.navigateNotificationSettings() },
-                    onLogin = { aniNavigator.navigateEmailLoginStart() },
-                    actions = rememberNotificationActions(aniNavigator),
-                    modifier = Modifier.fillMaxSize(),
-                    navigationIcon = {
-                        BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
-                    },
-                    windowInsets = windowInsets,
-                )
+                val vm = viewModel { NotificationCenterViewModel() }
+                val actions = rememberNotificationActions(aniNavigator)
+                if (appleShell == AppleShell.Mac) {
+                    MacNotificationCenterScreen(
+                        vm,
+                        onNavigateToDetail = { aniNavigator.navigateNotificationDetail(it) },
+                        onNavigateToAnnouncements = { aniNavigator.navigateAnnouncements() },
+                        // 有设定窗口时打开它的「通知」分类 (MacSettingsWindowNavigator)
+                        onNavigateToSettings = { aniNavigator.navigateNotificationSettings() },
+                        onLogin = { aniNavigator.navigateEmailLoginStart() },
+                        actions = actions,
+                        Modifier.fillMaxSize(),
+                    )
+                } else if (isIosShell) {
+                    AppleNotificationCenterScreen(
+                        vm,
+                        onNavigateToDetail = { aniNavigator.navigateNotificationDetail(it) },
+                        onNavigateToAnnouncements = { aniNavigator.navigateAnnouncements() },
+                        onNavigateToSettings = { aniNavigator.navigateNotificationSettings() },
+                        onLogin = { aniNavigator.navigateEmailLoginStart() },
+                        actions = actions,
+                        onBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        Modifier.fillMaxSize(),
+                        contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else {
+                    NotificationCenterScreen(
+                        vm = vm,
+                        onNavigateToDetail = { aniNavigator.navigateNotificationDetail(it) },
+                        onNavigateToAnnouncements = { aniNavigator.navigateAnnouncements() },
+                        onNavigateToSettings = { aniNavigator.navigateNotificationSettings() },
+                        onLogin = { aniNavigator.navigateEmailLoginStart() },
+                        actions = actions,
+                        modifier = Modifier.fillMaxSize(),
+                        navigationIcon = {
+                            BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
+                        },
+                        windowInsets = windowInsets,
+                    )
+                }
             }
             entry<NavRoutes.NotificationDetail> { route ->
-                NotificationDetailScreen(
-                    vm = viewModel(key = route.toString()) { NotificationDetailViewModel(route.notificationId) },
-                    actions = rememberNotificationActions(aniNavigator),
-                    modifier = Modifier.fillMaxSize(),
-                    navigationIcon = {
-                        BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
-                    },
-                    windowInsets = windowInsetsWithoutTitleBar,
-                )
+                val vm = viewModel(key = route.toString()) { NotificationDetailViewModel(route.notificationId) }
+                val actions = rememberNotificationActions(aniNavigator)
+                if (appleShell == AppleShell.Mac) {
+                    MacNotificationDetailScreen(vm, actions, Modifier.fillMaxSize())
+                } else if (isIosShell) {
+                    AppleNotificationDetailScreen(
+                        vm,
+                        actions,
+                        onBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        Modifier.fillMaxSize(),
+                        contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else {
+                    NotificationDetailScreen(
+                        vm = vm,
+                        actions = actions,
+                        modifier = Modifier.fillMaxSize(),
+                        navigationIcon = {
+                            BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
+                        },
+                        windowInsets = windowInsetsWithoutTitleBar,
+                    )
+                }
             }
             entry<NavRoutes.Announcements> { route ->
-                AnnouncementsScreen(
-                    vm = viewModel { AnnouncementsViewModel() },
-                    onNavigateToDetail = { aniNavigator.navigateAnnouncementDetail(it) },
-                    onLogin = { aniNavigator.navigateEmailLoginStart() },
-                    modifier = Modifier.fillMaxSize(),
-                    navigationIcon = {
-                        BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
-                    },
-                    windowInsets = windowInsets,
-                )
+                val vm = viewModel { AnnouncementsViewModel() }
+                if (appleShell == AppleShell.Mac) {
+                    MacAnnouncementsScreen(
+                        vm,
+                        onNavigateToDetail = { aniNavigator.navigateAnnouncementDetail(it) },
+                        onLogin = { aniNavigator.navigateEmailLoginStart() },
+                        Modifier.fillMaxSize(),
+                    )
+                } else if (isIosShell) {
+                    AppleAnnouncementsScreen(
+                        vm,
+                        onNavigateToDetail = { aniNavigator.navigateAnnouncementDetail(it) },
+                        onLogin = { aniNavigator.navigateEmailLoginStart() },
+                        onBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        Modifier.fillMaxSize(),
+                        contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else {
+                    AnnouncementsScreen(
+                        vm = vm,
+                        onNavigateToDetail = { aniNavigator.navigateAnnouncementDetail(it) },
+                        onLogin = { aniNavigator.navigateEmailLoginStart() },
+                        modifier = Modifier.fillMaxSize(),
+                        navigationIcon = {
+                            BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
+                        },
+                        windowInsets = windowInsets,
+                    )
+                }
             }
             entry<NavRoutes.AnnouncementDetail> { route ->
-                AnnouncementDetailScreen(
-                    vm = viewModel(key = route.toString()) { AnnouncementDetailViewModel(route.announcementId) },
-                    modifier = Modifier.fillMaxSize(),
-                    navigationIcon = {
-                        BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
-                    },
-                    windowInsets = windowInsetsWithoutTitleBar,
-                )
+                val vm = viewModel(key = route.toString()) { AnnouncementDetailViewModel(route.announcementId) }
+                if (appleShell == AppleShell.Mac) {
+                    MacAnnouncementDetailScreen(vm, Modifier.fillMaxSize())
+                } else if (isIosShell) {
+                    AppleAnnouncementDetailScreen(
+                        vm,
+                        onBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        Modifier.fillMaxSize(),
+                        contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else {
+                    AnnouncementDetailScreen(
+                        vm = vm,
+                        modifier = Modifier.fillMaxSize(),
+                        navigationIcon = {
+                            BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
+                        },
+                        windowInsets = windowInsetsWithoutTitleBar,
+                    )
+                }
             }
             entry<NavRoutes.NotificationSettings> { route ->
                 val vm = viewModel { NotificationSettingsViewModel() }
-                NotificationSettingsScreen(
-                    vm.notificationSettings,
-                    modifier = Modifier.fillMaxSize(),
-                    navigationIcon = {
-                        BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
-                    },
-                    windowInsets = windowInsetsWithoutTitleBar,
-                )
+                // macOS 有设定窗口时不推入这一页, 通知设定在设定窗口的「通知」分类 (MacSettingsWindowNavigator)
+                if (isIosShell) {
+                    AppleNotificationSettingsScreen(
+                        vm.notificationSettings,
+                        onBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        Modifier.fillMaxSize(),
+                        contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else {
+                    NotificationSettingsScreen(
+                        vm.notificationSettings,
+                        modifier = Modifier.fillMaxSize(),
+                        navigationIcon = {
+                            BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
+                        },
+                        windowInsets = windowInsetsWithoutTitleBar,
+                    )
+                }
             }
             entry<NavRoutes.CommentThread> { route ->
                 CommentThreadScreen(
@@ -865,79 +993,149 @@ private fun AniNavDisplay(
                 )
             }
             entry<NavRoutes.CacheDetail> { route ->
-                MediaCacheDetailsScreen(
-                    viewModel(key = route.toString()) { MediaCacheDetailsPageViewModel(route.cacheId) },
-                    navigationIcon = {
-                        BackNavigationIconButton(
-                            {
-                                aniNavigator.popBackStack(route, inclusive = true)
-                            },
-                        )
-                    },
-                    Modifier.fillMaxSize(),
-                    windowInsets = windowInsets,
-                )
+                val detailsVm = viewModel(key = route.toString()) { MediaCacheDetailsPageViewModel(route.cacheId) }
+                if (isIosShell) {
+                    AppleMediaCacheDetailsScreen(
+                        detailsVm,
+                        downloads = viewModel { createDownloadManagementViewModel() },
+                        cacheId = route.cacheId,
+                        onPlay = { aniNavigator.navigateEpisodeDetails(it.subjectId, it.episodeId) },
+                        onBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        Modifier.fillMaxSize(),
+                        contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else {
+                    MediaCacheDetailsScreen(
+                        detailsVm,
+                        navigationIcon = {
+                            BackNavigationIconButton(
+                                {
+                                    aniNavigator.popBackStack(route, inclusive = true)
+                                },
+                            )
+                        },
+                        Modifier.fillMaxSize(),
+                        windowInsets = windowInsets,
+                    )
+                }
             }
             entry<NavRoutes.SubjectRelationGraph> { route ->
                 val vm = viewModel<SubjectRelationGraphViewModel>(key = "subject-relation-graph-${route.subjectId}") {
                     SubjectRelationGraphViewModel(route.subjectId)
                 }
-                SubjectRelationGraphScreen(
-                    vm,
-                    onClickSubject = {
-                        aniNavigator.navigateSubjectDetails(
-                            it.subjectId,
-                            SubjectDetailPlaceholder(it.subjectId, it.name, it.nameCn, it.image),
-                        )
-                    },
-                    Modifier.fillMaxSize(),
-                    windowInsets = windowInsets,
-                    navigationIcon = {
-                        BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
-                    },
-                )
+                val onClickSubject: (SubjectRelationGraphSubject) -> Unit = {
+                    aniNavigator.navigateSubjectDetails(
+                        it.subjectId,
+                        SubjectDetailPlaceholder(it.subjectId, it.name, it.nameCn, it.image),
+                    )
+                }
+                if (appleShell == AppleShell.Mac) {
+                    MacSubjectRelationGraphScreen(vm, onClickSubject, Modifier.fillMaxSize())
+                } else if (isIosShell) {
+                    AppleSubjectRelationGraphScreen(
+                        vm,
+                        onClickSubject,
+                        onBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        Modifier.fillMaxSize(),
+                        contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else {
+                    SubjectRelationGraphScreen(
+                        vm,
+                        onClickSubject = onClickSubject,
+                        Modifier.fillMaxSize(),
+                        windowInsets = windowInsets,
+                        navigationIcon = {
+                            BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
+                        },
+                    )
+                }
             }
             entry<NavRoutes.PersonDetail> { route ->
                 val vm = viewModel<PersonDetailsViewModel>(key = "person-${route.personId}") {
                     PersonDetailsViewModel(route.personId)
                 }
-                PersonDetailsScreen(
-                    vm,
-                    Modifier.fillMaxSize(),
-                    windowInsets = windowInsets,
-                    navigationIcon = {
-                        BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
-                    },
-                )
+                if (appleShell == AppleShell.Mac) {
+                    MacPersonDetailsScreen(vm, route.personId, Modifier.fillMaxSize())
+                } else if (isIosShell) {
+                    ApplePersonDetailsScreen(
+                        vm,
+                        route.personId,
+                        onBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        Modifier.fillMaxSize(),
+                        contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else {
+                    PersonDetailsScreen(
+                        vm,
+                        Modifier.fillMaxSize(),
+                        windowInsets = windowInsets,
+                        navigationIcon = {
+                            BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
+                        },
+                    )
+                }
             }
             entry<NavRoutes.CharacterDetail> { route ->
                 val vm = viewModel<CharacterDetailsViewModel>(key = "character-${route.characterId}") {
                     CharacterDetailsViewModel(route.characterId)
                 }
-                CharacterDetailsScreen(
-                    vm,
-                    Modifier.fillMaxSize(),
-                    windowInsets = windowInsets,
-                    navigationIcon = {
-                        BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
-                    },
-                )
+                if (appleShell == AppleShell.Mac) {
+                    MacCharacterDetailsScreen(vm, route.characterId, Modifier.fillMaxSize())
+                } else if (isIosShell) {
+                    AppleCharacterDetailsScreen(
+                        vm,
+                        route.characterId,
+                        onBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        Modifier.fillMaxSize(),
+                        contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else {
+                    CharacterDetailsScreen(
+                        vm,
+                        Modifier.fillMaxSize(),
+                        windowInsets = windowInsets,
+                        navigationIcon = {
+                            BackNavigationIconButton({ aniNavigator.popBackStack(route, inclusive = true) })
+                        },
+                    )
+                }
             }
             entry<NavRoutes.SubjectCaches> { route ->
-                SubjectDownloadsScreen(
-                    vm = viewModel(key = route.toString()) { createSubjectDownloadsViewModel(route.subjectId) },
-                    onPlay = { aniNavigator.navigateEpisodeDetails(it.subjectId, it.episodeId) },
-                    onNavigateDownloadDetail = { aniNavigator.navigateCacheDetails(it) },
-                    modifier = Modifier.fillMaxSize(),
-                    windowInsets = windowInsets,
-                    navigationIcon = {
-                        BackNavigationIconButton(
-                            {
-                                aniNavigator.popBackStack(route, inclusive = true)
-                            },
-                        )
-                    },
-                )
+                val vm = viewModel(key = route.toString()) { createSubjectDownloadsViewModel(route.subjectId) }
+                val onPlay: (DownloadItem) -> Unit = { aniNavigator.navigateEpisodeDetails(it.subjectId, it.episodeId) }
+                if (appleShell == AppleShell.Mac) {
+                    MacSubjectDownloadsScreen(
+                        vm,
+                        onPlay = onPlay,
+                        onOpenSubjectDetails = { aniNavigator.navigateSubjectDetails(it, placeholder = null) },
+                        Modifier.fillMaxSize(),
+                    )
+                } else if (isIosShell) {
+                    AppleSubjectDownloadsScreen(
+                        vm,
+                        onPlay = onPlay,
+                        onOpenDetail = { aniNavigator.navigateCacheDetails(it.id) },
+                        onBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        Modifier.fillMaxSize(),
+                        contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else {
+                    SubjectDownloadsScreen(
+                        vm = vm,
+                        onPlay = onPlay,
+                        onNavigateDownloadDetail = { aniNavigator.navigateCacheDetails(it) },
+                        modifier = Modifier.fillMaxSize(),
+                        windowInsets = windowInsets,
+                        navigationIcon = {
+                            BackNavigationIconButton(
+                                {
+                                    aniNavigator.popBackStack(route, inclusive = true)
+                                },
+                            )
+                        },
+                    )
+                }
             }
             entry<NavRoutes.EditMediaSource> { route ->
                 val factoryId = FactoryId(route.factoryId)
@@ -1072,33 +1270,55 @@ private fun AniNavDisplay(
             }
             entry<NavRoutes.TrendingRanking> { route ->
                 val vm = viewModel { TrendingRankingViewModel() }
-                TrendingRankingScreen(
-                    vm.items.collectAsLazyPagingItemsWithLifecycle(),
-                    onClickItem = {
-                        Analytics.recordEvent(SubjectEnter) {
-                            put("source", "trending_ranking")
-                            put("subject_id", it.subject.subjectId)
-                        }
-                        aniNavigator.navigateSubjectDetails(
-                            it.subject.subjectId,
-                            placeholder = SubjectDetailPlaceholder(
-                                id = it.subject.subjectId,
-                                name = it.subject.originalTitle,
-                                nameCN = it.subject.title,
-                                coverUrl = it.subject.imageUrl,
-                            ),
-                        )
-                    },
-                    Modifier.fillMaxSize(),
-                    windowInsets = windowInsets,
-                    navigationIcon = {
-                        BackNavigationIconButton(
-                            {
-                                aniNavigator.popBackStack(route, inclusive = true)
-                            },
-                        )
-                    },
-                )
+                val items = vm.items.collectAsLazyPagingItemsWithLifecycle()
+                val onClickItem: (TrendingRankingItemPresentation) -> Unit = {
+                    Analytics.recordEvent(SubjectEnter) {
+                        put("source", "trending_ranking")
+                        put("subject_id", it.subject.subjectId)
+                    }
+                    aniNavigator.navigateSubjectDetails(
+                        it.subject.subjectId,
+                        placeholder = SubjectDetailPlaceholder(
+                            id = it.subject.subjectId,
+                            name = it.subject.originalTitle,
+                            nameCN = it.subject.title,
+                            coverUrl = it.subject.imageUrl,
+                        ),
+                    )
+                }
+                if (appleShell == AppleShell.Mac) {
+                    val selfInfo by remember { SelfInfoStateProducer() }.flow.collectAsState(null)
+                    MacTrendingRankingPage(
+                        items,
+                        quickFollowState = vm.quickFollowState.takeIf { selfInfo?.isSessionValid == true },
+                        onOpenItem = onClickItem,
+                        Modifier.fillMaxSize(),
+                    )
+                } else if (isIosShell) {
+                    val selfInfo by remember { SelfInfoStateProducer() }.flow.collectAsState(null)
+                    AppleTrendingRankingPage(
+                        items,
+                        quickFollowState = vm.quickFollowState.takeIf { selfInfo?.isSessionValid == true },
+                        onClickItem = onClickItem,
+                        onBack = { aniNavigator.popBackStack(route, inclusive = true) },
+                        Modifier.fillMaxSize(),
+                        contentPadding = appleBottomInsets().asPaddingValues(),
+                    )
+                } else {
+                    TrendingRankingScreen(
+                        items,
+                        onClickItem = onClickItem,
+                        Modifier.fillMaxSize(),
+                        windowInsets = windowInsets,
+                        navigationIcon = {
+                            BackNavigationIconButton(
+                                {
+                                    aniNavigator.popBackStack(route, inclusive = true)
+                                },
+                            )
+                        },
+                    )
+                }
             }
         },
     )

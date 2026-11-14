@@ -31,6 +31,7 @@ import me.him188.ani.app.domain.foundation.LoadError
 import me.him188.ani.app.ui.comment.createTestCommentState
 import me.him188.ani.app.ui.foundation.LocalPlatform
 import me.him188.ani.app.ui.foundation.ProvideCompositionLocalsForPreview
+import me.him188.ani.app.ui.foundation.apple.bangumiSubjectUrl
 import me.him188.ani.app.ui.foundation.apple.episodeTileLabel
 import me.him188.ani.app.ui.framework.runAniComposeUiTest
 import me.him188.ani.app.ui.rating.EditableRatingActions

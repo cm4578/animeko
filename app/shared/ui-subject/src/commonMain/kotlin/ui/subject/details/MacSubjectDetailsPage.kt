@@ -105,6 +105,7 @@ import me.him188.ani.app.ui.foundation.apple.EpisodeTileState
 import me.him188.ani.app.ui.foundation.apple.MacPageToolbar
 import me.him188.ani.app.ui.foundation.apple.MacToolbarIconButton
 import me.him188.ani.app.ui.foundation.apple.PillTab
+import me.him188.ani.app.ui.foundation.apple.bangumiSubjectUrl
 import me.him188.ani.app.ui.foundation.apple.episodeTileLabel
 import me.him188.ani.app.ui.foundation.avatar.AvatarImage
 import me.him188.ani.app.ui.foundation.layout.NestedScrollableColumn
@@ -610,7 +611,7 @@ private fun MacStatsCard(
 }
 
 @Composable
-private fun MacStatCell(value: String, label: String, modifier: Modifier = Modifier) {
+internal fun MacStatCell(value: String, label: String, modifier: Modifier = Modifier) {
     Column(
         modifier.padding(vertical = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -882,7 +883,7 @@ private fun MacDetailsTabContent(
  * 区块标题行: 区块标题 17/22 W700, 其后可放说明与 accent 链接.
  */
 @Composable
-private fun MacSectionHeader(
+internal fun MacSectionHeader(
     title: String,
     modifier: Modifier = Modifier,
     trailing: @Composable RowScope.() -> Unit = {},
@@ -902,7 +903,7 @@ private fun MacSectionHeader(
  * 简介: 最宽 640, 14 号 labelSoft, 默认 5 行; 溢出时末尾为 accent「顯示更多 / 顯示更少」.
  */
 @Composable
-private fun MacSummary(summary: String) {
+internal fun MacSummary(summary: String) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     var hasOverflow by remember { mutableStateOf(false) }
     Column(Modifier.widthIn(max = 640.dp)) {

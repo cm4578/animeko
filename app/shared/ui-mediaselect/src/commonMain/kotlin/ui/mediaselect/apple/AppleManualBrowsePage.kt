@@ -63,6 +63,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import me.him188.ani.app.ui.foundation.apple.AniSwitch
+import me.him188.ani.app.ui.foundation.apple.AppleButton
+import me.him188.ani.app.ui.foundation.apple.AppleButtonStyle
 import me.him188.ani.app.ui.foundation.apple.AppleDivider
 import me.him188.ani.app.ui.foundation.apple.AppleIcons
 import me.him188.ani.app.ui.foundation.apple.ApplePopoverMenu
@@ -73,7 +75,9 @@ import me.him188.ani.app.ui.foundation.theme.AniColors
 import me.him188.ani.app.ui.foundation.theme.AniTextStyles
 import me.him188.ani.app.ui.foundation.widgets.LocalToaster
 import me.him188.ani.app.ui.lang.Lang
+import me.him188.ani.app.ui.lang.media_selector_episode_label
 import me.him188.ani.app.ui.lang.media_selector_load_failed
+import me.him188.ani.app.ui.lang.media_selector_mac_play_episode
 import me.him188.ani.app.ui.lang.media_selector_manual_captcha_unsupported
 import me.him188.ani.app.ui.lang.media_selector_manual_episodes_count
 import me.him188.ani.app.ui.lang.media_selector_manual_no_result
@@ -82,6 +86,8 @@ import me.him188.ani.app.ui.lang.media_selector_manual_remember_selection
 import me.him188.ani.app.ui.lang.media_selector_manual_result_count
 import me.him188.ani.app.ui.lang.media_selector_retry
 import me.him188.ani.app.ui.lang.media_selector_search_hint
+import me.him188.ani.app.ui.mediaselect.WatchingEpisode
+import me.him188.ani.app.ui.mediaselect.common.episodeLabel
 import me.him188.ani.app.ui.mediaselect.manual.ManualBrowsePresentation
 import me.him188.ani.app.ui.mediaselect.manual.ManualBrowseSource
 import me.him188.ani.app.ui.mediaselect.manual.ManualBrowseState
@@ -99,16 +105,20 @@ import org.jetbrains.compose.resources.stringResource
  * 顶部是资料源选择钮与搜索框 (都高 40、圆角 20、card 底), 下方「共 N 條結果」与结果列表.
  * 打开的结果是一张卡片: 标题列高 48、线路小号胶囊 (高 30、圆角 15)、「劇集 N 項」与 7 栏剧集网格 (格高 38、圆角 10);
  * 其他结果收合成一列高 48、labelSoft, 点它改为打开它, 点打开卡片的标题列收起.
- * 底部是「記住選擇」开关.
+ * 底部左侧是「記住選擇」开关, 右侧是主要按钮「▶ 播放第 N 話」(高 48、圆角 24).
  *
  * 打开页面、生效源变化与当前集就绪时调用 [ManualBrowseState.searchIfNeeded], 与现有页面相同.
- * 点网格里的一集直接播放, 不确认; 成功后调用 [onPlayed], 失败提示「載入失敗」.
+ * 点网格里的一集只选取 (默认选取预选的一集), 按「播放」才把选取的一集交给 [ManualBrowseState.play] (05 G55, 同 macOS G38);
+ * 成功后调用 [onPlayed], 失败提示「載入失敗」.
+ *
+ * @param watching 正在观看的剧集, 用于按钮上的「第 N 話」. 为 `null` 时用手动查找的目标剧集.
  */
 @Composable
 fun AppleManualBrowsePage(
     state: ManualBrowseState,
     onPlayed: () -> Unit,
     modifier: Modifier = Modifier,
+    watching: WatchingEpisode? = null,
     showRememberSelection: Boolean = true,
 ) {
     val presentation by state.presentationFlow.collectAsStateWithLifecycle()
@@ -116,19 +126,17 @@ fun AppleManualBrowsePage(
     val toaster = LocalToaster.current
     val loadFailedText = stringResource(Lang.media_selector_load_failed)
     val currentOnPlayed by rememberUpdatedState(onPlayed)
-    val playEpisode: (Int) -> Unit = { index ->
-        scope.launch {
-            when (state.play(index)) {
-                true -> currentOnPlayed()
-                false -> toaster.toast(loadFailedText)
-                null -> Unit
-            }
-        }
-    }
 
     LaunchedEffect(state, presentation.selectedSourceId, presentation.target?.subjectName) {
         state.searchIfNeeded()
     }
+
+    // 点集数只选取; 换条目或线路后回到预选.
+    var pickedIndex by remember(presentation.openedSubject, presentation.selectedChannelIndex) {
+        mutableStateOf<Int?>(null)
+    }
+    val episodes = presentation.selectedChannel?.episodes.orEmpty()
+    val selectedIndex = (pickedIndex ?: presentation.selectedEpisodeIndex)?.takeIf { it in episodes.indices }
 
     Column(modifier.fillMaxSize()) {
         Row(
@@ -156,28 +164,60 @@ fun AppleManualBrowsePage(
             AppleManualResults(
                 state,
                 presentation,
-                onPlayEpisode = playEpisode,
+                selectedIndex = selectedIndex,
+                onSelectEpisode = { pickedIndex = it },
                 Modifier.weight(1f).fillMaxWidth(),
             )
         }
 
-        if (showRememberSelection) {
-            AppleDivider()
+        AppleDivider()
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 72.dp).padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // 按钮保持完整宽度, 空间不够时「記住選擇」的文字先省略
             Row(
-                Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 16.dp),
+                Modifier.weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    stringResource(Lang.media_selector_manual_remember_selection),
-                    Modifier.weight(1f),
-                    style = AniTextStyles.body,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                AniSwitch(
-                    presentation.rememberSelection,
-                    onCheckedChange = state::setRememberSelection,
-                    Modifier.testTag(AppleMediaSelectorTestTags.RememberSwitch),
-                )
+                if (showRememberSelection) {
+                    Text(
+                        stringResource(Lang.media_selector_manual_remember_selection),
+                        Modifier.weight(1f, fill = false),
+                        style = AniTextStyles.body,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    AniSwitch(
+                        presentation.rememberSelection,
+                        onCheckedChange = state::setRememberSelection,
+                        Modifier.testTag(AppleMediaSelectorTestTags.RememberSwitch),
+                    )
+                }
+            }
+            val episodeLabel = watching?.episodeLabel()
+                ?: stringResource(Lang.media_selector_episode_label, presentation.target?.episodeSortText ?: "–")
+            AppleButton(
+                onClick = {
+                    val index = selectedIndex ?: return@AppleButton
+                    scope.launch {
+                        when (state.play(index)) {
+                            true -> currentOnPlayed()
+                            false -> toaster.toast(loadFailedText)
+                            null -> Unit
+                        }
+                    }
+                },
+                Modifier.testTag(AppleMediaSelectorTestTags.Play),
+                style = AppleButtonStyle.Primary,
+                enabled = selectedIndex != null && presentation.target != null && !presentation.isPlaying,
+                height = 48.dp,
+            ) {
+                Icon(AppleIcons.playFilled(), contentDescription = null, Modifier.size(12.dp))
+                Text(stringResource(Lang.media_selector_mac_play_episode, episodeLabel), maxLines = 1)
             }
         }
     }
@@ -187,7 +227,8 @@ fun AppleManualBrowsePage(
 private fun AppleManualResults(
     state: ManualBrowseState,
     presentation: ManualBrowsePresentation,
-    onPlayEpisode: (Int) -> Unit,
+    selectedIndex: Int?,
+    onSelectEpisode: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when (val results = presentation.results) {
@@ -214,11 +255,11 @@ private fun AppleManualResults(
                     item("empty") { AppleManualMessage(stringResource(Lang.media_selector_manual_no_result)) }
                 }
                 if (opened != null && opened !in subjects) {
-                    openedSubjectItems(state, presentation, opened, key = "opened", onPlayEpisode)
+                    openedSubjectItems(state, presentation, opened, key = "opened", selectedIndex, onSelectEpisode)
                 }
                 subjects.forEachIndexed { index, subject ->
                     if (subject == opened) {
-                        openedSubjectItems(state, presentation, subject, key = "result-$index", onPlayEpisode)
+                        openedSubjectItems(state, presentation, subject, key = "result-$index", selectedIndex, onSelectEpisode)
                     } else {
                         item("result-$index") {
                             AppleCollapsedResultRow(
@@ -242,7 +283,8 @@ private fun LazyListScope.openedSubjectItems(
     presentation: ManualBrowsePresentation,
     subject: BrowseSubject,
     key: String,
-    onPlayEpisode: (Int) -> Unit,
+    selectedIndex: Int?,
+    onSelectEpisode: (Int) -> Unit,
 ) {
     val channels = presentation.channels
     val episodes = (channels as? ManualLoadState.Success)?.let { presentation.selectedChannel?.episodes }.orEmpty()
@@ -314,9 +356,9 @@ private fun LazyListScope.openedSubjectItems(
                     AppleEpisodeGridRow(
                         indices.map { episodes[it] },
                         firstIndex = indices.first(),
-                        selectedIndex = presentation.selectedEpisodeIndex,
+                        selectedIndex = selectedIndex,
                         enabled = !presentation.isPlaying,
-                        onClick = onPlayEpisode,
+                        onClick = onSelectEpisode,
                         Modifier
                             .fillMaxWidth()
                             .cardSegment(top = false, bottom = rowIndex == rows.lastIndex)
@@ -425,7 +467,7 @@ private fun AppleChannelPills(
 
 /**
  * 剧集网格的一行, 最多 [AppleManualBrowseDefaults.GridColumns] 格, 不足的位置留空.
- * 格高 38、圆角 10: 当前选中 (含预选) 为 C13「正在播放」样式, 其他为「未看」样式.
+ * 格高 38、圆角 10: 选取的一集 (默认为预选) 为 C13「正在播放」样式, 其他为「未看」样式. 点一格只选取.
  */
 @Composable
 private fun AppleEpisodeGridRow(
